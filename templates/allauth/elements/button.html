@@ -1,0 +1,5 @@
+{% load allauth %}{% comment %} djlint:off {% endcomment %}
+{% if "link" in attrs.tags %}{% with cls="inline-block font-medium text-emerald-800 underline" %}{% include "allauth/elements/_button_tag.html" %}{% endwith %}
+{% elif "outline" in attrs.tags or "secondary" in attrs.tags %}{% with cls="inline-flex w-full items-center justify-center rounded border border-slate-300 bg-white px-5 py-2.5 font-semibold text-slate-800 hover:bg-slate-50" %}{% include "allauth/elements/_button_tag.html" %}{% endwith %}
+{% elif "danger" in attrs.tags or "delete" in attrs.tags %}{% with cls="inline-flex items-center justify-center rounded border border-red-300 bg-white px-4 py-2 font-semibold text-red-700 hover:bg-red-50" %}{% include "allauth/elements/_button_tag.html" %}{% endwith %}
+{% else %}{% with cls="inline-flex w-full items-center justify-center rounded bg-emerald-700 px-5 py-2.5 font-semibold text-white hover:bg-emerald-800" %}{% include "allauth/elements/_button_tag.html" %}{% endwith %}{% endif %}

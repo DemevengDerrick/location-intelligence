@@ -1,0 +1,5 @@
+{% extends "admin/_action_form.html" %}
+{% load i18n money %}
+{% block summary %}
+<p>{% blocktranslate with ref=payment.provider_reference paid=payment.amount|money:payment.currency left=payment.refundable_amount|money:payment.currency %}Payment {{ ref }}: {{ paid }} paid, {{ left }} refundable.{% endblocktranslate %}</p>
+{% endblock %}

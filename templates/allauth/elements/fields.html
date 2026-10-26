@@ -1,0 +1,8 @@
+{# Every allauth form field rendered like the rest of the site: visible label, help, errors. #}
+{% if attrs.form.non_field_errors %}
+<div class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+  {% for error in attrs.form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+</div>
+{% endif %}
+{% for field in attrs.form.hidden_fields %}{{ field }}{% endfor %}
+{% for field in attrs.form.visible_fields %}{% include "partials/field.html" %}{% endfor %}

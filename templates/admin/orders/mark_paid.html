@@ -1,0 +1,5 @@
+{% extends "admin/_action_form.html" %}
+{% load i18n money %}
+{% block summary %}
+<p>{% blocktranslate with ref=order.public_id customer=order.customer.email amount=order.price_amount|money:order.currency %}Order {{ ref }} for {{ customer }}: {{ amount }}. Confirm only once the transfer is on the bank account.{% endblocktranslate %}</p>
+{% endblock %}

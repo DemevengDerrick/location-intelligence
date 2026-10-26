@@ -1,0 +1,61 @@
+[project]
+name = "location-analysis"
+version = "0.1.0"
+description = "Land due-diligence report platform for Cameroon"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "django>=5.2,<5.3",
+    "djangorestframework>=3.15",
+    "djangorestframework-gis>=1.1",
+    "django-environ>=0.11",
+    "django-allauth[socialaccount]>=65.0",
+    "django-modeltranslation>=0.19",
+    "celery[redis]>=5.4",
+    "django-celery-beat>=2.7",
+    "django-storages[s3]>=1.14",
+    "django-anymail>=12.0",
+    "psycopg[binary]>=3.2",
+    "gunicorn>=23.0",
+    "whitenoise>=6.7",
+    "sentry-sdk>=2.14",
+    "babel>=2.16",
+    "django-ratelimit>=4.1",
+    "httpx>=0.27",
+    "filetype>=1.2",
+    "stripe>=11.0",
+    "numpy>=2.0",
+    "rasterio>=1.4",
+    "scipy>=1.13",
+    "osmium>=4.0",
+    "matplotlib>=3.9",
+    "weasyprint>=62.0",
+    "segno>=1.6",
+    "vl-convert-python>=1.7",
+    "pystac-client>=0.8",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-django>=4.9",
+    "factory-boy>=3.3",
+    "ruff>=0.6",
+    "polib>=1.2",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers --ds=config.settings.test"
+filterwarnings = ["ignore:No directory at:UserWarning"]
+markers = ["run_analysis: let payments start the analysis pipeline (providers must be faked)"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/migrations/*", "input"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ"]

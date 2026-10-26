@@ -1,0 +1,6 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+{% block object-tools-items %}
+  <li><a href="{% url 'admin:gazetteer_referencelayer_import' %}">{% translate "Import a layer" %}</a></li>
+  {{ block.super }}
+{% endblock %}

@@ -1,0 +1,13 @@
+{% load i18n %}
+<form method="post" action="{% url 'set_currency' %}" class="flex flex-wrap items-center gap-2">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <span id="currency-label" class="text-slate-700">{% translate "Show prices in" %}</span>
+  <div role="group" aria-labelledby="currency-label" class="flex gap-1">
+    {% for code in CURRENCIES %}
+      <button type="submit" name="currency" value="{{ code }}"
+              class="rounded border px-2 py-1 {% if code == CURRENCY %}border-emerald-700 bg-emerald-700 text-white{% else %}border-slate-300 bg-white{% endif %}"
+              {% if code == CURRENCY %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>{{ code }}</button>
+    {% endfor %}
+  </div>
+</form>

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% translate "Frequently asked questions" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{% translate "Answers to common questions about our land due-diligence reports in Cameroon." %}{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold">{% translate "Frequently asked questions" %}</h1>
+{% if faq_items %}
+  {% include "pages/_faq_list.html" %}
+{% else %}
+  <p class="mt-6">{% translate "No questions yet." %}</p>
+{% endif %}
+<p class="mt-8">{% translate "Still have a question?" %} <a class="font-semibold text-emerald-800 underline" href="{% url 'pages:contact' %}">{% translate "Contact us" %}</a></p>
+{% endblock %}

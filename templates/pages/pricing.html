@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% translate "Pricing" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{% translate "Fixed prices for land due-diligence reports in Cameroon, in XAF, CAD, EUR or USD." %}{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="text-3xl font-bold">{% translate "Pricing" %}</h1>
+    <p class="mt-2 max-w-2xl text-slate-700">{% translate "One fixed price per parcel. No subscription." %}</p>
+  </div>
+  {% include "partials/currency_switcher.html" %}
+</div>
+<div class="mt-8">{% include "pages/_tier_cards.html" %}</div>
+<p class="mt-6 text-sm text-slate-600">
+  {% blocktranslate trimmed %}
+    Prices in each currency are set by us and are not live exchange-rate conversions. Mobile money payments are made in XAF.
+  {% endblocktranslate %}
+</p>
+{% endblock %}

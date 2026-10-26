@@ -1,0 +1,26 @@
+{% load i18n money %}
+    <div class="mt-3 space-y-3">
+      {% for option in options %}{% with method=option.method quote=option.quote %}
+      <form method="post" class="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-slate-200 p-5">
+        {% csrf_token %}
+        <input type="hidden" name="method" value="{{ method }}">
+        <div>
+          <p class="text-lg font-semibold">{{ option.label }}</p>
+          <p class="text-sm text-slate-600">
+            {% if method == "card" %}{% translate "Visa, Mastercard. Secure payment page." %}{% else %}{% translate "MTN Mobile Money or Orange Money, paid in XAF." %}{% endif %}
+          </p>
+        </div>
+        {% if quote %}
+          <div class="text-right">
+            {% if quote.discount %}<p class="text-sm text-slate-500 line-through">{{ quote.subtotal|money:quote.currency }}</p>{% endif %}
+            <p class="text-xl font-bold">{{ quote.total|money:quote.currency }}</p>
+          </div>
+          <button type="submit" name="action" value="pay" class="w-full rounded bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800 sm:w-auto">
+            {% if quote.total %}{% blocktranslate with amount=quote.total|money:quote.currency %}Pay {{ amount }}{% endblocktranslate %}{% else %}{% translate "Confirm free order" %}{% endif %}
+          </button>
+        {% else %}
+          <p class="text-sm text-slate-600">{{ option.error }}</p>
+        {% endif %}
+      </form>
+      {% endwith %}{% endfor %}
+    </div>

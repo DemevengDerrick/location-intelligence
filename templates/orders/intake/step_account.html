@@ -1,0 +1,37 @@
+{% extends "orders/intake/base.html" %}
+{% load i18n %}
+{% block step %}
+<h1 class="text-2xl font-bold">{% translate "Your details" %}</h1>
+{% if not user.is_authenticated %}
+<p class="mt-2">{% translate "We create your account now so you can follow your order and download the report." %}
+  <a class="underline" href="{{ login_url }}">{% translate "Already have an account? Sign in" %}</a></p>
+{% endif %}
+<form method="post" class="mt-4 space-y-5" novalidate>
+  {% csrf_token %}
+  {% if form.email %}
+    {% include "partials/field.html" with field=form.email %}
+    {% if form.email_taken %}
+    <p><a class="font-semibold text-emerald-800 underline" href="{{ login_url }}">{% translate "Sign in to continue" %}</a></p>
+    {% endif %}
+  {% else %}
+    <p class="rounded bg-slate-50 px-4 py-3">{% blocktranslate with email=user.email %}Signed in as {{ email }}{% endblocktranslate %}</p>
+  {% endif %}
+  <div class="grid gap-4 sm:grid-cols-2">
+    {% include "partials/field.html" with field=form.contact_name %}
+    {% include "partials/field.html" with field=form.contact_phone %}
+  </div>
+  {% if form.password %}{% include "partials/field.html" with field=form.password %}{% endif %}
+  <div class="rounded border border-slate-200 p-4">
+    {% include "partials/field.html" with field=form.accept_terms %}
+    <p class="mt-2 pl-6 text-sm">
+      <a class="underline" href="{% url 'pages:terms' %}" target="_blank" rel="noopener">{% translate "Terms of service" %}</a> ·
+      <a class="underline" href="{% url 'pages:disclaimer' %}" target="_blank" rel="noopener">{% translate "Report disclaimer" %}</a> ·
+      <a class="underline" href="{% url 'pages:privacy' %}" target="_blank" rel="noopener">{% translate "Privacy policy" %}</a>
+    </p>
+  </div>
+  <div class="flex justify-between pt-2">
+    <a href="{% url 'intake:step' draft.token 3 %}" class="px-2 py-3 underline">{% translate "Back" %}</a>
+    <button type="submit" class="rounded bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800">{% translate "Continue" %}</button>
+  </div>
+</form>
+{% endblock %}

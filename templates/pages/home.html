@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% translate "Land due-diligence reports for Cameroon" %} · {{ SITE_NAME }}{% endblock %}
+{% block body %}
+<section class="bg-emerald-900 text-white">
+  <div class="mx-auto max-w-6xl px-4 py-16 sm:py-20">
+    <h1 class="max-w-3xl text-3xl font-bold sm:text-5xl">{% translate "Know the land before you buy it" %}</h1>
+    <p class="mt-5 max-w-2xl text-lg text-emerald-50">
+      {% blocktranslate trimmed %}
+        Buying land in Cameroon from abroad? We check where the parcel really is, what is on it, and the physical risks around it, then send you a report reviewed by an analyst.
+      {% endblocktranslate %}
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="{% url 'intake:start' %}" class="rounded bg-white px-5 py-3 font-semibold text-emerald-900 hover:bg-emerald-50">{% translate "Order a report" %}</a>
+      <a href="{% url 'pages:samples' %}" class="rounded border border-white px-5 py-3 font-semibold hover:bg-emerald-800">{% translate "View a sample report" %}</a>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto max-w-6xl px-4 py-14">
+  <h2 class="text-2xl font-bold">{% translate "What your report answers" %}</h2>
+  <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% include "pages/_report_questions.html" %}
+  </ul>
+</section>
+
+<section class="bg-slate-50">
+  <div class="mx-auto max-w-6xl px-4 py-14">
+    <h2 class="text-2xl font-bold">{% translate "How it works" %}</h2>
+    {% include "pages/_steps.html" %}
+    <p class="mt-6"><a class="font-semibold text-emerald-800 underline" href="{% url 'pages:how_it_works' %}">{% translate "Read more about our process" %}</a></p>
+  </div>
+</section>
+
+<section class="mx-auto max-w-6xl px-4 py-14">
+  <h2 class="text-2xl font-bold">{% translate "Pricing" %}</h2>
+  <div class="mt-6">{% include "pages/_tier_cards.html" %}</div>
+</section>
+
+{% if faq_items %}
+<section class="bg-slate-50">
+  <div class="mx-auto max-w-6xl px-4 py-14">
+    <h2 class="text-2xl font-bold">{% translate "Frequently asked questions" %}</h2>
+    {% include "pages/_faq_list.html" %}
+    <p class="mt-6"><a class="font-semibold text-emerald-800 underline" href="{% url 'pages:faq' %}">{% translate "All questions" %}</a></p>
+  </div>
+</section>
+{% endif %}
+
+<section class="mx-auto max-w-6xl px-4 py-14">
+  <div class="rounded-lg border border-amber-300 bg-amber-50 p-6">
+    <h2 class="text-lg font-semibold">{% translate "What we do not do" %}</h2>
+    <p class="mt-2">
+      {% blocktranslate trimmed %}
+        We do not verify land titles, survey boundaries or value property. Our reports describe the physical and environmental situation from remote data and help you decide what to check with a notary and a surveyor.
+      {% endblocktranslate %}
+      <a class="underline" href="{% url 'pages:disclaimer' %}">{% translate "Read the disclaimer" %}</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "orders/intake/base.html" %}
+{% load i18n %}
+{% block step %}
+<h1 class="text-2xl font-bold">{% translate "About the parcel" %}</h1>
+<form method="post" enctype="multipart/form-data" class="mt-4 space-y-5" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="rounded border border-red-300 bg-red-50 px-4 py-3 text-red-800" role="alert">{{ form.non_field_errors|join:" " }}</div>
+  {% endif %}
+
+  <div class="grid gap-4 sm:grid-cols-[1fr_auto]"
+       hx-post="{% url 'intake:area_check' draft.token %}" hx-trigger="input changed delay:500ms from:#id_stated_area, change from:#id_stated_area_unit"
+       hx-target="#area-check" hx-swap="outerHTML" hx-include="#id_stated_area, #id_stated_area_unit, [name=csrfmiddlewaretoken]">
+    {% include "partials/field.html" with field=form.stated_area %}
+    {% include "partials/field.html" with field=form.stated_area_unit %}
+  </div>
+  {% include "orders/intake/_area_check.html" %}
+
+  <div class="grid gap-4 sm:grid-cols-3">
+    {% include "partials/field.html" with field=form.quartier %}
+    {% include "partials/field.html" with field=form.commune %}
+    {% include "partials/field.html" with field=form.region %}
+  </div>
+  {% include "partials/field.html" with field=form.title_number %}
+  {% include "partials/field.html" with field=form.intended_use %}
+  {% include "partials/field.html" with field=form.notes %}
+
+  {% if documents %}
+  <div>
+    <p class="font-medium">{% translate "Files already added" %}</p>
+    <ul class="mt-2 divide-y divide-slate-200 rounded border border-slate-200">
+      {% for doc in documents %}
+      <li class="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+        <span>{{ doc.original_name }} <span class="text-slate-500">({{ doc.size_bytes|filesizeformat }})</span></span>
+        <button type="submit" form="delete-{{ doc.pk }}" class="text-red-700 underline">{% translate "Remove" %}</button>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  {% include "partials/field.html" with field=form.documents %}
+
+  <div class="flex justify-between pt-2">
+    <a href="{% url 'intake:step' draft.token 1 %}" class="px-2 py-3 underline">{% translate "Back" %}</a>
+    <button type="submit" class="rounded bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800">{% translate "Continue" %}</button>
+  </div>
+</form>
+{% for doc in documents %}
+<form id="delete-{{ doc.pk }}" method="post" action="{% url 'intake:delete_attachment' draft.token doc.pk %}">{% csrf_token %}</form>
+{% endfor %}
+{% endblock %}

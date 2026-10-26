@@ -1,0 +1,64 @@
+{% extends "orders/intake/base.html" %}
+{% load i18n static money %}
+{% block extra_head %}
+{% if map_config.geometry or map_config.pin %}
+<link rel="stylesheet" href="{% static 'vendor/maplibre/maplibre-gl.css' %}">
+<script src="{% static 'vendor/maplibre/maplibre-gl.js' %}" defer></script>
+<script src="{% static 'js/parcel-preview.js' %}" defer></script>
+{% endif %}
+{% endblock %}
+{% block step %}
+<h1 class="text-2xl font-bold">{% translate "Check your order" %}</h1>
+
+<section class="mt-6">
+  <h2 class="flex items-baseline justify-between text-lg font-semibold">{% translate "Location" %}
+    <a class="text-sm font-normal underline" href="{% url 'intake:step' draft.token 1 %}">{% translate "Change" %}</a></h2>
+  <p class="mt-1">{{ draft.get_input_method_display }}{% if draft.is_approximate %} · {% translate "approximate location" %}{% endif %}</p>
+  {% if map_config.geometry or map_config.pin %}
+  <div id="parcel-preview" class="mt-3 h-72 w-full rounded border border-slate-300" role="img"
+       aria-label="{% translate "Map of the parcel boundary" %}"></div>
+  {{ map_config|json_script:"preview-config" }}
+  {% elif draft.input_method == "site_plan" %}
+  <p class="mt-2 text-sm text-slate-700">{% translate "Our analyst will place your site plan on the map before the analysis starts." %}</p>
+  {% endif %}
+  <div class="mt-3">{% include "orders/intake/_area_check.html" %}</div>
+</section>
+
+<section class="mt-8">
+  <h2 class="flex items-baseline justify-between text-lg font-semibold">{% translate "Details" %}
+    <a class="text-sm font-normal underline" href="{% url 'intake:step' draft.token 2 %}">{% translate "Change" %}</a></h2>
+  <dl class="mt-2 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+    <div><dt class="text-slate-600">{% translate "Quartier" %}</dt><dd>{{ draft.quartier|default:"–" }}</dd></div>
+    <div><dt class="text-slate-600">{% translate "Commune" %}</dt><dd>{{ draft.commune|default:"–" }}</dd></div>
+    <div><dt class="text-slate-600">{% translate "Region" %}</dt><dd>{{ draft.region|default:"–" }}</dd></div>
+    <div><dt class="text-slate-600">{% translate "Intended use" %}</dt><dd>{{ draft.get_intended_use_display|default:"–" }}</dd></div>
+    <div><dt class="text-slate-600">{% translate "Land title number" %}</dt><dd>{{ draft.title_number|default:"–" }}</dd></div>
+    <div><dt class="text-slate-600">{% translate "Files" %}</dt><dd>{{ documents|length }}</dd></div>
+  </dl>
+</section>
+
+<section class="mt-8">
+  <h2 class="flex items-baseline justify-between text-lg font-semibold">{% translate "Report" %}
+    <a class="text-sm font-normal underline" href="{% url 'intake:step' draft.token 3 %}">{% translate "Change" %}</a></h2>
+  <p class="mt-1">{{ draft.get_tier_display }} · {{ draft.get_report_language_display }}{% if draft.deadline %} · {% blocktranslate with date=draft.deadline|date:"DATE_FORMAT" %}needed by {{ date }}{% endblocktranslate %}{% endif %}</p>
+</section>
+
+<section class="mt-8">
+  <h2 class="flex items-baseline justify-between text-lg font-semibold">{% translate "Contact" %}
+    <a class="text-sm font-normal underline" href="{% url 'intake:step' draft.token 4 %}">{% translate "Change" %}</a></h2>
+  <p class="mt-1">{{ draft.contact_name }} · {{ draft.user.email }}{% if draft.contact_phone %} · {{ draft.contact_phone }}{% endif %}</p>
+</section>
+
+<form method="post" class="mt-8 rounded-lg border border-emerald-700 p-5">
+  {% csrf_token %}
+  <p class="flex items-baseline justify-between text-lg">
+    <span>{% translate "Total" %}</span>
+    <span class="text-2xl font-bold">{% if price is not None %}{{ price|money:draft.currency }}{% else %}–{% endif %}</span>
+  </p>
+  <p class="mt-2 text-sm text-slate-600">{% translate "You will choose card or mobile money on the next page." %}</p>
+  <div class="mt-4 flex justify-between">
+    <a href="{% url 'intake:step' draft.token 4 %}" class="px-2 py-3 underline">{% translate "Back" %}</a>
+    <button type="submit" class="rounded bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800" {% if price is None %}disabled{% endif %}>{% translate "Confirm order" %}</button>
+  </div>
+</form>
+{% endblock %}

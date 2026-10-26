@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% translate "Contact" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{% translate "Ask us about a parcel or a report. We reply within one business day." %}{% endblock %}
+{% block content %}
+<div class="grid gap-10 md:grid-cols-2">
+  <div>
+    <h1 class="text-3xl font-bold">{% translate "Contact us" %}</h1>
+    <p class="mt-4 text-lg">{% translate "Tell us about the parcel you are considering. We reply within one business day." %}</p>
+    {% if WHATSAPP_URL %}
+    <p class="mt-6">
+      <a href="{{ WHATSAPP_URL }}" target="_blank" rel="noopener" class="inline-block rounded bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-700">{% translate "Chat with us on WhatsApp" %}</a>
+    </p>
+    {% endif %}
+  </div>
+
+  <form method="post" novalidate class="space-y-4">
+    {% csrf_token %}
+    <input type="hidden" name="source" value="{{ request.META.HTTP_REFERER|default:'' }}">
+    {{ form.website }}
+    {% if form.non_field_errors %}
+      <div class="rounded border border-red-300 bg-red-50 px-4 py-3 text-red-800" role="alert">{{ form.non_field_errors|join:" " }}</div>
+    {% endif %}
+    {% for field in form.visible_fields %}
+      {% if field.name == "consent" %}
+      <div class="flex items-start gap-2">
+        <input type="checkbox" name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="mt-1" {% if field.value %}checked{% endif %} {% if field.errors %}aria-invalid="true" aria-describedby="{{ field.id_for_label }}-error"{% endif %}>
+        <label for="{{ field.id_for_label }}" class="text-sm">{{ field.label }} <a class="underline" href="{% url 'pages:privacy' %}">{% translate "Privacy policy" %}</a></label>
+      </div>
+      {% else %}
+      <div>
+        <label for="{{ field.id_for_label }}" class="block font-medium">{{ field.label }}{% if not field.field.required %} <span class="font-normal text-slate-500">({% translate "optional" %})</span>{% endif %}</label>
+        <div class="mt-1 [&>input]:w-full [&>input]:rounded [&>input]:border [&>input]:border-slate-300 [&>input]:px-3 [&>input]:py-2 [&>textarea]:w-full [&>textarea]:rounded [&>textarea]:border [&>textarea]:border-slate-300 [&>textarea]:px-3 [&>textarea]:py-2">{{ field }}</div>
+      </div>
+      {% endif %}
+      {% if field.errors %}<p id="{{ field.id_for_label }}-error" class="text-sm text-red-700">{{ field.errors|join:" " }}</p>{% endif %}
+    {% endfor %}
+    <button type="submit" class="rounded bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800">{% translate "Send" %}</button>
+  </form>
+</div>
+{% endblock %}

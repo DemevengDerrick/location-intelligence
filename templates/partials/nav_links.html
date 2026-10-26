@@ -1,0 +1,16 @@
+{% load i18n %}{% with name=request.resolver_match.url_name %}
+<a href="{% url 'pages:how_it_works' %}" class="hover:text-emerald-700 {% if name == 'how_it_works' %}font-semibold text-emerald-800{% endif %}" {% if name == 'how_it_works' %}aria-current="page"{% endif %}>{% translate "How it works" %}</a>
+<a href="{% url 'pages:samples' %}" class="hover:text-emerald-700 {% if name == 'samples' %}font-semibold text-emerald-800{% endif %}" {% if name == 'samples' %}aria-current="page"{% endif %}>{% translate "Sample reports" %}</a>
+<a href="{% url 'pages:pricing' %}" class="hover:text-emerald-700 {% if name == 'pricing' %}font-semibold text-emerald-800{% endif %}" {% if name == 'pricing' %}aria-current="page"{% endif %}>{% translate "Pricing" %}</a>
+<a href="{% url 'pages:faq' %}" class="hover:text-emerald-700 {% if name == 'faq' %}font-semibold text-emerald-800{% endif %}" {% if name == 'faq' %}aria-current="page"{% endif %}>{% translate "FAQ" %}</a>
+<a href="{% url 'pages:contact' %}" class="hover:text-emerald-700 {% if name == 'contact' %}font-semibold text-emerald-800{% endif %}" {% if name == 'contact' %}aria-current="page"{% endif %}>{% translate "Contact" %}</a>
+{% if user.is_authenticated %}
+<a href="{% url 'portal:orders' %}" class="hover:text-emerald-700 {% if request.resolver_match.app_name == 'portal' %}font-semibold text-emerald-800{% endif %}">{% translate "My orders" %}</a>
+<form method="post" action="{% url 'account_logout' %}">{% csrf_token %}<button type="submit" class="underline">{% translate "Sign out" %}</button></form>
+{% else %}
+<a href="{% url 'account_login' %}" class="underline">{% translate "Sign in" %}</a>
+{% endif %}
+{% if request.resolver_match.app_name != "intake" %}
+<a href="{% url 'intake:start' %}" class="rounded bg-emerald-700 px-4 py-2 text-center font-semibold text-white hover:bg-emerald-800">{% translate "Order a report" %}</a>
+{% endif %}
+{% endwith %}

@@ -1,0 +1,16 @@
+{% extends "allauth/layouts/base.html" %}
+{% comment %}Sign in, sign up, codes, password reset: one centred card.{% endcomment %}
+{% block meta %}{{ block.super }}<meta name="robots" content="noindex">{% endblock %}
+{% block body %}
+<div class="mx-auto max-w-md px-4 py-10 sm:py-16">
+  <div class="space-y-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    {% block content %}{% endblock %}
+  </div>
+  {% if DEV_MAILBOX_URL %}
+  <p class="mt-4 rounded border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600">
+    {% load i18n %}{% translate "Development server: emails such as sign-in codes are not sent out. Read them in" %}
+    <a class="font-medium underline" href="{{ DEV_MAILBOX_URL }}" target="_blank" rel="noopener">Mailpit</a>.
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

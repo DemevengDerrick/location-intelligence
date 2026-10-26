@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load i18n static money %}
+{% block head_title %}{% blocktranslate with ref=order.public_id|stringformat:"s"|slice:":8" %}Order {{ ref }}{% endblocktranslate %} · {{ SITE_NAME }}{% endblock %}
+{% block meta %}{{ block.super }}<meta name="robots" content="noindex">{% endblock %}
+{% block extra_head %}
+{% if map_config %}
+<link rel="stylesheet" href="{% static 'vendor/maplibre/maplibre-gl.css' %}">
+<script src="{% static 'vendor/maplibre/maplibre-gl.js' %}" defer></script>
+<script src="{% static 'js/parcel-preview.js' %}" defer></script>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-4xl">
+  {% include "portal/_nav.html" %}
+  <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-3xl font-bold">{% blocktranslate with ref=order.public_id|stringformat:"s"|slice:":8" %}Order {{ ref }}{% endblocktranslate %}</h1>
+    {% include "portal/_status_badge.html" %}
+  </div>
+  <p class="mt-1 text-slate-700">{{ order.get_tier_display }} · {{ order.created_at|date:"DATE_FORMAT" }}</p>
+
+  {% if order.status == "submitted" %}
+  <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-4 py-3">
+    <p>{% translate "This order is waiting for payment." %}</p>
+    <a href="{% url 'payments:pay' order.public_id %}" class="rounded bg-emerald-700 px-5 py-2 font-semibold text-white hover:bg-emerald-800">{% translate "Pay now" %}</a>
+  </div>
+  {% endif %}
+
+  <div class="mt-8 grid gap-8 md:grid-cols-[2fr_1fr]">
+    <div class="space-y-8">
+      <section aria-labelledby="report-heading">
+        <h2 id="report-heading" class="text-xl font-semibold">{% translate "Report" %}</h2>
+        <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-5">
+          {% if versions %}
+            {% with latest=versions.0 %}
+            <p class="font-semibold">{% blocktranslate with n=latest.number date=latest.approved_at|date:"DATE_FORMAT" %}Version {{ n }}, issued {{ date }}{% endblocktranslate %}</p>
+            <ul class="mt-3 space-y-2">
+              {% for f in summary %}
+              <li class="flex gap-3"><span class="inline-block min-w-20 rounded px-2 py-0.5 text-center text-xs font-bold text-white" style="background: {{ f.colour }}">{{ f.icon }} {{ f.label }}</span><span>{{ f.sentence }}</span></li>
+              {% endfor %}
+            </ul>
+            <div class="mt-4 flex flex-wrap gap-3">
+              {% for v in latest_versions %}
+              <a href="{% url 'reports:download' order.public_id v.number v.language %}" class="rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800">{% blocktranslate with lang=v.get_language_display %}Download PDF ({{ lang }}){% endblocktranslate %}</a>
+              {% endfor %}
+            </div>
+            <p class="mt-3 text-sm text-slate-600">{% translate "Report ID" %} {{ report.reference }} · <a class="underline" href="{% url 'reports:verify' report.reference %}">{% translate "Verify a report" %}</a></p>
+            {% endwith %}
+          {% elif order.status == "refunded" %}
+            <p>{% translate "This order was refunded, so no report will be produced." %}</p>
+          {% elif order.status == "submitted" %}
+            <p>{% translate "Your report will be prepared once the payment is received." %}</p>
+          {% else %}
+            <p>{% translate "Your report will appear here once an analyst has reviewed it. We will email you when it is ready." %}</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <section aria-labelledby="parcel-heading">
+        <h2 id="parcel-heading" class="text-xl font-semibold">{% translate "Parcel" %}</h2>
+        {% if map_config %}
+        <div id="parcel-preview" class="mt-3 h-64 w-full rounded border border-slate-300" role="img" aria-label="{% translate "Map of the parcel" %}"></div>
+        {{ map_config|json_script:"preview-config" }}
+        {% elif parcel.input_method == "site_plan" %}
+        <p class="mt-3 text-sm text-slate-700">{% translate "Our analyst will place your site plan on the map before the analysis starts." %}</p>
+        {% endif %}
+        {% if parcel %}
+        <dl class="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+          <div><dt class="text-slate-600">{% translate "Location given as" %}</dt><dd>{{ parcel.get_input_method_display }}{% if parcel.is_approximate %} · {% translate "approximate location" %}{% endif %}</dd></div>
+          <div><dt class="text-slate-600">{% translate "Area of the boundary" %}</dt><dd>{% if parcel.computed_area_m2 %}{{ parcel.computed_area_m2|floatformat:"0g" }} m²{% else %}–{% endif %}</dd></div>
+          <div><dt class="text-slate-600">{% translate "Area stated by the seller" %}</dt><dd>{% if parcel.stated_area_m2 %}{{ parcel.stated_area_m2|floatformat:"0g" }} m²{% else %}–{% endif %}</dd></div>
+          <div><dt class="text-slate-600">{% translate "Quartier" %}</dt><dd>{{ parcel.quartier|default:"–" }}</dd></div>
+          <div><dt class="text-slate-600">{% translate "Commune" %}</dt><dd>{{ parcel.commune|default:"–" }}</dd></div>
+          <div><dt class="text-slate-600">{% translate "Region" %}</dt><dd>{{ parcel.region|default:"–" }}</dd></div>
+        </dl>
+        {% endif %}
+        {% if attachments %}
+        <h3 class="mt-4 font-medium">{% translate "Your files" %}</h3>
+        <ul class="mt-2 space-y-1 text-sm">
+          {% for file in attachments %}
+          <li><a class="underline" href="{% url 'portal:attachment' order.public_id file.pk %}">{{ file.original_name }}</a> <span class="text-slate-500">({{ file.get_kind_display }}, {{ file.size_bytes|filesizeformat }})</span></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </section>
+
+      <section id="messages" aria-labelledby="messages-heading">
+        <h2 id="messages-heading" class="text-xl font-semibold">{% translate "Messages" %}</h2>
+        {% if thread %}
+        <ol class="mt-3 space-y-3">
+          {% for message in thread %}
+          <li class="rounded-lg p-4 {% if message.author_id == order.customer_id %}ml-8 bg-emerald-50{% else %}mr-8 border border-slate-200 bg-white{% endif %}">
+            <p class="text-xs text-slate-600">
+              {% if message.author_id == order.customer_id %}{% translate "You" %}{% else %}{% translate "Our team" %}{% endif %} · {{ message.created_at|date:"DATETIME_FORMAT" }}
+            </p>
+            <div class="mt-1">{{ message.body|linebreaks }}</div>
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="mt-3 text-sm text-slate-600">{% translate "Questions about your parcel or the report? Write to the analyst here." %}</p>
+        {% endif %}
+        <form method="post" action="{% url 'portal:message' order.public_id %}" class="mt-4 space-y-3">
+          {% csrf_token %}
+          {% include "partials/field.html" with field=message_form.body %}
+          <button type="submit" class="rounded bg-emerald-700 px-5 py-2 font-semibold text-white hover:bg-emerald-800">{% translate "Send" %}</button>
+        </form>
+      </section>
+    </div>
+
+    <aside class="space-y-8">
+      {% if can_upgrade %}
+      <section class="rounded-lg border border-emerald-700 p-5">
+        <h2 class="font-semibold">{% translate "Want someone on the ground?" %}</h2>
+        <p class="mt-2 text-sm">{% translate "Add a visit by a licensed surveyor or notary. You pay only the difference." %}</p>
+        <a href="{% url 'payments:upgrade' order.public_id %}" class="mt-3 inline-block rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800">{% translate "Add field verification" %}</a>
+      </section>
+      {% endif %}
+
+      <section aria-labelledby="timeline-heading">
+        <h2 id="timeline-heading" class="font-semibold">{% translate "Progress" %}</h2>
+        <ol class="mt-3 space-y-3 border-l-2 border-emerald-700 pl-4 text-sm">
+          {% for when, label in timeline %}
+          <li><p class="font-medium">{{ label }}</p><p class="text-slate-600">{{ when|date:"DATETIME_FORMAT" }}</p></li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      {% if payments %}
+      <section aria-labelledby="payments-heading">
+        <h2 id="payments-heading" class="font-semibold">{% translate "Payments" %}</h2>
+        <ul class="mt-3 space-y-2 text-sm">
+          {% for payment in payments %}
+          <li>
+            {{ payment.amount|money:payment.currency }} · {{ payment.get_method_display }}
+            {% if payment.purpose == "upgrade" %}· {% translate "field verification" %}{% endif %}
+            <br><span class="text-slate-600">{{ payment.succeeded_at|date:"DATE_FORMAT" }}{% if payment.refunded_amount %} · {% blocktranslate with amount=payment.refunded_amount|money:payment.currency %}{{ amount }} refunded{% endblocktranslate %}{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

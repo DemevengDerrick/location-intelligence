@@ -1,0 +1,9 @@
+{% load i18n %}{% autoescape off %}{% translate "Name" %}: {{ lead.name }}
+{% translate "Email" %}: {{ lead.email }}
+{% translate "Phone or WhatsApp" %}: {{ lead.phone|default:"-" }}
+{% translate "Language" %}: {{ lead.get_language_display }}
+
+{{ lead.message }}
+
+{{ admin_url }}
+{% endautoescape %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% translate "Add field verification" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta %}{{ block.super }}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  <h1 class="text-3xl font-bold">{% translate "Add field verification" %}</h1>
+  <p class="mt-2 text-slate-700">{% blocktranslate with ref=order.public_id|stringformat:"s"|slice:":8" %}Order {{ ref }}{% endblocktranslate %}</p>
+  <p class="mt-4">
+    {% blocktranslate trimmed %}
+      A licensed surveyor or notary visits the parcel, photographs it, records the boundary markers with GPS and adds their signed findings to your report. You pay only the difference with the desk report.
+    {% endblocktranslate %}
+  </p>
+  {% if demo_mode %}
+  <p class="mt-4 rounded border border-sky-300 bg-sky-50 px-4 py-3 text-sm" role="note">{% translate "Demo mode: no real payment will be taken." %}</p>
+  {% endif %}
+  <h2 class="mt-8 text-xl font-semibold">{% translate "How would you like to pay?" %}</h2>
+  {% include "payments/_options.html" %}
+  <p class="mt-6"><a class="underline" href="{% url 'portal:order' order.public_id %}">{% translate "Back to my order" %}</a></p>
+</div>
+{% endblock %}

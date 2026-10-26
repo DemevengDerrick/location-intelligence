@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a> &rsaquo;
+  <a href="{% url 'admin:gazetteer_referencelayer_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
+  {{ title }}
+</div>
+{% endblock %}
+{% block content %}
+<p>{% translate "Public-utility (DUP) zones, infrastructure corridors, protected areas and risk zones are checked against every parcel in the Regulatory red flags section." %}</p>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <fieldset class="module aligned">{% for field in form %}
+    <div class="form-row">{{ field.errors }}{{ field.label_tag }} {{ field }}{% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}</div>
+  {% endfor %}</fieldset>
+  <div class="submit-row"><input type="submit" class="default" value="{% translate 'Import' %}"></div>
+</form>
+{% endblock %}

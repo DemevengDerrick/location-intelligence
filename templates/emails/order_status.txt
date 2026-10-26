@@ -1,0 +1,8 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate with name=customer.first_name|default:customer.email %}Hello {{ name }},{% endblocktranslate %}
+
+{% if status == "processing" %}{% translate "Your parcel is now placed on the map and the analysis has started." %}{% elif status == "in_review" %}{% translate "The automated analysis of your parcel is complete. An analyst is now reviewing the results before your report is delivered." %}{% elif status == "delivered" %}{% translate "Your report is ready. You can download the PDF and explore the map in your account." %}{% elif status == "field_visit_scheduled" %}{% translate "A field visit to your parcel has been scheduled with a licensed professional." %}{% elif status == "field_report_delivered" %}{% translate "The field verification is complete and your updated report is ready in your account." %}{% elif status == "refunded" %}{% translate "Your order has been refunded. Depending on your bank or mobile-money operator, the money can take a few days to appear." %}{% else %}{% blocktranslate with label=order.get_status_display %}Your order is now: {{ label }}.{% endblocktranslate %}{% endif %}
+
+{% translate "Follow your order" %}: {{ order_link }}
+
+{{ site_name }}
+{% endautoescape %}

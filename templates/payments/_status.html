@@ -1,0 +1,29 @@
+{% load i18n money %}
+<div id="payment-status" aria-live="polite"
+     {% if payment.status == "pending" %}hx-get="{% url 'payments:return' payment.public_id %}" hx-trigger="every 3s" hx-swap="outerHTML"{% endif %}>
+  {% if payment.status == "succeeded" %}
+    <div class="rounded border border-emerald-300 bg-emerald-50 p-5">
+      <p class="text-lg font-semibold">{% translate "Payment received. Thank you!" %}</p>
+      {% if payment.purpose == "upgrade" %}
+        <p class="mt-2">{% translate "Field verification has been added to your order. We will assign a surveyor or notary in your region and email you when the visit is scheduled." %}</p>
+      {% elif order.status == "needs_georeferencing" %}
+        <p class="mt-2">{% translate "Our analyst will now place your site plan on the map, then the analysis starts. We will email you at each step." %}</p>
+      {% else %}
+        <p class="mt-2">{% translate "Your order is confirmed and in our queue. We will email you at each step and when your report is ready." %}</p>
+      {% endif %}
+      <p class="mt-3"><a class="font-semibold text-emerald-800 underline" href="{% url 'portal:order' order.public_id %}">{% translate "Follow my order" %}</a></p>
+      <p class="mt-2 text-sm text-slate-700">{% blocktranslate with amount=payment.amount|money:payment.currency %}A receipt for {{ amount }} has been sent to your email.{% endblocktranslate %}</p>
+    </div>
+  {% elif payment.status == "failed" %}
+    <div class="rounded border border-red-300 bg-red-50 p-5" role="alert">
+      <p class="text-lg font-semibold">{% translate "The payment did not go through." %}</p>
+      <p class="mt-2">{% translate "No money was taken. You can try again or choose another method." %}</p>
+      <a href="{% if payment.purpose == 'upgrade' %}{% url 'payments:upgrade' order.public_id %}{% else %}{% url 'payments:pay' order.public_id %}{% endif %}" class="mt-4 inline-block rounded bg-emerald-700 px-5 py-2 font-semibold text-white hover:bg-emerald-800">{% translate "Try again" %}</a>
+    </div>
+  {% else %}
+    <div class="rounded border border-slate-200 bg-slate-50 p-5">
+      <p class="text-lg font-semibold">{% translate "Waiting for confirmation from the payment provider…" %}</p>
+      <p class="mt-2 text-sm">{% translate "This usually takes a few seconds. You can close this page: we will email you once the payment is confirmed." %}</p>
+    </div>
+  {% endif %}
+</div>

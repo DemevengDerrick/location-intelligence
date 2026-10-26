@@ -1,0 +1,10 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate with name=customer.first_name|default:customer.email %}Hello {{ name }},{% endblocktranslate %}
+
+{% translate "Our analyst has replied about your order:" %}
+
+{{ message.body }}
+
+{% translate "Reply from your account" %}: {{ order_link }}#messages
+
+{{ site_name }}
+{% endautoescape %}

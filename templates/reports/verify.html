@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% translate "Verify a report" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta %}{{ block.super }}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  <h1 class="text-3xl font-bold">{% translate "Verify a report" %}</h1>
+  <p class="mt-2 text-slate-700">{% translate "Report ID" %}: <code>{{ report.reference }}</code></p>
+
+  {% if versions %}
+  <ul class="mt-4 space-y-1 text-sm">
+    {% for v in versions %}<li>{% blocktranslate with n=v.number lang=v.get_language_display date=v.approved_at|date:"DATE_FORMAT" %}Version {{ n }} ({{ lang }}), issued {{ date }}{% endblocktranslate %}</li>{% endfor %}
+  </ul>
+  {% else %}
+  <p class="mt-4">{% translate "This report has not been issued yet." %}</p>
+  {% endif %}
+
+  {% if outcome.status == "genuine" %}
+  <div class="mt-6 rounded border border-emerald-400 bg-emerald-50 p-4" role="status">
+    <p class="font-semibold"><span aria-hidden="true">✓</span> {% translate "Genuine and unaltered." %}</p>
+    <p class="mt-1 text-sm">{% blocktranslate with n=outcome.version.number lang=outcome.version.get_language_display %}This file is exactly version {{ n }} ({{ lang }}) of this report.{% endblocktranslate %}</p>
+  </div>
+  {% elif outcome.status == "altered" %}
+  <div class="mt-6 rounded border border-red-400 bg-red-50 p-4" role="alert">
+    <p class="font-semibold"><span aria-hidden="true">✕</span> {% translate "Not a match." %}</p>
+    <p class="mt-1 text-sm">{% translate "This file does not match any version of this report: it may have been modified, or it belongs to another report." %}</p>
+  </div>
+  {% elif outcome.status == "invalid" %}
+  <p class="mt-6 rounded border border-amber-300 bg-amber-50 p-4" role="alert">{% translate "Choose the PDF file to check (30 MB maximum)." %}</p>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="mt-6 space-y-3">
+    {% csrf_token %}
+    <label for="pdf" class="block font-medium">{% translate "Check a PDF of this report" %}</label>
+    <input id="pdf" type="file" name="pdf" accept="application/pdf" class="block">
+    <button type="submit" class="rounded bg-emerald-700 px-5 py-2 font-semibold text-white hover:bg-emerald-800">{% translate "Check" %}</button>
+    <p class="text-sm text-slate-600">{% translate "The file is compared with the fingerprint (SHA-256) recorded when the report was issued. It is not stored." %}</p>
+  </form>
+</div>
+{% endblock %}

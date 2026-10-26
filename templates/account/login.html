@@ -1,0 +1,68 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n allauth account %}
+{% block head_title %}{% translate "Sign in" %} · {{ SITE_NAME }}{% endblock %}
+{% block content %}
+{% url 'account_login' as login_url %}
+<div x-data="{ email: '{{ form.login.value|default:''|escapejs }}' }" class="space-y-5">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">{% translate "Sign in" %}</h1>
+    <p class="mt-1 text-slate-600">{% translate "Follow your orders and download your reports." %}</p>
+  </div>
+
+  <form method="post" action="{{ login_url }}" class="space-y-4" novalidate>
+    {% csrf_token %}
+    {{ redirect_field }}
+    {% if form.non_field_errors %}
+    <div class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="space-y-1">
+      <label for="id_login" class="block font-medium">{% translate "Email address" %}</label>
+      <input type="email" name="login" id="id_login" x-model="email" autocomplete="email" required
+             class="w-full rounded border border-slate-300 px-3 py-2"
+             {% if form.login.errors %}aria-invalid="true" aria-describedby="id_login-desc"{% endif %}>
+      {% if form.login.errors %}<div id="id_login-desc">{% for error in form.login.errors %}<p class="text-sm font-medium text-red-700">{{ error }}</p>{% endfor %}</div>{% endif %}
+    </div>
+    <div class="space-y-1">
+      <div class="flex items-baseline justify-between">
+        <label for="id_password" class="block font-medium">{% translate "Password" %}</label>
+        <a href="{% url 'account_reset_password' %}" class="text-sm text-emerald-800 underline">{% translate "Forgot your password?" %}</a>
+      </div>
+      <input type="password" name="password" id="id_password" autocomplete="current-password"
+             class="w-full rounded border border-slate-300 px-3 py-2"
+             {% if form.password.errors %}aria-invalid="true" aria-describedby="id_password-desc"{% endif %}>
+      {% if form.password.errors %}<div id="id_password-desc">{% for error in form.password.errors %}<p class="text-sm font-medium text-red-700">{{ error }}</p>{% endfor %}</div>{% endif %}
+    </div>
+    {% if form.remember %}
+    <div class="flex items-center gap-2">
+      <input type="checkbox" name="remember" id="id_remember" class="h-4 w-4"{% if form.remember.value %} checked{% endif %}>
+      <label for="id_remember">{% translate "Keep me signed in" %}</label>
+    </div>
+    {% endif %}
+    <button type="submit" class="w-full rounded bg-emerald-700 px-5 py-2.5 font-semibold text-white hover:bg-emerald-800">{% translate "Sign in" %}</button>
+  </form>
+
+  {% if LOGIN_BY_CODE_ENABLED %}
+  {% element hr %}{% endelement %}
+  <form method="post" action="{{ request_login_code_url }}" class="space-y-3" novalidate>
+    {% csrf_token %}
+    {{ redirect_field }}
+    <input type="hidden" name="email" :value="email">
+    <button type="submit" class="w-full rounded border border-slate-300 bg-white px-5 py-2.5 font-semibold text-slate-800 hover:bg-slate-50">{% translate "Email me a sign-in code" %}</button>
+    <p class="text-sm text-slate-600">{% translate "No password? If you created your account while ordering and left the password empty, sign in with a code sent to your email. You can then set a password under My details." %}</p>
+  </form>
+  {% endif %}
+
+  {% if SOCIALACCOUNT_ENABLED %}
+    {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+  {% endif %}
+
+  <p class="border-t border-slate-200 pt-4 text-sm text-slate-600">
+    {% translate "New here?" %}
+    <a href="{% url 'pages:pricing' %}" class="font-medium text-emerald-800 underline">{% translate "Order a report" %}</a>
+    {% translate "or" %}
+    <a href="{{ signup_url }}" class="font-medium text-emerald-800 underline">{% translate "create an account" %}</a>.
+  </p>
+</div>
+{% endblock %}

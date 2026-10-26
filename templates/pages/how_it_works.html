@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% translate "How it works" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{% translate "From locating your parcel to receiving a reviewed report: how our land due-diligence service works." %}{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold">{% translate "How it works" %}</h1>
+<p class="mt-4 max-w-3xl text-lg">
+  {% blocktranslate trimmed %}
+    Every report combines automated analysis of satellite and open data with a review by an analyst. Nothing is delivered without that human check.
+  {% endblocktranslate %}
+</p>
+{% include "pages/_steps.html" %}
+
+<section class="mt-12 grid gap-8 md:grid-cols-2">
+  <div>
+    <h2 class="text-xl font-semibold">{% translate "Only have the seller's site plan?" %}</h2>
+    <p class="mt-2 text-slate-700">
+      {% blocktranslate trimmed %}
+        Upload a photo or PDF of the plan. Our analyst places it on the map and traces the boundary before the analysis starts.
+      {% endblocktranslate %}
+    </p>
+  </div>
+  <div>
+    <h2 class="text-xl font-semibold">{% translate "Want someone on the ground?" %}</h2>
+    <p class="mt-2 text-slate-700">
+      {% blocktranslate trimmed %}
+        Add field verification. A licensed surveyor or notary visits the parcel, photographs it, records the boundary markers and adds their signed findings to your report.
+      {% endblocktranslate %}
+    </p>
+  </div>
+</section>
+
+<section class="mt-12">
+  <h2 class="text-xl font-semibold">{% translate "What the report covers" %}</h2>
+  <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{% include "pages/_report_questions.html" %}</ul>
+</section>
+
+<section class="mt-12 rounded-lg border border-amber-300 bg-amber-50 p-6">
+  <h2 class="text-lg font-semibold">{% translate "Limits of a remote report" %}</h2>
+  <p class="mt-2">
+    {% blocktranslate trimmed %}
+      We work from satellite imagery and public datasets. We cannot confirm who owns the land or whether a title is valid. Always have the title checked at the land registry by a notary before you pay the seller.
+    {% endblocktranslate %}
+  </p>
+</section>
+{% endblock %}

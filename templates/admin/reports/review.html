@@ -1,0 +1,82 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  .review { display: grid; gap: 1.5rem; }
+  .finding { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; border: 1px solid var(--hairline-color); padding: 1rem; border-radius: 6px; }
+  .finding img { width: 100%; border: 1px solid var(--hairline-color); background: #fff; }
+  .rating { display: inline-block; padding: 2px 10px; border-radius: 999px; color: #fff; font-weight: bold; }
+  .finding textarea { width: 100%; box-sizing: border-box; }
+  .unavailable { background: #fff4e5; padding: .5rem; }
+  .meta { color: var(--body-quiet-color); font-size: .85em; }
+  @media (max-width: 900px) { .finding { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+{% block content %}
+<p>
+  {% blocktranslate with ref=order.public_id|stringformat:"s"|slice:":8" email=order.customer.email status=order.get_status_display %}Order {{ ref }} · {{ email }} · status: <strong>{{ status }}</strong>{% endblocktranslate %}
+  {% if parcel %} · {{ parcel.get_input_method_display }}{% if parcel.is_approximate %} ({% translate "approximate location" %}){% endif %}{% endif %}
+  · <a href="{% url 'admin:orders_order_change' order.pk %}">{% translate "Order" %}</a>
+</p>
+
+{% if not findings %}
+  <p>{% translate "No analysis results yet." %}</p>
+{% endif %}
+
+<form method="post" class="review">
+  {% csrf_token %}
+  {% for f in findings %}
+  <section class="finding">
+    <div>
+      <h2>{{ f.title }} <span class="rating" style="background: {{ f.colour }}">{{ f.rating }}</span>
+        {% if f.rating != f.computed_rating %}<span class="meta">({% translate "computed" %}: {{ f.computed_rating }})</span>{% endif %}</h2>
+      {% if f.unavailable %}<p class="unavailable">{% translate "This module failed. It will appear as unavailable unless you re-run the analysis." %}</p>{% endif %}
+      <p>
+        <label>{% translate "Rating" %}
+          <select name="rating_{{ f.index }}" {% if not editable %}disabled{% endif %}>
+            {% for value, label in ratings %}<option value="{{ value }}" {% if value == f.rating %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>{% translate "Reason for changing it" %} <input name="override_reason_{{ f.index }}" value="{{ f.override_reason }}" size="40" {% if not editable %}disabled{% endif %}></label>
+      </p>
+      <p><label>{% translate "Finding (French)" %}<br><textarea name="text_fr_{{ f.index }}" rows="3" {% if not editable %}disabled{% endif %}>{{ f.text.fr }}</textarea></label></p>
+      <p><label>{% translate "Finding (English)" %}<br><textarea name="text_en_{{ f.index }}" rows="3" {% if not editable %}disabled{% endif %}>{{ f.text.en }}</textarea></label></p>
+      <p>
+        <label><input type="checkbox" name="hidden_{{ f.index }}" {% if f.hidden %}checked{% endif %} {% if not editable %}disabled{% endif %}> {% translate "Hide this section" %}</label>
+        <input name="hidden_reason_{{ f.index }}" value="{{ f.hidden_reason }}" placeholder="{% translate "Reason" %}" size="30" {% if not editable %}disabled{% endif %}>
+      </p>
+      <details class="meta"><summary>{% translate "Computed values" %}</summary><pre>{{ f.results|pprint }}</pre><p>{% translate "Data" %}: {{ f.datasets }}</p></details>
+    </div>
+    <div>{% for url in f.map_urls %}<img src="{{ url }}" alt="{{ f.title }}">{% endfor %}</div>
+  </section>
+  {% endfor %}
+
+  {% if findings %}
+  <section>
+    <h2>{% translate "Analyst note (optional, shown in the report)" %}</h2>
+    <p><textarea name="note_fr" rows="2" cols="80" placeholder="FR" {% if not editable %}disabled{% endif %}>{{ report.draft.note.fr }}</textarea></p>
+    <p><textarea name="note_en" rows="2" cols="80" placeholder="EN" {% if not editable %}disabled{% endif %}>{{ report.draft.note.en }}</textarea></p>
+  </section>
+  {% endif %}
+
+  <div class="submit-row">
+    {% if editable and findings %}
+      <button type="submit" name="action" value="save">{% translate "Save draft" %}</button>
+      <button type="submit" name="action" value="approve" class="default">{% translate "Approve and deliver" %}</button>
+    {% endif %}
+    {% if order.status == "processing" or order.status == "in_review" %}
+      <button type="submit" name="action" value="rerun">{% translate "Re-run analysis" %}</button>
+    {% endif %}
+    {% if order.status == "delivered" %}
+      <button type="submit" name="action" value="reopen">{% translate "Reopen for changes" %}</button>
+    {% endif %}
+  </div>
+</form>
+
+{% if versions %}
+<h2>{% translate "Delivered versions" %}</h2>
+<ul>
+  {% for v in versions %}<li>v{{ v.number }} ({{ v.language }}) · {{ v.approved_at|date:"DATETIME_FORMAT" }} · {{ v.approved_by }} · <code>{{ v.sha256|slice:":16" }}…</code> · <a href="{{ v.pdf.url }}">PDF</a></li>{% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

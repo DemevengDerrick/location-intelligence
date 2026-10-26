@@ -1,0 +1,131 @@
+{% load i18n l10n %}<!doctype html>
+<html lang="{{ language }}">
+<head>
+<meta charset="utf-8">
+<title>{{ site_name }} · {{ report.reference }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 24mm 16mm;
+    @bottom-left { content: element(footer); }
+    @bottom-right { content: counter(page) " / " counter(pages); font: 8pt "DejaVu Sans"; color: #555; }
+  }
+  body { font-family: "DejaVu Sans", sans-serif; font-size: 9.5pt; color: #111; line-height: 1.45; }
+  h1 { font-size: 22pt; margin: 0 0 4mm; color: #064E3B; }
+  h2 { font-size: 13pt; margin: 8mm 0 2mm; color: #064E3B; page-break-after: avoid; }
+  .footer { position: running(footer); font-size: 7.5pt; color: #555; display: flex; align-items: center; gap: 3mm; }
+  .footer .qr { width: 14mm; height: 14mm; }
+  .cover { page-break-after: always; }
+  .cover table { border-collapse: collapse; margin-top: 6mm; }
+  .cover td { padding: 1.5mm 4mm 1.5mm 0; vertical-align: top; }
+  .cover td:first-child { color: #555; }
+  .notice { border: 1px solid #E69F00; background: #FFF7E6; padding: 3mm; margin: 4mm 0; }
+  .scorecard { width: 100%; border-collapse: separate; border-spacing: 0 2mm; }
+  .scorecard td { padding: 2mm 3mm; vertical-align: top; border-top: 1px solid #ddd; }
+  .badge { display: inline-block; white-space: nowrap; min-width: 18mm; padding: 1mm 2mm; border-radius: 2mm; color: #fff; font-weight: bold; text-align: center; }
+  h3 { font-size: 11pt; margin: 5mm 0 1mm; }
+  .finding-block { margin-bottom: 4mm; }
+  .visual { page-break-inside: avoid; margin: 3mm 0; text-align: center; }
+  .finding-head { page-break-inside: avoid; page-break-after: avoid; }
+  .data-table { width: 100%; border-collapse: collapse; margin: 3mm 0; font-size: 9pt; page-break-inside: avoid; }
+  .data-table caption { text-align: left; font-weight: bold; margin-bottom: 1.5mm; }
+  .data-table th { text-align: left; border-bottom: 1px solid #999; padding: 1mm 2mm 1mm 0; }
+  .data-table td { border-bottom: 1px solid #E5E5E5; padding: 1mm 2mm 1mm 0; }
+  .visual img { max-width: 100%; height: auto; }
+  .placeholder { border: 1px dashed #999; color: #555; padding: 3mm; font-size: 8.5pt; }
+  .tiles { display: flex; flex-wrap: wrap; gap: 3mm; margin-bottom: 4mm; }
+  .tile { width: 54mm; border: 1.5px solid; border-radius: 2mm; padding: 2.5mm; }
+  .tile-label { margin: 2mm 0 0; font-weight: bold; font-size: 9pt; }
+  .tile-figure { margin: 1mm 0 0; font-size: 12pt; }
+  .finding { font-size: 10.5pt; }
+  .sources li { margin-bottom: 1.5mm; }
+  .small { font-size: 8pt; color: #444; }
+</style>
+</head>
+<body>
+<div class="footer">
+  <img class="qr" src="{{ qr_src }}" alt="">
+  <div>{% translate "Report ID" %} {{ report.reference }} · v{{ number }}<br>{% translate "Check this report is genuine:" %} {{ verify_url }}</div>
+</div>
+
+<section class="cover">
+  <p class="small">{{ site_name }}</p>
+  <h1>{% translate "Land due-diligence report" %}</h1>
+  <p class="finding">{% if parcel.quartier %}{{ parcel.quartier }}, {% endif %}{{ parcel.commune|default:"" }}{% if parcel.region %} ({{ parcel.region }}){% endif %}</p>
+  <table>
+    <tr><td>{% translate "Report ID" %}</td><td>{{ report.reference }}</td></tr>
+    <tr><td>{% translate "Version" %}</td><td>{{ number }} · {{ generated_at|date:"DATE_FORMAT" }}</td></tr>
+    <tr><td>{% translate "Order" %}</td><td>{{ order.public_id|stringformat:"s"|slice:":8" }} · {{ order.created_at|date:"DATE_FORMAT" }}</td></tr>
+    <tr><td>{% translate "Report" %}</td><td>{{ order.get_tier_display }}</td></tr>
+    <tr><td>{% translate "Location given as" %}</td><td>{{ parcel.get_input_method_display }}</td></tr>
+  </table>
+  {% if approximate %}
+  <p class="notice">{% translate "Approximate location: only a pin was given. The analysis covers a circle around it, not the exact parcel." %}</p>
+  {% endif %}
+  <p class="notice">{% translate "This report is physical and environmental due diligence from remote data. It is not a legal title search, a survey or a valuation." %}</p>
+</section>
+
+<h2>{% translate "Summary" %}</h2>
+<div class="tiles">
+  {% for f in scorecard %}
+  <div class="tile" style="border-color: {{ f.colour }}">
+    <span class="badge" style="background: {{ f.colour }}">{{ f.icon }} {{ f.word }}</span>
+    <p class="tile-label">{{ f.title }}</p>
+    <p class="tile-figure">{{ f.key_figure|default:"–" }}</p>
+  </div>
+  {% endfor %}
+</div>
+<table class="scorecard">
+  {% for f in scorecard %}
+  <tr><td><strong>{{ f.title }}</strong><br>{{ f.sentence }}</td></tr>
+  {% endfor %}
+</table>
+{% if note %}<p class="notice"><strong>{% translate "Analyst note" %}:</strong> {{ note|linebreaksbr }}</p>{% endif %}
+
+{% for section in sections %}
+<section class="section-block">
+  <h2>{{ forloop.counter }}. {{ section.title }}</h2>
+  {% for f in section.findings %}
+  <div class="finding-block">
+    <div class="finding-head">{# heading, rating and sentence stay together, with the first map #}
+      {% if section.findings|length > 1 %}<h3>{{ f.title }}</h3>{% endif %}
+      <p><span class="badge" style="background: {{ f.colour }}">{{ f.icon }} {{ f.word }}</span></p>
+      <p class="finding">{{ f.sentence }}</p>
+    </div>
+    {% if f.rating != f.computed_rating and f.override_reason %}<p class="small">{% translate "Rating adjusted by the analyst" %}: {{ f.override_reason }}</p>{% endif %}
+    {% for src in f.map_srcs %}{% if src %}<div class="visual"><img src="{{ src }}" alt=""></div>{% endif %}{% empty %}{% if f.unavailable %}<p class="placeholder">{% translate "Map unavailable for this section." %}</p>{% endif %}{% endfor %}
+    {% for chart in f.charts %}
+      {% if chart.src %}<div class="visual"><img src="{{ chart.src }}" alt=""></div>
+      {% elif chart.table %}
+      <table class="data-table">
+        <caption>{{ chart.table.caption }}</caption>
+        <thead><tr>{% for column in chart.table.columns %}<th>{{ column }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for row in chart.table.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+      </table>
+      {% else %}<p class="placeholder">{{ chart.reason }}</p>{% endif %}
+    {% endfor %}
+  </div>
+  {% empty %}
+  <p class="placeholder">{% translate "This section is not included in this version of the report." %}</p>
+  {% endfor %}
+</section>
+{% endfor %}
+
+<section>
+  <h2>{% translate "Methods, data sources and limitations" %}</h2>
+  <ul class="sources">
+    {% for d in datasets %}<li><strong>{{ d.name }}</strong>{% if d.version %} ({{ d.version }}){% endif %}. {% translate "Licence" %}: {{ d.licence }}. {{ d.attribution }}</li>{% endfor %}
+  </ul>
+  <p class="small">{% translate "Slopes come from a surface model: in built-up or wooded areas, buildings and trees add relief. Building footprints come from OpenStreetMap, whose coverage varies; an absence of mapped buildings does not prove the land is empty." %}
+  {% translate "Land cover comes from 10 m Sentinel-2 pixels: it separates vegetation and water from built-up or bare ground, but cannot tell buildings from cleared soil, and on small parcels it is indicative only." %}
+  {% translate "Flood exposure combines satellite observations of water since 1984 with a global river-flood model at about 90 m; it does not cover flooding from blocked drains or heavy rain in town." %}
+  {% translate "Travel times are computed on mapped roads without traffic; services missing from OpenStreetMap are not counted, and a road next to the parcel does not prove a legal right of way." %}
+  {% translate "Population figures are modelled estimates from WorldPop, not census counts, and are less certain for small areas; the 2030 figures are projections." %}
+  {% translate "Regulatory checks cover only the constraints that are mapped or uploaded; setback strips are measured from mapped centrelines, and widths marked * are indicative. The commune's urban planning office has the final word." %}</p>
+  {% if disclaimer %}
+  <h2>{{ disclaimer.title }}</h2>
+  <div class="small">{{ disclaimer.body|linebreaks }}</div>
+  {% endif %}
+</section>
+</body>
+</html>

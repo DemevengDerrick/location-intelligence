@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load i18n money %}
+{% block head_title %}{% translate "My orders" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta %}{{ block.super }}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-4xl">
+  {% include "portal/_nav.html" %}
+  <h1 class="mt-6 text-3xl font-bold">{% translate "My orders" %}</h1>
+
+  {% for draft in drafts %}
+  <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-4 py-3">
+    <p>{% blocktranslate with date=draft.updated_at|date:"DATE_FORMAT" %}You have an unfinished order from {{ date }}.{% endblocktranslate %}</p>
+    <a class="font-semibold text-emerald-800 underline" href="{% url 'intake:step' draft.token draft.step_reached %}">{% translate "Continue my order" %}</a>
+  </div>
+  {% endfor %}
+
+  {% if orders %}
+  <ul class="mt-6 divide-y divide-slate-200 rounded-lg border border-slate-200">
+    {% for order in orders %}
+    {% with parcel=order.parcels.first %}
+    <li>
+      <a href="{% url 'portal:order' order.public_id %}" class="flex flex-wrap items-center justify-between gap-3 px-4 py-4 hover:bg-slate-50">
+        <div>
+          <p class="font-semibold">{{ order.public_id|stringformat:"s"|slice:":8" }} · {{ order.get_tier_display }}</p>
+          <p class="text-sm text-slate-600">
+            {% if parcel.quartier or parcel.commune %}{{ parcel.quartier }}{% if parcel.quartier and parcel.commune %}, {% endif %}{{ parcel.commune }} · {% endif %}{{ order.created_at|date:"DATE_FORMAT" }}
+            {% if order.price_amount %} · {{ order.price_amount|money:order.currency }}{% endif %}
+          </p>
+        </div>
+        {% include "portal/_status_badge.html" %}
+      </a>
+    </li>
+    {% endwith %}
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="mt-6 rounded-lg border border-slate-200 p-6">
+    <p>{% translate "You have no orders yet." %}</p>
+    <a href="{% url 'intake:start' %}" class="mt-4 inline-block rounded bg-emerald-700 px-5 py-2 font-semibold text-white hover:bg-emerald-800">{% translate "Order a report" %}</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

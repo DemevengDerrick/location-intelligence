@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: app
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U app" --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    env:
+      DJANGO_SECRET_KEY: ci-secret
+      DATABASE_URL: postgis://app:app@localhost:5432/app
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries (GDAL, gettext)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gdal-bin gettext
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.0"
+          python-version: "3.12"
+      - run: uv sync --frozen --group dev
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run python manage.py makemigrations --check --dry-run --settings=config.settings.test
+      - run: uv run python manage.py compilemessages --ignore=.venv --settings=config.settings.test
+      - run: uv run pytest

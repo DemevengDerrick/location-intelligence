@@ -1,0 +1,77 @@
+{% extends "orders/intake/base.html" %}
+{% load i18n static %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'vendor/maplibre/maplibre-gl.css' %}">
+<script src="{% static 'vendor/maplibre/maplibre-gl.js' %}" defer></script>
+<script src="{% static 'vendor/terra-draw.umd.js' %}" defer></script>
+<script src="{% static 'vendor/terra-draw-maplibre-gl-adapter.umd.js' %}" defer></script>
+<script src="{% static 'js/intake-map.js' %}" defer></script>
+{% endblock %}
+{% block step %}
+<h1 class="text-2xl font-bold">{% translate "Where is the parcel?" %}</h1>
+
+<form method="post" enctype="multipart/form-data" class="mt-4 space-y-4" novalidate
+      x-data="{ method: '{{ form.method.value|default:'pin'|escapejs }}' }"
+      x-init="$watch('method', m => window.dispatchEvent(new CustomEvent('intake-method', { detail: m })))">
+  {% csrf_token %}
+  {{ form.geometry }}
+
+  {% if form.non_field_errors %}
+  <div class="rounded border border-red-300 bg-red-50 px-4 py-3 text-red-800" role="alert">{{ form.non_field_errors|join:" " }}</div>
+  {% endif %}
+
+  <fieldset>
+    <legend class="font-medium">{% translate "How would you like to locate it?" %}</legend>
+    <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {% for choice in form.method %}
+      <label class="flex cursor-pointer items-center gap-2 rounded border px-3 py-2 text-sm has-[:checked]:border-emerald-700 has-[:checked]:bg-emerald-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-600">
+        <input type="radio" name="{{ choice.data.name }}" value="{{ choice.data.value }}" x-model="method"
+               {% if choice.data.selected %}checked{% endif %} class="h-4 w-4">
+        {{ choice.choice_label }}
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <div class="rounded bg-slate-50 px-4 py-3 text-sm" aria-live="polite">
+    <p x-show="method === 'pin'">{% translate "Search for a place or zoom in, then tap the parcel to drop a pin. You can drag the pin to adjust it." %}</p>
+    <p x-show="method === 'drawn'" x-cloak>{% translate "Zoom in on the parcel, tap each corner in turn, then tap the first corner again to close the shape. Drag corners to adjust." %}</p>
+    <p x-show="method === 'file'" x-cloak>{% translate "Upload the file from your surveyor or GPS: KML, KMZ, GeoJSON, GPX, a zipped shapefile, or a CSV with one corner per line." %}</p>
+    <p x-show="method === 'site_plan'" x-cloak>{% translate "Upload a photo or PDF of the seller's site plan. Our analyst will place it on the map. If you know roughly where the parcel is, tap the map too." %}</p>
+  </div>
+
+  <div x-show="method === 'file'" x-cloak class="grid gap-4 sm:grid-cols-2">
+    {% include "partials/field.html" with field=form.coords_file %}
+    {% include "partials/field.html" with field=form.crs %}
+  </div>
+  <div x-show="method === 'site_plan'" x-cloak>
+    {% include "partials/field.html" with field=form.site_plan %}
+  </div>
+
+  <div x-show="method !== 'file'" class="flex gap-2" role="search">
+    <label for="place-search" class="sr-only">{% translate "Search for a place" %}</label>
+    <input id="place-search" type="search" placeholder="{% translate "Quartier, town or landmark" %}" autocomplete="off"
+           class="w-full rounded border border-slate-300 px-3 py-2"
+           @keydown.enter.prevent="window.dispatchEvent(new CustomEvent('intake-search'))">
+    <button type="button" class="rounded border border-slate-300 px-4 py-2"
+            @click="window.dispatchEvent(new CustomEvent('intake-search'))">{% translate "Search" %}</button>
+  </div>
+  <ul id="search-results" class="space-y-1 text-sm" aria-live="polite"></ul>
+
+  <div class="relative">
+    <div id="intake-map" class="h-[420px] w-full rounded border border-slate-300" role="application"
+         aria-label="{% translate "Map for locating the parcel" %}"></div>
+    <noscript><p class="p-4">{% translate "The map needs JavaScript. You can still upload a coordinates file or a site plan." %}</p></noscript>
+  </div>
+  <div class="flex flex-wrap items-center gap-3 text-sm">
+    <button type="button" id="clear-shape" class="rounded border border-slate-300 px-3 py-1"
+            x-show="method === 'drawn' || method === 'pin'">{% translate "Clear and start again" %}</button>
+    <span id="shape-status" class="text-slate-600" aria-live="polite"></span>
+  </div>
+
+  <div class="flex justify-end pt-2">
+    <button type="submit" class="rounded bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800">{% translate "Continue" %}</button>
+  </div>
+</form>
+{{ map_config|json_script:"intake-config" }}
+{% endblock %}

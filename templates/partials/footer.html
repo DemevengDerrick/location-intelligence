@@ -1,0 +1,23 @@
+{% load i18n %}
+<footer class="border-t border-slate-200 bg-slate-50">
+  <div class="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:grid-cols-3">
+    <div>
+      <p class="font-semibold">{{ SITE_NAME }}</p>
+      <p class="mt-2 text-slate-600">{% translate "Physical and environmental due-diligence reports on land parcels in Cameroon." %}</p>
+    </div>
+    <nav aria-label="{% translate "Footer" %}">
+      <ul class="space-y-2">
+        <li><a class="underline" href="{% url 'pages:about' %}">{% translate "About" %}</a></li>
+        <li><a class="underline" href="{% url 'pages:terms' %}">{% translate "Terms of service" %}</a></li>
+        <li><a class="underline" href="{% url 'pages:privacy' %}">{% translate "Privacy policy" %}</a></li>
+        <li><a class="underline" href="{% url 'pages:disclaimer' %}">{% translate "Report disclaimer" %}</a></li>
+      </ul>
+    </nav>
+    <div>
+      {% include "partials/currency_switcher.html" %}
+    </div>
+  </div>
+  <p class="mx-auto max-w-6xl px-4 pb-8 text-xs text-slate-600">
+    {% translate "Reports are physical and environmental due diligence from remote data. They are not a legal title search, a survey or a valuation." %}
+  </p>
+</footer>

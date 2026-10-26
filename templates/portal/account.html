@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% translate "My details" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta %}{{ block.super }}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  {% include "portal/_nav.html" %}
+  <h1 class="mt-6 text-3xl font-bold">{% translate "My details" %}</h1>
+  <p class="mt-2 text-slate-700">{{ user.email }}</p>
+  <form method="post" class="mt-6 space-y-4" novalidate>
+    {% csrf_token %}
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% include "partials/field.html" with field=form.first_name %}
+      {% include "partials/field.html" with field=form.last_name %}
+    </div>
+    {% include "partials/field.html" with field=form.phone %}
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% include "partials/field.html" with field=form.language %}
+      {% include "partials/field.html" with field=form.currency %}
+    </div>
+    <button type="submit" class="rounded bg-emerald-700 px-5 py-2 font-semibold text-white hover:bg-emerald-800">{% translate "Save" %}</button>
+  </form>
+  <section class="mt-10 space-y-3 rounded-lg border border-slate-200 p-5" aria-labelledby="sign-in-heading">
+    <h2 id="sign-in-heading" class="text-lg font-semibold">{% translate "Sign-in" %}</h2>
+    {% if user.has_usable_password %}
+      <p class="text-slate-700">{% translate "You sign in with your email address and password, or with a code sent by email." %}</p>
+      <a class="inline-block rounded border border-slate-300 px-4 py-2 font-semibold hover:bg-slate-50" href="{% url 'account_change_password' %}">{% translate "Change password" %}</a>
+    {% else %}
+      <p class="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">{% translate "Your account has no password yet: you sign in with a code sent to your email. Set a password to sign in faster." %}</p>
+      <a class="inline-block rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800" href="{% url 'account_set_password' %}">{% translate "Set a password" %}</a>
+    {% endif %}
+    <p class="text-sm"><a class="underline" href="{% url 'account_email' %}">{% translate "Manage email addresses" %}</a></p>
+  </section>
+</div>
+{% endblock %}

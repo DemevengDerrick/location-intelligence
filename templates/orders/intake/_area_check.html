@@ -1,0 +1,24 @@
+{% load i18n l10n %}
+<div id="area-check" aria-live="polite">
+{% if approximate %}
+  <p class="rounded border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+    {% translate "Only a pin was given, so the parcel's area cannot be measured or compared with the seller's. To check it, go back to step 1 and draw the boundary or upload the surveyor's coordinates." %}
+  </p>
+{% elif area_check %}
+  <dl class="grid grid-cols-2 gap-x-6 gap-y-1 rounded border {% if area_check.flagged %}border-amber-400 bg-amber-50{% else %}border-slate-200 bg-slate-50{% endif %} px-4 py-3 text-sm sm:grid-cols-3">
+    <div><dt class="text-slate-600">{% translate "Area of the boundary" %}</dt><dd class="font-semibold">{{ area_check.computed|floatformat:"0g" }} m²</dd></div>
+    <div><dt class="text-slate-600">{% translate "Area stated by the seller" %}</dt><dd class="font-semibold">{% if area_check.stated %}{{ area_check.stated|floatformat:"0g" }} m²{% else %}–{% endif %}</dd></div>
+    {% if area_check.difference is not None %}
+    <div><dt class="text-slate-600">{% translate "Difference" %}</dt><dd class="font-semibold">{{ area_check.difference|floatformat:"1" }} %</dd></div>
+    {% endif %}
+  </dl>
+  {% if area_check.flagged %}
+  <p class="mt-2 text-sm font-medium text-amber-900" role="alert">
+    <span aria-hidden="true">⚠</span>
+    {% blocktranslate trimmed with threshold=area_check.threshold|floatformat:"0" %}
+      The seller's area differs from the boundary by more than {{ threshold }} %. Check the boundary, or ask the seller where the difference comes from.
+    {% endblocktranslate %}
+  </p>
+  {% endif %}
+{% endif %}
+</div>

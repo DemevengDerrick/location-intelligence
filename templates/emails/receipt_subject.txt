@@ -1,0 +1,1 @@
+{% load i18n %}{% blocktranslate with ref=order.public_id|stringformat:"s"|slice:":8" site=site_name %}Receipt for order {{ ref }} · {{ site }}{% endblocktranslate %}

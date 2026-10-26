@@ -1,0 +1,104 @@
+# Local development stack. Production uses the `prod` Dockerfile target behind Nginx.
+x-app: &app
+  # One image for web, worker, beat and tailwind, so a single build updates all of them.
+  image: location-analysis:dev
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+    target: dev
+  env_file: .env
+  volumes:
+    - .:/app
+    - osm_data:/data/osm  # the downloaded OpenStreetMap extract (manage.py load_osm)
+    - worldpop_data:/data/worldpop  # WorldPop age-sex rasters (manage.py load_worldpop)
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  web:
+    <<: *app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      s3:
+        condition: service_started
+    environment:
+      RUN_MIGRATIONS: "1"
+      COMPILE_MESSAGES: "1"
+      CREATE_BUCKET: "1"
+    ports: ["8000:8000"]
+
+  worker:
+    <<: *app
+    command: celery -A config worker --loglevel=info
+
+  beat:
+    <<: *app
+    command: celery -A config beat --loglevel=info
+
+  tailwind:
+    <<: *app
+    depends_on: []
+    # Polling rebuild: file-change events don't cross Docker bind mounts on Windows/macOS,
+    # so `--watch` misses edits. Rebuild every 3 s and replace the CSS only when it changed.
+    command: >
+      sh -c 'while true; do
+        tailwindcss -i assets/tailwind.css -o /tmp/app.css 2>/dev/null &&
+        { cmp -s /tmp/app.css static/css/app.css || cp /tmp/app.css static/css/app.css; };
+        sleep 3; done'
+
+  s3:
+    # S3-compatible stand-in for Cloudflare R2 in development (MinIO images are no longer published).
+    # The bucket is created by the web container's entrypoint (manage.py ensure_bucket).
+    image: adobe/s3mock:4.4.0
+    ports: ["9090:9090"]
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["8025:8025", "1025:1025"]
+
+  valhalla:
+    # Routing for travel times and isochrones. It builds its routing tiles from the extract
+    # that `manage.py load_osm` downloads into the shared osm_data volume (run that first).
+    # First build takes several minutes; later starts reuse the tiles. After a weekly refresh,
+    # rebuild with: `docker compose run --rm -e force_rebuild=True valhalla`.
+    image: ghcr.io/valhalla/valhalla-scripted:3.9.1
+    environment:
+      use_tiles_ignore_pbf: "True"
+      build_elevation: "False"
+      build_admins: "True"
+      build_time_zones: "False"
+      server_threads: "2"
+    ports: ["8002:8002"]
+    volumes: [osm_data:/custom_files]
+
+volumes:
+  pgdata:
+  osm_data:
+  worldpop_data:

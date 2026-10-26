@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% translate "Order a report" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta %}{{ block.super }}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl">
+  <nav aria-label="{% translate "Order progress" %}">
+    <ol class="flex gap-1 text-xs sm:text-sm">
+      {% for number, name in steps %}
+      <li class="flex-1">
+        {% if number <= draft.step_reached and number != step %}
+          <a href="{% url 'intake:step' draft.token number %}" class="block border-t-4 border-emerald-700 pt-2 text-emerald-800 underline">
+            <span class="font-semibold">{{ number }}.</span> <span class="hidden sm:inline">{{ name }}</span>
+          </a>
+        {% else %}
+          <span class="block border-t-4 pt-2 {% if number == step %}border-emerald-700 font-semibold{% else %}border-slate-200 text-slate-500{% endif %}" {% if number == step %}aria-current="step"{% endif %}>
+            {{ number }}. <span class="{% if number != step %}hidden sm:inline{% endif %}">{{ name }}</span>
+          </span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </nav>
+
+  {% if draft.location_warnings and step > 1 %}
+  <div class="mt-6 rounded border border-amber-300 bg-amber-50 px-4 py-3" role="status">
+    <ul class="list-disc pl-5">{% for w in draft.location_warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  <div class="mt-6">{% block step %}{% endblock %}</div>
+</div>
+<script>
+  // Keep the draft token so the order can be resumed if the session is lost (NFR-4).
+  try { localStorage.setItem("intake:last", "{{ draft.token }}"); } catch (e) {}
+</script>
+{% endblock %}

@@ -1,0 +1,4 @@
+{% autoescape off %}{{ message.body }}
+
+{{ admin_link }}
+{% endautoescape %}

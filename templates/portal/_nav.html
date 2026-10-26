@@ -1,0 +1,5 @@
+{% load i18n %}
+<nav class="flex gap-4 border-b border-slate-200 pb-2 text-sm" aria-label="{% translate "My account" %}">
+  <a href="{% url 'portal:orders' %}" class="{% if request.resolver_match.namespace == 'portal' and request.resolver_match.url_name != 'account' %}font-semibold text-emerald-800{% else %}underline{% endif %}">{% translate "My orders" %}</a>
+  <a href="{% url 'portal:account' %}" class="{% if request.resolver_match.url_name == 'account' or request.resolver_match.url_name|slice:':8' == 'account_' %}font-semibold text-emerald-800{% else %}underline{% endif %}">{% translate "My details" %}</a>
+</nav>

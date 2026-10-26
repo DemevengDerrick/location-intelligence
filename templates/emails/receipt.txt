@@ -1,0 +1,20 @@
+{% load i18n money %}{% autoescape off %}{% blocktranslate with name=customer.first_name|default:customer.email %}Hello {{ name }},{% endblocktranslate %}
+
+{% translate "Thank you for your payment. Here is your receipt." %}
+
+{% translate "Order" %}: {{ order.public_id|stringformat:"s"|slice:":8" }}
+{% translate "Report" %}: {{ order.get_tier_display }}
+{% translate "Date" %}: {{ payment.succeeded_at|date:"DATE_FORMAT" }}
+{% translate "Payment method" %}: {{ payment.get_method_display }}
+{% if payment.discount_amount %}{% translate "Discount" %}: {{ payment.discount_amount|money:payment.currency }}
+{% endif %}{% translate "Amount paid" %}: {{ payment.amount|money:payment.currency }}
+{% translate "Payment reference" %}: {{ payment.public_id }}
+
+{% if payment.purpose == "upgrade" %}{% translate "Field verification has been added to your order. We will assign a surveyor or notary in your region and email you when the visit is scheduled." %}{% elif order.status == "needs_georeferencing" %}{% translate "Our analyst will place your site plan on the map, then the analysis starts." %}{% else %}{% translate "Your order is confirmed and in our queue. We will email you at each step and when your report is ready." %}{% endif %}
+
+{% translate "Follow your order" %}: {{ site_url }}{{ order_url }}
+
+{% translate "This report is physical and environmental due diligence from remote data. It is not a legal title search, a survey or a valuation." %}
+
+{{ site_name }} · {{ site_url }}
+{% endautoescape %}

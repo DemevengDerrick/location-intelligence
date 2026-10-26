@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n money %}
+{% block head_title %}{% translate "Demo payment" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta %}{{ block.super }}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-md">
+  <p class="rounded border border-sky-300 bg-sky-50 px-4 py-3 text-sm" role="note">
+    {% translate "Demo checkout. This page stands in for the payment provider; no money moves." %}
+  </p>
+  <h1 class="mt-6 text-2xl font-bold">
+    {% if payment.method == "mobile_money" %}{% translate "Mobile money" %}{% else %}{% translate "Card payment" %}{% endif %}
+  </h1>
+  <p class="mt-2 text-3xl font-bold">{{ payment.amount|money:payment.currency }}</p>
+  {% if payment.method == "mobile_money" %}
+    <p class="mt-4">{% translate "On a real payment, you would now confirm on your phone with your MTN or Orange PIN." %}</p>
+  {% endif %}
+  {% if payment.status == "pending" %}
+  <form method="post" class="mt-6 flex gap-3">
+    {% csrf_token %}
+    <button type="submit" name="decision" value="approve" class="flex-1 rounded bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800">{% translate "Approve payment" %}</button>
+    <button type="submit" name="decision" value="decline" class="flex-1 rounded border border-slate-300 px-5 py-3 font-semibold">{% translate "Decline" %}</button>
+  </form>
+  {% else %}
+  <p class="mt-6"><a class="underline" href="{% url 'payments:return' payment.public_id %}">{% translate "See payment status" %}</a></p>
+  {% endif %}
+</div>
+{% endblock %}

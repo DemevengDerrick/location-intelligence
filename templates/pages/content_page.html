@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{{ page.title }} · {{ SITE_NAME }}{% endblock %}
+{% block og_title %}{{ page.title }}{% endblock %}
+{% block meta_description %}{{ page.body|truncatewords:30 }}{% endblock %}
+{% block content %}
+<article class="max-w-3xl">
+  <h1 class="text-3xl font-bold">{{ page.title }}</h1>
+  {% if page.version or page.updated_at %}
+  <p class="mt-2 text-sm text-slate-600">
+    {% if page.version %}{% blocktranslate with version=page.version %}Version {{ version }}{% endblocktranslate %} · {% endif %}{% blocktranslate with date=page.updated_at|date:"DATE_FORMAT" %}Last updated {{ date }}{% endblocktranslate %}
+  </p>
+  {% endif %}
+  {% if page.is_draft %}
+  <p class="mt-4 rounded border border-amber-300 bg-amber-50 px-4 py-3" role="note">
+    {% translate "This text is a draft and is awaiting legal review." %}
+  </p>
+  {% endif %}
+  <div class="mt-6 space-y-4 leading-relaxed">{{ page.body|linebreaks }}</div>
+</article>
+{% endblock %}

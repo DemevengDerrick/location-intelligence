@@ -1,0 +1,25 @@
+{% load i18n %}{# Usage: {% include "partials/field.html" with field=form.x %} #}
+<div class="space-y-1">
+  {% if field.field.widget.input_type == "checkbox" %}
+    <div class="flex items-start gap-2">
+      <input type="checkbox" name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="mt-1 h-4 w-4"
+             {% if field.value %}checked{% endif %}
+             {% if field.help_text or field.errors %}aria-describedby="{{ field.id_for_label }}-desc"{% endif %}
+             {% if field.errors %}aria-invalid="true"{% endif %}>
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    </div>
+  {% else %}
+    <label for="{{ field.id_for_label }}" class="block font-medium">
+      {{ field.label }}{% if not field.field.required %} <span class="font-normal text-slate-500">({% translate "optional" %})</span>{% endif %}
+    </label>
+    <div class="[&_input:not([type=radio]):not([type=checkbox])]:w-full [&_input:not([type=radio]):not([type=checkbox])]:rounded [&_input:not([type=radio]):not([type=checkbox])]:border [&_input:not([type=radio]):not([type=checkbox])]:border-slate-300 [&_input:not([type=radio]):not([type=checkbox])]:px-3 [&_input:not([type=radio]):not([type=checkbox])]:py-2 [&_select]:w-full [&_select]:rounded [&_select]:border [&_select]:border-slate-300 [&_select]:px-3 [&_select]:py-2 [&_textarea]:w-full [&_textarea]:rounded [&_textarea]:border [&_textarea]:border-slate-300 [&_textarea]:px-3 [&_textarea]:py-2">
+      {{ field }}
+    </div>
+  {% endif %}
+  {% if field.help_text or field.errors %}
+  <div id="{{ field.id_for_label }}-desc">
+    {% if field.help_text %}<p class="text-sm text-slate-600">{{ field.help_text }}</p>{% endif %}
+    {% for error in field.errors %}<p class="text-sm font-medium text-red-700">{{ error }}</p>{% endfor %}
+  </div>
+  {% endif %}
+</div>

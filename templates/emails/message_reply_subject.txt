@@ -1,0 +1,1 @@
+{% load i18n %}{% blocktranslate %}New message about order {{ ref }}{% endblocktranslate %} · {{ site_name }}

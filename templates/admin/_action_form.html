@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  {% block summary %}{% endblock %}
+  <fieldset class="module aligned">{{ form.as_div }}</fieldset>
+  <input type="hidden" name="action" value="{{ action_name }}">
+  <input type="hidden" name="{{ action_checkbox_name }}" value="{{ object_pk }}">
+  <div class="submit-row">
+    <input type="submit" name="apply" value="{% translate "Confirm" %}" class="default">
+    <a href="." class="button cancel-link">{% translate "Cancel" %}</a>
+  </div>
+</form>
+{% endblock %}

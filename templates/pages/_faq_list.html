@@ -1,0 +1,10 @@
+<div class="mt-6 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+  {% for item in faq_items %}
+  <details class="group p-5">
+    <summary class="cursor-pointer list-none font-semibold marker:hidden">
+      <span class="flex items-start justify-between gap-4">{{ item.question }}<span aria-hidden="true" class="transition group-open:rotate-45">+</span></span>
+    </summary>
+    <div class="mt-3 text-slate-700">{{ item.answer|linebreaks }}</div>
+  </details>
+  {% endfor %}
+</div>
