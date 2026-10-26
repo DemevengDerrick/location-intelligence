@@ -20,6 +20,7 @@ from .. import charts
 from ..config import thresholds
 from ..formatting import fmt
 from ..landcover import OPEN, VEGETATION, classify, parcel_mask, shares, true_colour
+from ..layers import classified_layer, rgb_layer
 from ..maps import ParcelMap, image_strip
 from ..models import ModuleStatus, Rating
 from ..providers import imagery_provider
@@ -188,7 +189,40 @@ class ChangeModule(Module):
                 )
             }
 
+        # One image per year for the year slider and the swipe comparison in the portal.
+        layers = [
+            rgb_layer(
+                f"year-{label}",
+                lambda label=label: _("Imagery, dry season %(y)s") % {"y": label},
+                rgb,
+                frame_transform,
+                frame_crs,
+                visible=i == len(frames) - 1,
+                group="years",
+                year=int(label),
+            )
+            for i, (label, rgb, frame_transform, frame_crs) in enumerate(frames)
+        ]
+        if cleared_years:
+            palette = colormaps["viridis"].resampled(max(len(cleared_years), 2))
+            layers.append(
+                classified_layer(
+                    "cleared",
+                    lambda: _("Year of clearing"),
+                    cleared,
+                    transform,
+                    [cleared_years[0] - 0.5] + [y + 0.5 for y in cleared_years],
+                    [palette(i) for i in range(len(cleared_years))],
+                    [lambda y=y: _("Cleared from %(y)s") % {"y": y} for y in cleared_years],
+                    crs_epsg=crs_epsg,
+                    categories={
+                        y: (lambda y=y: _("Cleared from %(y)s") % {"y": y}) for y in cleared_years
+                    },
+                )
+            )
+
         return ModuleOutput(
+            layers=layers,
             rating=rating,
             results=results,
             parameters={

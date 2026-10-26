@@ -39,5 +39,11 @@ def test_translation_catalogue_is_complete(language):
     path = Path(settings.BASE_DIR) / "locale" / language / "LC_MESSAGES" / "django.po"
     po = polib.pofile(str(path))
     assert not po.metadata_is_fuzzy, "header is fuzzy, so msgfmt would skip the catalogue"
-    untranslated = [e.msgid for e in po if not e.obsolete and (not e.msgstr or e.fuzzy)]
+
+    def missing(entry):
+        if entry.msgid_plural:  # every plural form must be filled
+            return not entry.msgstr_plural or not all(entry.msgstr_plural.values())
+        return not entry.msgstr
+
+    untranslated = [e.msgid for e in po if not e.obsolete and (missing(e) or e.fuzzy)]
     assert untranslated == []

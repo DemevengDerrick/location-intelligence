@@ -79,9 +79,22 @@ def execute_module(result_id, can_retry=False):
             }
             for name, by_language in output.maps.items()
         }
+        result.layers = [_store_layer(result, layer) for layer in output.layers]
     result.ran_at = timezone.now()
     result.save()
     finish_run_if_complete(result.run_id)
+
+
+def _store_layer(result, layer):
+    """Image layers: save the PNG and keep its storage key instead of the bytes."""
+    if "png" not in layer:
+        return layer
+    stored = {k: v for k, v in layer.items() if k != "png"}
+    stored["image"] = default_storage.save(
+        f"analysis/run-{result.run_id}/{result.module}-layer-{layer['id']}.png",
+        ContentFile(layer["png"]),
+    )
+    return stored
 
 
 @transaction.atomic

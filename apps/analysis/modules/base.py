@@ -19,6 +19,9 @@ class ModuleOutput:
     # chart name -> {language: Vega-Lite spec}, or {"reason": {language: text}} when the
     # chart cannot be drawn (shown as a labelled placeholder, FR-68)
     charts: dict = field(default_factory=dict)
+    # interactive layers for the portal map (apps.analysis.layers); image layers carry PNG
+    # bytes under "png" until the pipeline stores them
+    layers: list = field(default_factory=list)
 
 
 class Module(ABC):

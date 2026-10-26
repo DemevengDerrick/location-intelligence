@@ -18,6 +18,7 @@ from apps.parcels.geometry import utm_srid_for
 from .. import charts, style
 from ..config import thresholds
 from ..formatting import fmt
+from ..layers import classified_layer
 from ..maps import ParcelMap
 from ..models import Rating
 from ..providers import elevation_provider
@@ -144,6 +145,23 @@ class TerrainModule(Module):
             datasets={dem.dataset: dem.version},
             maps={"main": self.render_maps(draw)},
             charts={"profile": self._profile_chart(elevation_profile(geom, dem))},
+            layers=[
+                classified_layer(
+                    "slope",
+                    lambda: _("Slope"),
+                    slope,
+                    dem.transform,
+                    bounds,
+                    style.SLOPE_CLASSES,
+                    [
+                        lambda: _("Under %(n)s°") % {"n": f"{bounds[1]:g}"},
+                        lambda: f"{bounds[1]:g}–{bounds[2]:g}°",
+                        lambda: f"{bounds[2]:g}–{bounds[3]:g}°",
+                        lambda: _("Over %(n)s° (erosion risk)") % {"n": f"{bounds[3]:g}"},
+                    ],
+                    unit="°",
+                )
+            ],
         )
 
     def _profile_chart(self, profile):

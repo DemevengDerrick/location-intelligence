@@ -17,7 +17,8 @@ from django.utils.translation import gettext_lazy
 from .. import charts, style
 from ..config import thresholds
 from ..formatting import fmt
-from ..landcover import classify, parcel_mask, shares, true_colour
+from ..landcover import OPEN, VEGETATION, WATER, classify, parcel_mask, shares, true_colour
+from ..layers import classified_layer, rgb_layer
 from ..maps import NEIGHBOURHOOD_RADIUS_M, ParcelMap
 from ..models import ModuleStatus, Rating
 from ..providers import imagery_provider
@@ -139,6 +140,38 @@ class ImageryModule(Module):
             datasets={composite.dataset: f"L2A {dates[0]} – {dates[-1]}"},
             maps={"main": self.render_maps(draw)},
             charts={"cover": self.per_language(cover_chart)},
+            layers=[
+                rgb_layer(
+                    "imagery",
+                    lambda: (
+                        _("Sentinel-2 imagery, %(period)s")
+                        % {"period": month_range(dates[0], dates[-1])}
+                    ),
+                    rgb,
+                    composite.transform,
+                    composite.crs_epsg,
+                ),
+                classified_layer(
+                    "landcover",
+                    lambda: _("Land cover"),
+                    classes,
+                    composite.transform,
+                    [0.5, 1.5, 2.5, 3.5],
+                    [style.SERIES["water"], style.SERIES["vegetation"], style.SERIES["open"]],
+                    [
+                        lambda: cover_label("water"),
+                        lambda: cover_label("vegetation"),
+                        lambda: cover_label("open"),
+                    ],
+                    crs_epsg=composite.crs_epsg,
+                    visible=False,
+                    categories={
+                        WATER: lambda: cover_label("water"),
+                        VEGETATION: lambda: cover_label("vegetation"),
+                        OPEN: lambda: cover_label("open"),
+                    },
+                ),
+            ],
         )
 
     def finding_values(self, results):

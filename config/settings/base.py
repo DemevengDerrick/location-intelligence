@@ -222,6 +222,9 @@ WORLDPOP_DATA_DIR = env("WORLDPOP_DATA_DIR", default="/data/worldpop")
 GHSL_DATA_DIR = env("GHSL_DATA_DIR", default="/data/worldpop/ghsl")
 # Routing engine (Valhalla) for travel times and isochrones
 VALHALLA_URL = env("VALHALLA_URL", default="http://valhalla:8002")
+# Shared report links (FR-19): expiry choices offered to the customer, in days
+REPORT_SHARE_DAYS = [7, 30, 90]
+REPORT_SHARE_DEFAULT_DAYS = 30
 NOMINATIM_USER_AGENT = env(
     "NOMINATIM_USER_AGENT",
     default=f"{SITE_NAME} (contact: {env('DEFAULT_FROM_EMAIL', default='')})",

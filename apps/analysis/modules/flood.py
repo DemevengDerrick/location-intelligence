@@ -22,6 +22,7 @@ from scipy.ndimage import distance_transform_edt
 from .. import style
 from ..config import thresholds
 from ..formatting import fmt
+from ..layers import classified_layer, vector_layer
 from ..maps import NEIGHBOURHOOD_RADIUS_M, ParcelMap
 from ..models import Rating
 from ..providers import elevation_provider, water_features_provider, water_provider
@@ -33,6 +34,8 @@ OCCURRENCE_CLASSES = [0.5, 25, 50, 75, 100.5]  # % of observations with water
 OCCURRENCE_COLOURS = ["#DCEAF7", "#9ECAE1", "#4292C6", "#08519C"]
 HEIGHT_CLASSES = [-1e6, 1, 3, 10, 1e6]  # metres above the nearest water
 HEIGHT_COLOURS = ["#08519C", "#6BAED6", "#C6DBEF", "#F7F7F7"]
+FLOOD_CLASSES = [0.001, 0.5, 1, 2, 1e6]  # modelled flood depth, metres
+FLOOD_COLOURS = ["#FDD49E", "#FC8D59", "#D7301F", "#7F0000"]
 
 
 def _on_grid(grid, dem):
@@ -212,7 +215,92 @@ class FloodModule(Module):
                 "water": self.render_maps(draw_water),
                 "hazard": self.render_maps(draw_hazard),
             },
+            layers=self._layers(occurrence, height_above, depth, transform, features),
         )
+
+    @staticmethod
+    def _layers(occurrence, height_above, depth, transform, features):
+        ranges = ("1–25 %", "25–50 %", "50–75 %", "75–100 %")
+        layers = [
+            classified_layer(
+                "water-seen",
+                lambda: _("Water seen 1984–2021"),
+                np.where(np.nan_to_num(occurrence) > 0, occurrence, np.nan),
+                transform,
+                OCCURRENCE_CLASSES,
+                OCCURRENCE_COLOURS,
+                [lambda r=r: _("Water %(range)s of the time") % {"range": r} for r in ranges],
+                unit=lambda: _("% of the time"),
+                decimals=0,
+            ),
+        ]
+        if height_above is not None:
+            layers.append(
+                classified_layer(
+                    "height",
+                    lambda: _("Height above the nearest water"),
+                    height_above,
+                    transform,
+                    HEIGHT_CLASSES,
+                    HEIGHT_COLOURS,
+                    [
+                        lambda: _("Under 1 m above water"),
+                        lambda: _("1–3 m"),
+                        lambda: _("3–10 m"),
+                        lambda: _("Over 10 m"),
+                    ],
+                    unit="m",
+                    visible=False,
+                    opacity=0.6,
+                )
+            )
+        if (depth > 0).any():
+            layers.append(
+                classified_layer(
+                    "flood",
+                    lambda: _("1-in-%(rp)s-year river flood") % {"rp": RETURN_PERIOD},
+                    np.where(depth > 0, depth, np.nan),
+                    transform,
+                    FLOOD_CLASSES,
+                    FLOOD_COLOURS,
+                    [
+                        lambda: _("Under 0.5 m deep"),
+                        lambda: _("0.5–1 m"),
+                        lambda: _("1–2 m"),
+                        lambda: _("Over 2 m"),
+                    ],
+                    unit=lambda: _("m deep"),
+                )
+            )
+        layers += [
+            vector_layer(
+                "waterways",
+                lambda: _("Rivers and streams"),
+                [(g, {}) for g in features.lines],
+                kind="line",
+                color="#08519C",
+                width=2,
+            ),
+            vector_layer(
+                "water-bodies",
+                lambda: _("Water bodies"),
+                [(g, {}) for g in features.areas],
+                kind="fill",
+                color="#6BAED6",
+                outline="#08519C",
+                opacity=0.6,
+            ),
+            vector_layer(
+                "wetlands",
+                lambda: _("Wetland"),
+                [(g, {}) for g in features.wetlands],
+                kind="fill",
+                color="#2CA25F",
+                outline="#2CA25F",
+                opacity=0.35,
+            ),
+        ]
+        return layers
 
     @staticmethod
     def _rate(r, t):

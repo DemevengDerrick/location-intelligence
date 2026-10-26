@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load i18n static %}
+{% block head_title %}{% translate "Land due-diligence report" %} · {{ SITE_NAME }}{% endblock %}
+{% block meta %}{{ block.super }}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'vendor/maplibre/maplibre-gl.css' %}">
+<script src="{% static 'vendor/maplibre/maplibre-gl.js' %}" defer></script>
+<script src="{% static 'vendor/vega/vega.min.js' %}" defer></script>
+<script src="{% static 'vendor/vega/vega-lite.min.js' %}" defer></script>
+<script src="{% static 'vendor/vega/vega-embed.min.js' %}" defer></script>
+<script src="{% static 'js/report-page.js' %}" defer></script>
+{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-5xl">
+  {% if not shared %}{% include "portal/_nav.html" %}{% endif %}
+
+  <header class="mt-6">
+    <p class="text-sm font-semibold uppercase tracking-wide text-emerald-800">{% translate "Land due-diligence report" %}</p>
+    <h1 class="mt-1 text-3xl font-bold text-slate-900">{% if parcel.quartier %}{{ parcel.quartier }}, {% endif %}{{ parcel.commune|default:"" }}{% if parcel.region %} ({{ parcel.region }}){% endif %}</h1>
+    <p class="mt-2 text-sm text-slate-600">
+      {% translate "Report ID" %} {{ report.reference }} · {% blocktranslate with n=version.number date=version.approved_at|date:"DATE_FORMAT" %}Version {{ n }}, {{ date }}{% endblocktranslate %}
+    </p>
+    <div class="mt-4 flex flex-wrap gap-3">
+      {% for language, v in versions.items %}
+        <a href="{% if shared %}{% url 'reports:shared_download' shared.token v.number language %}{% else %}{% url 'reports:download' order.public_id v.number language %}{% endif %}" class="rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800">{% blocktranslate with lang=v.get_language_display %}Download PDF ({{ lang }}){% endblocktranslate %}</a>
+      {% endfor %}
+      {% if not shared %}<a href="{% url 'portal:order' order.public_id %}" class="rounded border border-slate-300 px-4 py-2 font-semibold hover:bg-slate-50">{% translate "Back to the order" %}</a>{% endif %}
+    </div>
+    <p class="mt-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{% translate "This report is physical and environmental due diligence from remote data. It is not a legal title search, a survey or a valuation." %}</p>
+    {% if approximate %}<p class="mt-2 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{% translate "The location was given as a pin: the analysis uses a small circle around it, so figures about the parcel are approximate." %}</p>{% endif %}
+  </header>
+
+  <section class="mt-8" aria-labelledby="summary-heading">
+    <h2 id="summary-heading" class="text-2xl font-bold">{% translate "Summary" %}</h2>
+    <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {% for f in summary %}
+      <li class="rounded-lg border-2 p-4" style="border-color: {{ f.colour }}">
+        <span class="inline-block rounded px-2 py-0.5 text-sm font-semibold text-white" style="background: {{ f.colour }}">{{ f.icon }} {{ f.word }}</span>
+        <p class="mt-2 font-semibold"><a class="hover:underline" href="#finding-{{ f.module }}">{{ f.title }}</a></p>
+        <p class="text-slate-700">{{ f.key_figure|default:"–" }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if note %}<p class="mt-4 rounded border border-slate-200 bg-slate-50 px-4 py-3"><strong>{% translate "Analyst note" %}:</strong> {{ note|linebreaksbr }}</p>{% endif %}
+  </section>
+
+  {% for section in sections %}
+  <section class="mt-12" aria-labelledby="section-{{ section.key }}">
+    <h2 id="section-{{ section.key }}" class="border-b border-slate-200 pb-2 text-2xl font-bold">{{ forloop.counter }}. {{ section.title }}</h2>
+    {% for f in section.findings %}
+    <article id="finding-{{ f.module }}" class="mt-6">
+      {% if section.findings|length > 1 %}<h3 class="text-xl font-semibold">{{ f.title }}</h3>{% endif %}
+      <p class="mt-2"><span class="inline-block rounded px-2 py-0.5 text-sm font-semibold text-white" style="background: {{ f.colour }}">{{ f.icon }} {{ f.word }}</span></p>
+      <p class="mt-3 max-w-3xl text-lg">{{ f.sentence }}</p>
+      {% if f.overridden %}<p class="mt-1 text-sm text-slate-600">{% translate "Rating adjusted by the analyst" %}: {{ f.override_reason }}</p>{% endif %}
+
+      {% if f.map %}
+      <div class="mt-4 grid gap-4 lg:grid-cols-[1fr_16rem]">
+        <div class="relative">
+          <div id="{{ f.map_id }}" data-report-map="{{ f.map_config_id }}" class="h-[28rem] w-full rounded border border-slate-300" role="region" aria-label="{% blocktranslate with t=f.title %}Interactive map: {{ t }}{% endblocktranslate %}"></div>
+          <p class="mt-1 text-xs text-slate-500">{% translate "Hover over the map to read values. Use the list to show or hide layers." %}</p>
+        </div>
+        <div data-layer-panel="{{ f.map_id }}" class="text-sm" aria-label="{% translate 'Map layers' %}"></div>
+      </div>
+      {{ f.map|json_script:f.map_config_id }}
+      {% endif %}
+
+      {% if f.static_maps %}
+      <details class="mt-3" {% if not f.map %}open{% endif %}>
+        <summary class="cursor-pointer text-sm font-medium text-emerald-800">{% if f.map %}{% translate "Maps as printed in the PDF" %}{% else %}{% translate "Maps" %}{% endif %}</summary>
+        <div class="mt-3 grid gap-4 md:grid-cols-2">
+          {% for src in f.static_maps %}{% if src %}<img src="{{ src }}" alt="{% blocktranslate with t=f.title %}Map: {{ t }}{% endblocktranslate %}" class="w-full rounded border border-slate-200 bg-white" loading="lazy">{% endif %}{% endfor %}
+        </div>
+      </details>
+      {% elif f.unavailable %}
+      <p class="mt-3 rounded border border-dashed border-slate-300 px-4 py-3 text-slate-600">{% translate "Map unavailable for this section." %}</p>
+      {% endif %}
+
+      {% for chart in f.charts %}
+      <figure class="mt-6">
+        {% if chart.spec %}
+          <div data-vega="{{ chart.script_id }}" class="max-w-full overflow-x-auto" role="img" aria-label="{{ chart.title }}"></div>
+          {{ chart.spec|json_script:chart.script_id }}
+          {% if chart.data %}
+          <details class="mt-2 text-sm">
+            <summary class="cursor-pointer font-medium text-emerald-800">{% translate "Chart data" %}</summary>
+            <div class="mt-2 overflow-x-auto"><table class="min-w-full text-left">
+              <caption class="sr-only">{{ chart.title }}</caption>
+              <thead><tr>{% for c in chart.data.columns %}<th class="border-b border-slate-300 py-1 pr-4">{{ c }}</th>{% endfor %}</tr></thead>
+              <tbody>{% for row in chart.data.rows %}<tr>{% for cell in row %}<td class="border-b border-slate-100 py-1 pr-4">{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+            </table></div>
+          </details>
+          {% endif %}
+        {% elif chart.table %}
+          <div class="overflow-x-auto"><table class="min-w-full text-left text-sm">
+            <caption class="mb-2 text-left font-semibold">{{ chart.table.caption }}</caption>
+            <thead><tr>{% for c in chart.table.columns %}<th class="border-b border-slate-300 py-1 pr-4">{{ c }}</th>{% endfor %}</tr></thead>
+            <tbody>{% for row in chart.table.rows %}<tr>{% for cell in row %}<td class="border-b border-slate-100 py-1.5 pr-4">{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+          </table></div>
+        {% else %}
+          <p class="rounded border border-dashed border-slate-300 px-4 py-3 text-slate-600">{{ chart.reason }}</p>
+        {% endif %}
+      </figure>
+      {% endfor %}
+    </article>
+    {% empty %}
+    <p class="mt-4 rounded border border-dashed border-slate-300 px-4 py-3 text-slate-600">{% translate "This section is not included in this version of the report." %}</p>
+    {% endfor %}
+  </section>
+  {% endfor %}
+
+  {% if is_owner %}
+  <section id="share" class="mt-12 rounded-lg border border-slate-200 p-5" aria-labelledby="share-heading">
+    <h2 id="share-heading" class="text-xl font-semibold">{% translate "Share this report" %}</h2>
+    <p class="mt-1 text-slate-700">{% translate "Anyone with a share link can read the report and download the PDF, without an account. They do not see your messages, payments or details. You can revoke a link at any time." %}</p>
+    <form method="post" action="{% url 'reports:share_create' order.public_id %}" class="mt-4 flex flex-wrap items-end gap-3">
+      {% csrf_token %}
+      <div>
+        <label for="share-days" class="block font-medium">{% translate "Link valid for" %}</label>
+        <select id="share-days" name="days" class="rounded border border-slate-300 px-3 py-2">
+          {% for d in share_days %}<option value="{{ d }}"{% if d == share_default_days %} selected{% endif %}>{% blocktranslate count days=d %}{{ days }} day{% plural %}{{ days }} days{% endblocktranslate %}</option>{% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800">{% translate "Create a share link" %}</button>
+    </form>
+    {% if shares %}
+    <ul class="mt-5 space-y-3">
+      {% for s in shares %}
+      <li class="rounded border border-slate-200 p-3">
+        {% url 'reports:shared' s.token as share_path %}
+        <label for="share-{{ s.pk }}" class="block text-sm font-medium">{% blocktranslate with date=s.expires_at|date:"DATE_FORMAT" n=s.views %}Expires {{ date }} · opened {{ n }} time(s){% endblocktranslate %}</label>
+        <div class="mt-1 flex flex-wrap gap-2">
+          <input id="share-{{ s.pk }}" type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{{ share_path }}" class="min-w-0 flex-1 rounded border border-slate-300 px-3 py-2 text-sm" onfocus="this.select()">
+          <button type="button" data-copy="share-{{ s.pk }}" class="rounded border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50">{% translate "Copy" %}</button>
+          <form method="post" action="{% url 'reports:share_revoke' order.public_id s.pk %}">{% csrf_token %}<button type="submit" class="rounded border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">{% translate "Revoke" %}</button></form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="mt-12" aria-labelledby="methods-heading">
+    <h2 id="methods-heading" class="text-xl font-semibold">{% translate "Methods, data sources and limitations" %}</h2>
+    <ul class="mt-3 list-disc space-y-2 pl-6 text-sm text-slate-700">
+      {% for d in datasets %}<li><strong>{{ d.name }}</strong>{% if d.version %} ({{ d.version }}){% endif %}. {% translate "Licence" %}: {{ d.licence }}. {{ d.attribution }}</li>{% endfor %}
+    </ul>
+    {% if disclaimer %}
+    <h2 class="mt-8 text-xl font-semibold">{{ disclaimer.title }}</h2>
+    <div class="mt-2 space-y-2 text-sm text-slate-700">{{ disclaimer.body|linebreaks }}</div>
+    {% endif %}
+  </section>
+</div>
+<noscript><style>[data-report-map], [data-layer-panel], [data-vega] { display: none; }</style></noscript>
+{% endblock %}

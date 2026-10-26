@@ -21,6 +21,7 @@ from apps.parcels.geometry import utm_srid_for
 
 from ..config import setback_rules, thresholds
 from ..formatting import fmt
+from ..layers import vector_layer
 from ..maps import ParcelMap
 from ..models import Rating
 from ..providers import osm_provider
@@ -227,7 +228,56 @@ class RedFlagsModule(Module):
             datasets={"osm-roads-services": osm.data_timestamp, "reference-layers": "admin"},
             maps={"constraints": self.render_maps(draw)},
             charts=charts,
+            layers=self._layers(constraints, strips, areas, drawn_lines),
         )
+
+    @staticmethod
+    def _layers(constraints, strips, areas, drawn_lines):
+        setbacks = [c for c in constraints if c["type"] == "setback"]
+        layers = [
+            vector_layer(
+                "setbacks",
+                lambda: _("Setback strips"),
+                [(strip, {"rule": c["label"]}) for strip, c in zip(strips, setbacks, strict=True)],
+                kind="fill",
+                color=STYLE["setback"]["facecolor"],
+                outline=STYLE["setback"]["edgecolor"],
+                opacity=0.45,
+                hover=[("rule", lambda: _("Constraint"))],
+            )
+        ]
+        for kind in ("protected", "dup", "infrastructure", "risk_zone"):
+            found = [
+                (shape, {"name": name or "–", "source": source or "–"})
+                for k, name, source, shape in areas
+                if k == kind
+            ]
+            if found:
+                layers.append(
+                    vector_layer(
+                        kind,
+                        lambda kind=kind: _kind_labels()[kind],
+                        found,
+                        kind="fill",
+                        color=STYLE[kind]["facecolor"],
+                        outline=STYLE[kind]["edgecolor"],
+                        opacity=0.45,
+                        hover=[("name", lambda: _("Name")), ("source", lambda: _("Source"))],
+                    )
+                )
+        lines = [(shape, {}) for _category, shape in drawn_lines]
+        if lines:
+            layers.append(
+                vector_layer(
+                    "constraint-features",
+                    lambda: _("Rivers, roads and lines with setbacks"),
+                    lines,
+                    kind="line",
+                    color="#555555",
+                    width=1.5,
+                )
+            )
+        return layers
 
     @staticmethod
     def _areas(osm, bounds):

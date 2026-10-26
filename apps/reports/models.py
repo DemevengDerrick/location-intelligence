@@ -73,3 +73,44 @@ class ReportVersion(TimeStampedModel):
 
     def __str__(self):
         return f"{self.report} v{self.number} ({self.language})"
+
+
+def _share_token():
+    import secrets
+
+    return secrets.token_urlsafe(24)
+
+
+class ReportShare(TimeStampedModel):
+    """A read-only link to the latest delivered report, with an expiry date (FR-19). The
+    customer can revoke it at any time; views are counted."""
+
+    report = models.ForeignKey(
+        Report, verbose_name=_("report"), on_delete=models.CASCADE, related_name="shares"
+    )
+    token = models.CharField(_("token"), max_length=64, unique=True, default=_share_token)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("created by"),
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    expires_at = models.DateTimeField(_("expires at"))
+    revoked_at = models.DateTimeField(_("revoked at"), null=True, blank=True)
+    views = models.PositiveIntegerField(_("views"), default=0)
+    last_viewed_at = models.DateTimeField(_("last viewed at"), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("shared report link")
+        verbose_name_plural = _("shared report links")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.report} → {self.expires_at:%Y-%m-%d}"
+
+    @property
+    def is_active(self):
+        from django.utils import timezone
+
+        return self.revoked_at is None and self.expires_at > timezone.now()

@@ -39,8 +39,9 @@
               {% endfor %}
             </ul>
             <div class="mt-4 flex flex-wrap gap-3">
+              <a href="{% url 'reports:page' order.public_id %}" class="rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800">{% translate "Open the interactive report" %}</a>
               {% for v in latest_versions %}
-              <a href="{% url 'reports:download' order.public_id v.number v.language %}" class="rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800">{% blocktranslate with lang=v.get_language_display %}Download PDF ({{ lang }}){% endblocktranslate %}</a>
+              <a href="{% url 'reports:download' order.public_id v.number v.language %}" class="rounded border border-slate-300 px-4 py-2 font-semibold hover:bg-slate-50">{% blocktranslate with lang=v.get_language_display %}Download PDF ({{ lang }}){% endblocktranslate %}</a>
               {% endfor %}
             </div>
             <p class="mt-3 text-sm text-slate-600">{% translate "Report ID" %} {{ report.reference }} · <a class="underline" href="{% url 'reports:verify' report.reference %}">{% translate "Verify a report" %}</a></p>

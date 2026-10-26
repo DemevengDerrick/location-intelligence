@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 03:39+0100\n"
+"POT-Creation-Date: 2026-10-26 14:17+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -276,56 +276,56 @@ msgstr "population statistic"
 msgid "population statistics"
 msgstr "population statistics"
 
-#: apps/analysis/modules/access.py:38
+#: apps/analysis/modules/access.py:40
 msgid "Paved road"
 msgstr "Paved road"
 
-#: apps/analysis/modules/access.py:39 apps/osm/models.py:49
+#: apps/analysis/modules/access.py:41 apps/osm/models.py:49
 msgid "School"
 msgstr "School"
 
-#: apps/analysis/modules/access.py:40 apps/osm/models.py:50
+#: apps/analysis/modules/access.py:42 apps/osm/models.py:50
 msgid "Health facility"
 msgstr "Health facility"
 
-#: apps/analysis/modules/access.py:41 apps/osm/models.py:51
+#: apps/analysis/modules/access.py:43 apps/osm/models.py:51
 msgid "Market"
 msgstr "Market"
 
-#: apps/analysis/modules/access.py:42 apps/osm/models.py:52
+#: apps/analysis/modules/access.py:44 apps/osm/models.py:52
 msgid "Water point"
 msgstr "Water point"
 
-#: apps/analysis/modules/access.py:57 apps/reports/structure.py:10
+#: apps/analysis/modules/access.py:59 apps/reports/structure.py:10
 #: templates/pages/_report_questions.html:5
 msgid "Access and services"
 msgstr "Access and services"
 
-#: apps/analysis/modules/access.py:112
+#: apps/analysis/modules/access.py:114 apps/analysis/modules/access.py:184
 #, python-format
 msgid "Within %(m)s min on foot"
 msgstr "Within %(m)s min on foot"
 
-#: apps/analysis/modules/access.py:114
+#: apps/analysis/modules/access.py:116 apps/analysis/modules/access.py:187
 #, python-format
 msgid "Within %(m)s min by car"
 msgstr "Within %(m)s min by car"
 
-#: apps/analysis/modules/access.py:134
+#: apps/analysis/modules/access.py:136
 msgid "Roads"
 msgstr "Roads"
 
-#: apps/analysis/modules/access.py:144 apps/analysis/modules/buildings.py:88
-#: apps/analysis/modules/change.py:143
-#: apps/analysis/modules/demographics.py:136
-#: apps/analysis/modules/demographics.py:166
-#: apps/analysis/modules/flood.py:160 apps/analysis/modules/flood.py:185
-#: apps/analysis/modules/imagery.py:105 apps/analysis/modules/location.py:73
-#: apps/analysis/modules/red_flags.py:198 apps/analysis/modules/terrain.py:128
+#: apps/analysis/modules/access.py:146 apps/analysis/modules/buildings.py:90
+#: apps/analysis/modules/change.py:144
+#: apps/analysis/modules/demographics.py:209
+#: apps/analysis/modules/demographics.py:240
+#: apps/analysis/modules/flood.py:163 apps/analysis/modules/flood.py:188
+#: apps/analysis/modules/imagery.py:106 apps/analysis/modules/location.py:73
+#: apps/analysis/modules/red_flags.py:199 apps/analysis/modules/terrain.py:129
 msgid "Parcel boundary"
 msgstr "Parcel boundary"
 
-#: apps/analysis/modules/access.py:147
+#: apps/analysis/modules/access.py:149
 #, python-format
 msgid ""
 "Roads and services © OpenStreetMap contributors (ODbL), data of %(date)s. "
@@ -334,25 +334,50 @@ msgstr ""
 "Roads and services © OpenStreetMap contributors (ODbL), data of %(date)s. "
 "Travel areas computed with Valhalla."
 
-#: apps/analysis/modules/access.py:247 apps/analysis/modules/access.py:315
+#: apps/analysis/modules/access.py:191
+msgid "Areas reached on foot"
+msgstr "Areas reached on foot"
+
+#: apps/analysis/modules/access.py:192
+msgid "Areas reached by car"
+msgstr "Areas reached by car"
+
+#: apps/analysis/modules/access.py:214
+msgid "Travel time"
+msgstr "Travel time"
+
+#: apps/analysis/modules/access.py:233
+msgid "Services"
+msgstr "Services"
+
+#: apps/analysis/modules/access.py:240
+msgid "Service"
+msgstr "Service"
+
+#: apps/analysis/modules/access.py:240 apps/analysis/modules/access.py:392
+#: apps/analysis/modules/red_flags.py:265 templates/emails/new_lead.txt:1
+msgid "Name"
+msgstr "Name"
+
+#: apps/analysis/modules/access.py:324 apps/analysis/modules/access.py:392
 msgid "On foot"
 msgstr "On foot"
 
-#: apps/analysis/modules/access.py:247 apps/analysis/modules/access.py:315
+#: apps/analysis/modules/access.py:324 apps/analysis/modules/access.py:392
 msgid "By car"
 msgstr "By car"
 
-#: apps/analysis/modules/access.py:257
+#: apps/analysis/modules/access.py:334
 #, python-format
 msgid "The nearest health facility is %(m)s min away by car"
 msgstr "The nearest health facility is %(m)s min away by car"
 
-#: apps/analysis/modules/access.py:261
+#: apps/analysis/modules/access.py:338
 #, python-format
 msgid "No health facility found within %(km)s km"
 msgstr "No health facility found within %(km)s km"
 
-#: apps/analysis/modules/access.py:267
+#: apps/analysis/modules/access.py:344
 #, python-format
 msgid ""
 "Valhalla routes on OpenStreetMap (data of %(date)s), including the walk to "
@@ -361,151 +386,159 @@ msgstr ""
 "Valhalla routes on OpenStreetMap (data of %(date)s), including the walk to "
 "the nearest road."
 
-#: apps/analysis/modules/access.py:282
+#: apps/analysis/modules/access.py:359
 msgid "Minutes"
 msgstr "Minutes"
 
-#: apps/analysis/modules/access.py:302
+#: apps/analysis/modules/access.py:379
 msgid "None found nearby"
 msgstr "None found nearby"
 
-#: apps/analysis/modules/access.py:307
+#: apps/analysis/modules/access.py:384
 msgid "(no name)"
 msgstr "(no name)"
 
-#: apps/analysis/modules/access.py:314
+#: apps/analysis/modules/access.py:391
 msgid "Nearest services"
 msgstr "Nearest services"
 
-#: apps/analysis/modules/access.py:315
+#: apps/analysis/modules/access.py:392
 msgid "Destination"
 msgstr "Destination"
 
-#: apps/analysis/modules/access.py:315 templates/emails/new_lead.txt:1
-msgid "Name"
-msgstr "Name"
-
-#: apps/analysis/modules/access.py:315 apps/analysis/modules/red_flags.py:316
+#: apps/analysis/modules/access.py:392 apps/analysis/modules/red_flags.py:366
 msgid "Distance"
 msgstr "Distance"
 
-#: apps/analysis/modules/access.py:324
+#: apps/analysis/modules/access.py:401
 #, python-format
 msgid "no road is mapped within %(d)s m"
 msgstr "no road is mapped within %(d)s m"
 
-#: apps/analysis/modules/access.py:326
+#: apps/analysis/modules/access.py:403
 msgid "it touches a road"
 msgstr "it touches a road"
 
-#: apps/analysis/modules/access.py:328
+#: apps/analysis/modules/access.py:405
 #, python-format
 msgid "the nearest road is %(d)s m from the boundary"
 msgstr "the nearest road is %(d)s m from the boundary"
 
-#: apps/analysis/modules/access.py:338
+#: apps/analysis/modules/access.py:415
 #, python-format
 msgid "no paved road within %(km)s km"
 msgstr "no paved road within %(km)s km"
 
-#: apps/analysis/modules/access.py:342
+#: apps/analysis/modules/access.py:419
 #, python-format
 msgid "the nearest paved road is %(d)s m away"
 msgstr "the nearest paved road is %(d)s m away"
 
-#: apps/analysis/modules/access.py:346
+#: apps/analysis/modules/access.py:423
 msgid "no health facility could be reached"
 msgstr "no health facility could be reached"
 
-#: apps/analysis/modules/access.py:349
+#: apps/analysis/modules/access.py:426
 #, python-format
 msgid "the nearest health facility is %(m)s min away by car"
 msgstr "the nearest health facility is %(m)s min away by car"
 
-#: apps/analysis/modules/access.py:354
+#: apps/analysis/modules/access.py:431
 msgid "no school could be reached on foot"
 msgstr "no school could be reached on foot"
 
-#: apps/analysis/modules/access.py:357
+#: apps/analysis/modules/access.py:434
 #, python-format
 msgid "the nearest school is %(m)s min away on foot"
 msgstr "the nearest school is %(m)s min away on foot"
 
-#: apps/analysis/modules/access.py:366
+#: apps/analysis/modules/access.py:443
 #, python-format
 msgid "%(what)s %(walk)s min on foot or %(drive)s min by car"
 msgstr "%(what)s %(walk)s min on foot or %(drive)s min by car"
 
-#: apps/analysis/modules/access.py:374
+#: apps/analysis/modules/access.py:451
 #, python-format
 msgid "Nearest services: %(list)s."
 msgstr "Nearest services: %(list)s."
 
-#: apps/analysis/modules/access.py:374 apps/analysis/modules/access.py:378
-#: apps/analysis/modules/flood.py:280 apps/analysis/modules/red_flags.py:331
+#: apps/analysis/modules/access.py:451 apps/analysis/modules/access.py:455
+#: apps/analysis/modules/flood.py:368 apps/analysis/modules/red_flags.py:381
 msgid "; "
 msgstr "; "
 
-#: apps/analysis/modules/access.py:376
+#: apps/analysis/modules/access.py:453
 msgid "No services were found within reach."
 msgstr "No services were found within reach."
 
-#: apps/analysis/modules/access.py:382
+#: apps/analysis/modules/access.py:459
 msgid "No road nearby"
 msgstr "No road nearby"
 
-#: apps/analysis/modules/access.py:384
+#: apps/analysis/modules/access.py:461
 msgid "On a road"
 msgstr "On a road"
 
-#: apps/analysis/modules/access.py:386
+#: apps/analysis/modules/access.py:463
 #, python-format
 msgid "Road %(d)s m away"
 msgstr "Road %(d)s m away"
 
-#: apps/analysis/modules/access.py:390
+#: apps/analysis/modules/access.py:467
 #, python-format
 msgid "%(road)s · clinic %(m)s min by car"
 msgstr "%(road)s · clinic %(m)s min by car"
 
-#: apps/analysis/modules/buildings.py:21
+#: apps/analysis/modules/buildings.py:23
 msgid "Buildings on the parcel"
 msgstr "Buildings on the parcel"
 
-#: apps/analysis/modules/buildings.py:66
+#: apps/analysis/modules/buildings.py:68
+#: apps/analysis/modules/buildings.py:108
 msgid "Other buildings"
 msgstr "Other buildings"
 
-#: apps/analysis/modules/buildings.py:70
+#: apps/analysis/modules/buildings.py:72
+#: apps/analysis/modules/buildings.py:112
 #, python-format
 msgid "Within %(m)s m of the boundary"
 msgstr "Within %(m)s m of the boundary"
 
-#: apps/analysis/modules/buildings.py:72
-#: apps/analysis/modules/red_flags.py:316
+#: apps/analysis/modules/buildings.py:74
+#: apps/analysis/modules/buildings.py:114
+#: apps/analysis/modules/red_flags.py:366
 msgid "On the parcel"
 msgstr "On the parcel"
 
-#: apps/analysis/modules/buildings.py:85
+#: apps/analysis/modules/buildings.py:87
+#: apps/analysis/modules/buildings.py:135
 #, python-format
 msgid "%(m)s m around the boundary"
 msgstr "%(m)s m around the boundary"
 
-#: apps/analysis/modules/buildings.py:90
+#: apps/analysis/modules/buildings.py:92
 #, python-format
 msgid "Buildings © OpenStreetMap contributors (ODbL), data of %(date)s."
 msgstr "Buildings © OpenStreetMap contributors (ODbL), data of %(date)s."
 
-#: apps/analysis/modules/buildings.py:103
+#: apps/analysis/modules/buildings.py:124
+msgid "Buildings"
+msgstr "Buildings"
+
+#: apps/analysis/modules/buildings.py:130 apps/osm/models.py:44
+msgid "Building"
+msgstr "Building"
+
+#: apps/analysis/modules/buildings.py:145
 #, python-format
 msgid "%(inside)s on the parcel · %(near)s nearby"
 msgstr "%(inside)s on the parcel · %(near)s nearby"
 
-#: apps/analysis/modules/change.py:56 apps/reports/structure.py:8
+#: apps/analysis/modules/change.py:57 apps/reports/structure.py:8
 msgid "Change over time"
 msgstr "Change over time"
 
-#: apps/analysis/modules/change.py:124
+#: apps/analysis/modules/change.py:125
 #, python-format
 msgid ""
 "Contains modified Copernicus Sentinel data %(first)s–%(last)s, dry-season "
@@ -514,56 +547,68 @@ msgstr ""
 "Contains modified Copernicus Sentinel data %(first)s–%(last)s, dry-season "
 "composites."
 
-#: apps/analysis/modules/change.py:140
+#: apps/analysis/modules/change.py:141 apps/analysis/modules/change.py:216
+#: apps/analysis/modules/change.py:219
 #, python-format
 msgid "Cleared from %(y)s"
 msgstr "Cleared from %(y)s"
 
-#: apps/analysis/modules/change.py:153
+#: apps/analysis/modules/change.py:154
 #, python-format
 msgid "Vegetation went from %(a)s %% in %(y1)s to %(b)s %% in %(y2)s"
 msgstr "Vegetation went from %(a)s %% in %(y1)s to %(b)s %% in %(y2)s"
 
-#: apps/analysis/modules/change.py:169 apps/analysis/modules/imagery.py:125
+#: apps/analysis/modules/change.py:170 apps/analysis/modules/imagery.py:126
 msgid "Share of the parcel (%)"
 msgstr "Share of the parcel (%)"
 
-#: apps/analysis/modules/change.py:185
+#: apps/analysis/modules/change.py:186
 #, python-format
 msgid "No part of the parcel was cleared between %(a)s and %(b)s."
 msgstr "No part of the parcel was cleared between %(a)s and %(b)s."
 
-#: apps/analysis/modules/change.py:222
+#: apps/analysis/modules/change.py:196
+#, python-format
+msgid "Imagery, dry season %(y)s"
+msgstr "Imagery, dry season %(y)s"
+
+#: apps/analysis/modules/change.py:211
+msgid "Year of clearing"
+msgstr "Year of clearing"
+
+#: apps/analysis/modules/change.py:256
 #, python-format
 msgid "%(delta)s pts vegetation since %(year)s"
 msgstr "%(delta)s pts vegetation since %(year)s"
 
-#: apps/analysis/modules/demographics.py:48
+#: apps/analysis/modules/demographics.py:68
 msgid "Within 1 km"
 msgstr "Within 1 km"
 
-#: apps/analysis/modules/demographics.py:49
+#: apps/analysis/modules/demographics.py:69
 msgid "Within 5 km"
 msgstr "Within 5 km"
 
-#: apps/analysis/modules/demographics.py:50
+#: apps/analysis/modules/demographics.py:70
 #, python-format
 msgid "Commune of %(name)s"
 msgstr "Commune of %(name)s"
 
-#: apps/analysis/modules/demographics.py:56 apps/reports/structure.py:11
+#: apps/analysis/modules/demographics.py:76 apps/reports/structure.py:11
 msgid "Demographics and area growth"
 msgstr "Demographics and area growth"
 
-#: apps/analysis/modules/demographics.py:119
+#: apps/analysis/modules/demographics.py:192
+#: apps/analysis/modules/demographics.py:295
 msgid "Under 500 people/km²"
 msgstr "Under 500 people/km²"
 
-#: apps/analysis/modules/demographics.py:123
+#: apps/analysis/modules/demographics.py:196
+#: apps/analysis/modules/demographics.py:299
 msgid "Over 10,000"
 msgstr "Over 10,000"
 
-#: apps/analysis/modules/demographics.py:139
+#: apps/analysis/modules/demographics.py:212
 #, python-format
 msgid ""
 "Population density in %(year)s from WorldPop %(release)s (100 m grid, CC BY "
@@ -572,12 +617,13 @@ msgstr ""
 "Population density in %(year)s from WorldPop %(release)s (100 m grid, CC BY "
 "4.0): modelled estimates, not census counts."
 
-#: apps/analysis/modules/demographics.py:147
+#: apps/analysis/modules/demographics.py:221
+#: apps/analysis/modules/demographics.py:283
 #, python-format
 msgid "Built by %(y)s"
 msgstr "Built by %(y)s"
 
-#: apps/analysis/modules/demographics.py:169
+#: apps/analysis/modules/demographics.py:243
 #, python-format
 msgid ""
 "Built-up areas by period from GHSL GHS-BUILT-S %(v)s (EC JRC, CC BY 4.0), "
@@ -586,42 +632,59 @@ msgstr ""
 "Built-up areas by period from GHSL GHS-BUILT-S %(v)s (EC JRC, CC BY 4.0), "
 "cells at least %(pct)s %% built."
 
-#: apps/analysis/modules/demographics.py:239
+#: apps/analysis/modules/demographics.py:289
+#, python-format
+msgid "People per km² (%(y)s)"
+msgstr "People per km² (%(y)s)"
+
+#: apps/analysis/modules/demographics.py:301
+msgid "people/km²"
+msgstr "people/km²"
+
+#: apps/analysis/modules/demographics.py:307
+msgid "Built-up land by period"
+msgstr "Built-up land by period"
+
+#: apps/analysis/modules/demographics.py:319
+msgid "1 km and 5 km around the parcel"
+msgstr "1 km and 5 km around the parcel"
+
+#: apps/analysis/modules/demographics.py:369
 #, python-format
 msgid "WorldPop %(release)s: modelled estimates, not census counts."
 msgstr "WorldPop %(release)s: modelled estimates, not census counts."
 
-#: apps/analysis/modules/demographics.py:255
-#: apps/analysis/modules/demographics.py:288
+#: apps/analysis/modules/demographics.py:385
+#: apps/analysis/modules/demographics.py:418
 msgid "Male"
 msgstr "Male"
 
-#: apps/analysis/modules/demographics.py:263
-#: apps/analysis/modules/demographics.py:288
+#: apps/analysis/modules/demographics.py:393
+#: apps/analysis/modules/demographics.py:418
 msgid "Female"
 msgstr "Female"
 
-#: apps/analysis/modules/demographics.py:273
-#: apps/analysis/modules/demographics.py:406
+#: apps/analysis/modules/demographics.py:403
+#: apps/analysis/modules/demographics.py:607
 msgid "Share of the population (%)"
 msgstr "Share of the population (%)"
 
-#: apps/analysis/modules/demographics.py:309
+#: apps/analysis/modules/demographics.py:439
 #, python-format
 msgid "Bars: within 5 km in %(year)s. Outline: commune of %(name)s."
 msgstr "Bars: within 5 km in %(year)s. Outline: commune of %(name)s."
 
-#: apps/analysis/modules/demographics.py:312
+#: apps/analysis/modules/demographics.py:442
 #, python-format
 msgid "Within 5 km in %(year)s."
 msgstr "Within 5 km in %(year)s."
 
-#: apps/analysis/modules/demographics.py:315
+#: apps/analysis/modules/demographics.py:445
 #, python-format
 msgid "%(pct)s %% of people within 5 km are under 15"
 msgstr "%(pct)s %% of people within 5 km are under 15"
 
-#: apps/analysis/modules/demographics.py:321
+#: apps/analysis/modules/demographics.py:450
 msgid ""
 "WorldPop models age structure per administrative unit, so it varies little "
 "between nearby areas."
@@ -629,73 +692,115 @@ msgstr ""
 "WorldPop models age structure per administrative unit, so it varies little "
 "between nearby areas."
 
-#: apps/analysis/modules/demographics.py:332
+#: apps/analysis/modules/demographics.py:461
+#: apps/analysis/modules/demographics.py:500
 msgid "Estimate"
 msgstr "Estimate"
 
-#: apps/analysis/modules/demographics.py:332
+#: apps/analysis/modules/demographics.py:461
+#: apps/analysis/modules/demographics.py:500
 msgid "Projection"
 msgstr "Projection"
 
-#: apps/analysis/modules/demographics.py:342
+#: apps/analysis/modules/demographics.py:471
 #, python-format
 msgid "Population within 5 km: %(rate)s %% a year from %(a)s to %(b)s"
 msgstr "Population within 5 km: %(rate)s %% a year from %(a)s to %(b)s"
 
-#: apps/analysis/modules/demographics.py:344
+#: apps/analysis/modules/demographics.py:473
 msgid "Dashed: projection."
 msgstr "Dashed: projection."
 
-#: apps/analysis/modules/demographics.py:353
-#: apps/analysis/modules/demographics.py:439
+#: apps/analysis/modules/demographics.py:482
+#: apps/analysis/modules/demographics.py:645
 msgid "People"
 msgstr "People"
 
-#: apps/analysis/modules/demographics.py:370
+#: apps/analysis/modules/demographics.py:510
+#, python-format
+msgid ""
+"Within 5 km, %(wp)s %% a year (WorldPop) and %(gh)s %% a year (GHSL) from "
+"2020 to 2025"
+msgstr ""
+"Within 5 km, %(wp)s %% a year (WorldPop) and %(gh)s %% a year (GHSL) from "
+"2020 to 2025"
+
+#: apps/analysis/modules/demographics.py:514
+msgid "Population growth a year within 5 km, by period"
+msgstr "Population growth a year within 5 km, by period"
+
+#: apps/analysis/modules/demographics.py:519
+#, python-format
+msgid ""
+"WorldPop: %(old)s for %(a)s–%(b)s, %(new)s from 2015. No rate is given "
+"across the two releases: they use different methods."
+msgstr ""
+"WorldPop: %(old)s for %(a)s–%(b)s, %(new)s from 2015. No rate is given "
+"across the two releases: they use different methods."
+
+#: apps/analysis/modules/demographics.py:531
+#, python-format
+msgid "GHSL: GHS-POP %(v)s (EC JRC, CC BY 4.0)."
+msgstr "GHSL: GHS-POP %(v)s (EC JRC, CC BY 4.0)."
+
+#: apps/analysis/modules/demographics.py:533
+msgid "Lighter bars: projection. Modelled estimates, not census counts."
+msgstr "Lighter bars: projection. Modelled estimates, not census counts."
+
+#: apps/analysis/modules/demographics.py:549
+msgid "Growth a year (%)"
+msgstr "Growth a year (%)"
+
+#: apps/analysis/modules/demographics.py:571
 msgid "Under 5"
 msgstr "Under 5"
 
-#: apps/analysis/modules/demographics.py:371
+#: apps/analysis/modules/demographics.py:572
 msgid "5–14 (school age)"
 msgstr "5–14 (school age)"
 
-#: apps/analysis/modules/demographics.py:372
+#: apps/analysis/modules/demographics.py:573
 msgid "15–64"
 msgstr "15–64"
 
-#: apps/analysis/modules/demographics.py:373
+#: apps/analysis/modules/demographics.py:574
 msgid "65 and over"
 msgstr "65 and over"
 
-#: apps/analysis/modules/demographics.py:388
+#: apps/analysis/modules/demographics.py:589
 #, python-format
 msgid "%(ratio)s dependants for every 100 people aged 15–64 within 5 km"
 msgstr "%(ratio)s dependants for every 100 people aged 15–64 within 5 km"
 
-#: apps/analysis/modules/demographics.py:435
+#: apps/analysis/modules/demographics.py:641
 #, python-format
 msgid "Population in %(year)s (WorldPop %(release)s)"
 msgstr "Population in %(year)s (WorldPop %(release)s)"
 
-#: apps/analysis/modules/demographics.py:438
+#: apps/analysis/modules/demographics.py:644
 msgid "Area"
 msgstr "Area"
 
-#: apps/analysis/modules/demographics.py:440
+#: apps/analysis/modules/demographics.py:646
 msgid "Per km²"
 msgstr "Per km²"
 
-#: apps/analysis/modules/demographics.py:441
+#: apps/analysis/modules/demographics.py:647
 #, python-format
 msgid "Growth a year, %(a)s–%(b)s"
 msgstr "Growth a year, %(a)s–%(b)s"
 
-#: apps/analysis/modules/demographics.py:442
+#: apps/analysis/modules/demographics.py:648
 #, python-format
 msgid "Projected, %(a)s–%(b)s"
 msgstr "Projected, %(a)s–%(b)s"
 
-#: apps/analysis/modules/demographics.py:453
+#: apps/analysis/modules/demographics.py:651
+#, python-format
+msgid "Growth a year, %(a)s–%(b)s (%(release)s)"
+msgstr "Growth a year, %(a)s–%(b)s (%(release)s)"
+
+#: apps/analysis/modules/demographics.py:667
 #, python-format
 msgid ""
 "Built-up land within 5 km grew from %(a)s km² in %(y1)s to %(b)s km² in "
@@ -704,29 +809,30 @@ msgstr ""
 "Built-up land within 5 km grew from %(a)s km² in %(y1)s to %(b)s km² in "
 "%(y2)s."
 
-#: apps/analysis/modules/demographics.py:477
+#: apps/analysis/modules/demographics.py:691
 #, python-format
 msgid "%(n)s people within 5 km · %(g)s %%/yr"
 msgstr "%(n)s people within 5 km · %(g)s %%/yr"
 
-#: apps/analysis/modules/flood.py:64
+#: apps/analysis/modules/flood.py:67
 msgid "Flood and water"
 msgstr "Flood and water"
 
-#: apps/analysis/modules/flood.py:144
+#: apps/analysis/modules/flood.py:147 apps/analysis/modules/flood.py:232
 #, python-format
 msgid "Water %(range)s of the time"
 msgstr "Water %(range)s of the time"
 
-#: apps/analysis/modules/flood.py:148
+#: apps/analysis/modules/flood.py:151 apps/analysis/modules/flood.py:278
 msgid "Rivers and streams"
 msgstr "Rivers and streams"
 
-#: apps/analysis/modules/flood.py:153 apps/osm/models.py:47
+#: apps/analysis/modules/flood.py:156 apps/analysis/modules/flood.py:295
+#: apps/osm/models.py:47
 msgid "Wetland"
 msgstr "Wetland"
 
-#: apps/analysis/modules/flood.py:163
+#: apps/analysis/modules/flood.py:166
 msgid ""
 "Surface water 1984–2021: EC JRC/Google (Pekel et al. 2016). Waterways © "
 "OpenStreetMap contributors."
@@ -734,28 +840,28 @@ msgstr ""
 "Surface water 1984–2021: EC JRC/Google (Pekel et al. 2016). Waterways © "
 "OpenStreetMap contributors."
 
-#: apps/analysis/modules/flood.py:176
+#: apps/analysis/modules/flood.py:179 apps/analysis/modules/flood.py:247
 msgid "Under 1 m above water"
 msgstr "Under 1 m above water"
 
-#: apps/analysis/modules/flood.py:176
+#: apps/analysis/modules/flood.py:179 apps/analysis/modules/flood.py:248
 msgid "1–3 m"
 msgstr "1–3 m"
 
-#: apps/analysis/modules/flood.py:176
+#: apps/analysis/modules/flood.py:179 apps/analysis/modules/flood.py:249
 msgid "3–10 m"
 msgstr "3–10 m"
 
-#: apps/analysis/modules/flood.py:176
+#: apps/analysis/modules/flood.py:179 apps/analysis/modules/flood.py:250
 msgid "Over 10 m"
 msgstr "Over 10 m"
 
-#: apps/analysis/modules/flood.py:183
+#: apps/analysis/modules/flood.py:186 apps/analysis/modules/flood.py:261
 #, python-format
 msgid "1-in-%(rp)s-year river flood"
 msgstr "1-in-%(rp)s-year river flood"
 
-#: apps/analysis/modules/flood.py:188
+#: apps/analysis/modules/flood.py:191
 msgid ""
 "Height above nearest mapped water from Copernicus DEM GLO-30. River flood "
 "hazard: Copernicus EMS / JRC global flood maps, CC BY 4.0."
@@ -763,12 +869,49 @@ msgstr ""
 "Height above nearest mapped water from Copernicus DEM GLO-30. River flood "
 "hazard: Copernicus EMS / JRC global flood maps, CC BY 4.0."
 
-#: apps/analysis/modules/flood.py:244
+#: apps/analysis/modules/flood.py:227
+msgid "Water seen 1984–2021"
+msgstr "Water seen 1984–2021"
+
+#: apps/analysis/modules/flood.py:233
+#, python-format
+msgid "% of the time"
+msgstr "% of the time"
+
+#: apps/analysis/modules/flood.py:241
+msgid "Height above the nearest water"
+msgstr "Height above the nearest water"
+
+#: apps/analysis/modules/flood.py:267
+msgid "Under 0.5 m deep"
+msgstr "Under 0.5 m deep"
+
+#: apps/analysis/modules/flood.py:268
+msgid "0.5–1 m"
+msgstr "0.5–1 m"
+
+#: apps/analysis/modules/flood.py:269
+msgid "1–2 m"
+msgstr "1–2 m"
+
+#: apps/analysis/modules/flood.py:270
+msgid "Over 2 m"
+msgstr "Over 2 m"
+
+#: apps/analysis/modules/flood.py:272
+msgid "m deep"
+msgstr "m deep"
+
+#: apps/analysis/modules/flood.py:286
+msgid "Water bodies"
+msgstr "Water bodies"
+
+#: apps/analysis/modules/flood.py:332
 #, python-format
 msgid "water was seen on %(share)s %% of the parcel since 1984"
 msgstr "water was seen on %(share)s %% of the parcel since 1984"
 
-#: apps/analysis/modules/flood.py:250
+#: apps/analysis/modules/flood.py:338
 #, python-format
 msgid ""
 "the 1-in-%(rp)s-year river flood reaches %(share)s %% of the parcel, up to "
@@ -777,76 +920,76 @@ msgstr ""
 "the 1-in-%(rp)s-year river flood reaches %(share)s %% of the parcel, up to "
 "%(depth)s m deep"
 
-#: apps/analysis/modules/flood.py:260
+#: apps/analysis/modules/flood.py:348
 msgid "a wetland is mapped on the parcel"
 msgstr "a wetland is mapped on the parcel"
 
-#: apps/analysis/modules/flood.py:265
+#: apps/analysis/modules/flood.py:353
 #, python-format
 msgid "the 1-in-%(rp)s-year flood zone is %(d)s m away"
 msgstr "the 1-in-%(rp)s-year flood zone is %(d)s m away"
 
-#: apps/analysis/modules/flood.py:270
+#: apps/analysis/modules/flood.py:358
 #, python-format
 msgid "the parcel lies %(level)s"
 msgstr "the parcel lies %(level)s"
 
-#: apps/analysis/modules/flood.py:273
+#: apps/analysis/modules/flood.py:361
 #, python-format
 msgid "a river or water body is %(d)s m away"
 msgstr "a river or water body is %(d)s m away"
 
-#: apps/analysis/modules/flood.py:275
+#: apps/analysis/modules/flood.py:363
 msgid "No river or water body is mapped within 1 km."
 msgstr "No river or water body is mapped within 1 km."
 
-#: apps/analysis/modules/flood.py:278
+#: apps/analysis/modules/flood.py:366
 #, python-format
 msgid ""
 "The nearest river or water body is %(d)s m away; the parcel lies %(level)s."
 msgstr ""
 "The nearest river or water body is %(d)s m away; the parcel lies %(level)s."
 
-#: apps/analysis/modules/flood.py:284
+#: apps/analysis/modules/flood.py:372
 msgid "No river or water body within 1 km"
 msgstr "No river or water body within 1 km"
 
-#: apps/analysis/modules/flood.py:287
+#: apps/analysis/modules/flood.py:375
 #, python-format
 msgid "%(d)s m to water · same level"
 msgstr "%(d)s m to water · same level"
 
-#: apps/analysis/modules/flood.py:288
+#: apps/analysis/modules/flood.py:376
 #, python-format
 msgid "%(d)s m to water · %(h)s m above it"
 msgstr "%(d)s m to water · %(h)s m above it"
 
-#: apps/analysis/modules/flood.py:297
+#: apps/analysis/modules/flood.py:385
 msgid "at about the same level as the nearest water"
 msgstr "at about the same level as the nearest water"
 
-#: apps/analysis/modules/flood.py:298
+#: apps/analysis/modules/flood.py:386
 #, python-format
 msgid "about %(h)s m above the nearest water"
 msgstr "about %(h)s m above the nearest water"
 
-#: apps/analysis/modules/imagery.py:46
+#: apps/analysis/modules/imagery.py:47
 msgid "Vegetation"
 msgstr "Vegetation"
 
-#: apps/analysis/modules/imagery.py:47
+#: apps/analysis/modules/imagery.py:48
 msgid "Built-up or bare ground"
 msgstr "Built-up or bare ground"
 
-#: apps/analysis/modules/imagery.py:48
+#: apps/analysis/modules/imagery.py:49
 msgid "Water"
 msgstr "Water"
 
-#: apps/analysis/modules/imagery.py:67
+#: apps/analysis/modules/imagery.py:68
 msgid "Recent imagery and land cover"
 msgstr "Recent imagery and land cover"
 
-#: apps/analysis/modules/imagery.py:98
+#: apps/analysis/modules/imagery.py:99
 #, python-format
 msgid ""
 "Contains modified Copernicus Sentinel data %(year)s: median of %(n)s scenes,"
@@ -855,12 +998,21 @@ msgstr ""
 "Contains modified Copernicus Sentinel data %(year)s: median of %(n)s scenes,"
 " %(period)s."
 
-#: apps/analysis/modules/imagery.py:114
+#: apps/analysis/modules/imagery.py:115
 #, python-format
 msgid "About %(pct)s %% of the parcel is vegetated"
 msgstr "About %(pct)s %% of the parcel is vegetated"
 
-#: apps/analysis/modules/imagery.py:153
+#: apps/analysis/modules/imagery.py:147
+#, python-format
+msgid "Sentinel-2 imagery, %(period)s"
+msgstr "Sentinel-2 imagery, %(period)s"
+
+#: apps/analysis/modules/imagery.py:156
+msgid "Land cover"
+msgstr "Land cover"
+
+#: apps/analysis/modules/imagery.py:186
 #, python-format
 msgid "%(pct)s %% vegetated"
 msgstr "%(pct)s %% vegetated"
@@ -915,37 +1067,38 @@ msgstr ""
 msgid "an unknown commune"
 msgstr "an unknown commune"
 
-#: apps/analysis/modules/red_flags.py:70 apps/reports/structure.py:12
+#: apps/analysis/modules/red_flags.py:71 apps/reports/structure.py:12
 #: templates/pages/samples.html:34
 msgid "Regulatory red flags"
 msgstr "Regulatory red flags"
 
-#: apps/analysis/modules/red_flags.py:161
-#: apps/analysis/modules/red_flags.py:350 apps/gazetteer/models.py:46
+#: apps/analysis/modules/red_flags.py:162
+#: apps/analysis/modules/red_flags.py:400 apps/gazetteer/models.py:46
 #: apps/osm/models.py:53
 msgid "Protected area"
 msgstr "Protected area"
 
-#: apps/analysis/modules/red_flags.py:162
-#: apps/analysis/modules/red_flags.py:351 apps/gazetteer/models.py:44
+#: apps/analysis/modules/red_flags.py:163
+#: apps/analysis/modules/red_flags.py:401 apps/gazetteer/models.py:44
 msgid "Public-utility (DUP) zone"
 msgstr "Public-utility (DUP) zone"
 
-#: apps/analysis/modules/red_flags.py:163
-#: apps/analysis/modules/red_flags.py:352 apps/gazetteer/models.py:45
+#: apps/analysis/modules/red_flags.py:164
+#: apps/analysis/modules/red_flags.py:402 apps/gazetteer/models.py:45
 msgid "Infrastructure corridor"
 msgstr "Infrastructure corridor"
 
-#: apps/analysis/modules/red_flags.py:164
-#: apps/analysis/modules/red_flags.py:353
+#: apps/analysis/modules/red_flags.py:165
+#: apps/analysis/modules/red_flags.py:403
 msgid "Risk zone"
 msgstr "Risk zone"
 
-#: apps/analysis/modules/red_flags.py:188
+#: apps/analysis/modules/red_flags.py:189
+#: apps/analysis/modules/red_flags.py:240
 msgid "Setback strips"
 msgstr "Setback strips"
 
-#: apps/analysis/modules/red_flags.py:201
+#: apps/analysis/modules/red_flags.py:202
 #, python-format
 msgid ""
 "Setback rules as set in the admin; features © OpenStreetMap contributors "
@@ -954,89 +1107,98 @@ msgstr ""
 "Setback rules as set in the admin; features © OpenStreetMap contributors "
 "(ODbL), data of %(date)s, and official layers where uploaded."
 
-#: apps/analysis/modules/red_flags.py:214
+#: apps/analysis/modules/red_flags.py:215
 #, python-format
 msgid "No regulatory constraint was found within %(d)s m of the parcel."
 msgstr "No regulatory constraint was found within %(d)s m of the parcel."
 
-#: apps/analysis/modules/red_flags.py:269
+#: apps/analysis/modules/red_flags.py:246
+#: apps/analysis/modules/red_flags.py:366
+msgid "Constraint"
+msgstr "Constraint"
+
+#: apps/analysis/modules/red_flags.py:265 apps/gazetteer/admin.py:32
+msgid "Source"
+msgstr "Source"
+
+#: apps/analysis/modules/red_flags.py:273
+msgid "Rivers, roads and lines with setbacks"
+msgstr "Rivers, roads and lines with setbacks"
+
+#: apps/analysis/modules/red_flags.py:319
 #, python-format
 msgid "%(rule)s covers %(m2)s m² (%(pct)s %%) of the parcel"
 msgstr "%(rule)s covers %(m2)s m² (%(pct)s %%) of the parcel"
 
-#: apps/analysis/modules/red_flags.py:276
+#: apps/analysis/modules/red_flags.py:326
 msgid "the protected area"
 msgstr "the protected area"
 
-#: apps/analysis/modules/red_flags.py:277
+#: apps/analysis/modules/red_flags.py:327
 msgid "the public-utility (DUP) zone"
 msgstr "the public-utility (DUP) zone"
 
-#: apps/analysis/modules/red_flags.py:278
+#: apps/analysis/modules/red_flags.py:328
 msgid "the infrastructure corridor"
 msgstr "the infrastructure corridor"
 
-#: apps/analysis/modules/red_flags.py:279
+#: apps/analysis/modules/red_flags.py:329
 msgid "the risk zone"
 msgstr "the risk zone"
 
-#: apps/analysis/modules/red_flags.py:283
+#: apps/analysis/modules/red_flags.py:333
 #, python-format
 msgid "%(what)s%(name)s covers %(pct)s %% of the parcel"
 msgstr "%(what)s%(name)s covers %(pct)s %% of the parcel"
 
-#: apps/analysis/modules/red_flags.py:288
+#: apps/analysis/modules/red_flags.py:338
 #, python-format
 msgid "%(what)s%(name)s is %(d)s m away"
 msgstr "%(what)s%(name)s is %(d)s m away"
 
-#: apps/analysis/modules/red_flags.py:315
+#: apps/analysis/modules/red_flags.py:365
 msgid "Constraints on or near the parcel"
 msgstr "Constraints on or near the parcel"
 
-#: apps/analysis/modules/red_flags.py:316
-msgid "Constraint"
-msgstr "Constraint"
-
-#: apps/analysis/modules/red_flags.py:316
+#: apps/analysis/modules/red_flags.py:366
 msgid "Basis or source"
 msgstr "Basis or source"
 
-#: apps/analysis/modules/red_flags.py:326
+#: apps/analysis/modules/red_flags.py:376
 msgid ""
 "* Indicative width, to be confirmed by a lawyer or the planning office."
 msgstr ""
 "* Indicative width, to be confirmed by a lawyer or the planning office."
 
-#: apps/analysis/modules/red_flags.py:339
+#: apps/analysis/modules/red_flags.py:389
 msgid "No constraint found"
 msgstr "No constraint found"
 
-#: apps/analysis/modules/red_flags.py:341
+#: apps/analysis/modules/red_flags.py:391
 #, python-format
 msgid "%(n)s constraint(s) · %(pct)s %% in setbacks"
 msgstr "%(n)s constraint(s) · %(pct)s %% in setbacks"
 
-#: apps/analysis/modules/red_flags.py:345
+#: apps/analysis/modules/red_flags.py:395
 #, python-format
 msgid "%(n)s constraint(s) nearby"
 msgstr "%(n)s constraint(s) nearby"
 
-#: apps/analysis/modules/terrain.py:73
+#: apps/analysis/modules/terrain.py:74
 msgid "Terrain and slope"
 msgstr "Terrain and slope"
 
-#: apps/analysis/modules/terrain.py:122
+#: apps/analysis/modules/terrain.py:123 apps/analysis/modules/terrain.py:157
 #, python-format
 msgid "Under %(n)s°"
 msgstr "Under %(n)s°"
 
-#: apps/analysis/modules/terrain.py:125
+#: apps/analysis/modules/terrain.py:126 apps/analysis/modules/terrain.py:160
 #, python-format
 msgid "Over %(n)s° (erosion risk)"
 msgstr "Over %(n)s° (erosion risk)"
 
-#: apps/analysis/modules/terrain.py:131
+#: apps/analysis/modules/terrain.py:132
 msgid ""
 "Slope from Copernicus DEM GLO-30 (30 m). © DLR e.V., © Airbus DS, provided "
 "under COPERNICUS by the EU and ESA."
@@ -1044,35 +1206,39 @@ msgstr ""
 "Slope from Copernicus DEM GLO-30 (30 m). © DLR e.V., © Airbus DS, provided "
 "under COPERNICUS by the EU and ESA."
 
-#: apps/analysis/modules/terrain.py:157
+#: apps/analysis/modules/terrain.py:151
+msgid "Slope"
+msgstr "Slope"
+
+#: apps/analysis/modules/terrain.py:175
 msgid ""
 "No elevation profile: the parcel is too small for the 30 m elevation data."
 msgstr ""
 "No elevation profile: the parcel is too small for the 30 m elevation data."
 
-#: apps/analysis/modules/terrain.py:166
+#: apps/analysis/modules/terrain.py:184
 #, python-format
 msgid "Elevation varies by %(m)s m across the parcel"
 msgstr "Elevation varies by %(m)s m across the parcel"
 
-#: apps/analysis/modules/terrain.py:167
+#: apps/analysis/modules/terrain.py:185
 msgid "Copernicus DEM GLO-30 (30 m), along the parcel's longest axis."
 msgstr "Copernicus DEM GLO-30 (30 m), along the parcel's longest axis."
 
-#: apps/analysis/modules/terrain.py:173 apps/analysis/modules/terrain.py:185
-#: templates/portal/order_detail.html:59
+#: apps/analysis/modules/terrain.py:191 apps/analysis/modules/terrain.py:203
+#: templates/portal/order_detail.html:60
 msgid "Parcel"
 msgstr "Parcel"
 
-#: apps/analysis/modules/terrain.py:205
+#: apps/analysis/modules/terrain.py:223
 msgid "Distance along the parcel (m)"
 msgstr "Distance along the parcel (m)"
 
-#: apps/analysis/modules/terrain.py:210
+#: apps/analysis/modules/terrain.py:228
 msgid "Elevation (m)"
 msgstr "Elevation (m)"
 
-#: apps/analysis/modules/terrain.py:221
+#: apps/analysis/modules/terrain.py:239
 #, python-format
 msgid "%(s)s° average slope"
 msgstr "%(s)s° average slope"
@@ -1224,10 +1390,6 @@ msgstr "Name attribute"
 msgid "The attribute that holds each feature's name (optional)."
 msgstr "The attribute that holds each feature's name (optional)."
 
-#: apps/gazetteer/admin.py:32
-msgid "Source"
-msgstr "Source"
-
 #: apps/gazetteer/admin.py:34
 msgid "For example the decree or ministry the layer comes from."
 msgstr "For example the decree or ministry the layer comes from."
@@ -1275,7 +1437,7 @@ msgid "Country"
 msgstr "Country"
 
 #: apps/gazetteer/models.py:11 templates/orders/intake/step_review.html:33
-#: templates/portal/order_detail.html:73
+#: templates/portal/order_detail.html:74
 msgid "Region"
 msgstr "Region"
 
@@ -1289,13 +1451,13 @@ msgstr "Arrondissement"
 
 #: apps/gazetteer/models.py:14 apps/incidents/models.py:81
 #: templates/orders/intake/step_review.html:32
-#: templates/portal/order_detail.html:72
+#: templates/portal/order_detail.html:73
 msgid "Commune"
 msgstr "Commune"
 
 #: apps/gazetteer/models.py:15 apps/incidents/models.py:80
 #: templates/orders/intake/step_review.html:31
-#: templates/portal/order_detail.html:71
+#: templates/portal/order_detail.html:72
 msgid "Quartier"
 msgstr "Quartier"
 
@@ -1656,7 +1818,7 @@ msgid "Upload a photo or PDF of the site plan."
 msgstr "Upload a photo or PDF of the site plan."
 
 #: apps/orders/intake_forms.py:131 templates/orders/intake/_area_check.html:10
-#: templates/portal/order_detail.html:70
+#: templates/portal/order_detail.html:71
 msgid "Area stated by the seller"
 msgstr "Area stated by the seller"
 
@@ -1986,7 +2148,7 @@ msgstr "read at"
 msgid "messages"
 msgstr "messages"
 
-#: apps/orders/models.py:179
+#: apps/orders/models.py:179 apps/reports/models.py:91
 msgid "token"
 msgstr "token"
 
@@ -2019,7 +2181,7 @@ msgstr "computed area (m²)"
 #: apps/orders/models.py:198 apps/parcels/models.py:21
 #: templates/admin/reports/review.html:18
 #: templates/orders/intake/step_review.html:16
-#: templates/portal/order_detail.html:68
+#: templates/portal/order_detail.html:69
 msgid "approximate location"
 msgstr "approximate location"
 
@@ -2134,10 +2296,6 @@ msgstr "OSM import"
 #: apps/osm/models.py:32
 msgid "OSM imports"
 msgstr "OSM imports"
-
-#: apps/osm/models.py:44
-msgid "Building"
-msgstr "Building"
 
 #: apps/osm/models.py:45
 msgid "River, stream or canal"
@@ -2652,7 +2810,7 @@ msgstr "Refund recorded."
 msgid "Refund payment"
 msgstr "Refund payment"
 
-#: apps/payments/apps.py:8 templates/portal/order_detail.html:130
+#: apps/payments/apps.py:8 templates/portal/order_detail.html:131
 msgid "Payments"
 msgstr "Payments"
 
@@ -2742,7 +2900,7 @@ msgstr "payments"
 msgid "reason"
 msgstr "reason"
 
-#: apps/payments/models.py:103
+#: apps/payments/models.py:103 apps/reports/models.py:94
 msgid "created by"
 msgstr "created by"
 
@@ -2802,7 +2960,7 @@ msgstr "code"
 msgid "Required for fixed-amount codes."
 msgstr "Required for fixed-amount codes."
 
-#: apps/payments/models.py:157
+#: apps/payments/models.py:157 apps/reports/models.py:99
 msgid "expires at"
 msgstr "expires at"
 
@@ -2988,6 +3146,7 @@ msgid "Findings as edited by the analyst, before approval."
 msgstr "Findings as edited by the analyst, before approval."
 
 #: apps/reports/models.py:32 apps/reports/models.py:47
+#: apps/reports/models.py:89
 msgid "report"
 msgstr "report"
 
@@ -3022,6 +3181,46 @@ msgstr "report version"
 #: apps/reports/models.py:66
 msgid "report versions"
 msgstr "report versions"
+
+#: apps/reports/models.py:100
+msgid "revoked at"
+msgstr "revoked at"
+
+#: apps/reports/models.py:101
+msgid "views"
+msgstr "views"
+
+#: apps/reports/models.py:102
+msgid "last viewed at"
+msgstr "last viewed at"
+
+#: apps/reports/models.py:105
+msgid "shared report link"
+msgstr "shared report link"
+
+#: apps/reports/models.py:106
+msgid "shared report links"
+msgstr "shared report links"
+
+#: apps/reports/page.py:141
+msgid "Compare two years"
+msgstr "Compare two years"
+
+#: apps/reports/page.py:142
+msgid "Left"
+msgstr "Left"
+
+#: apps/reports/page.py:143
+msgid "Right"
+msgstr "Right"
+
+#: apps/reports/page.py:144
+msgid "Divider position"
+msgstr "Divider position"
+
+#: apps/reports/page.py:145
+msgid ":"
+msgstr ":"
 
 #: apps/reports/services.py:37
 #, python-format
@@ -3066,6 +3265,34 @@ msgid ""
 "my-account/orders/<uuid:public_id>/report/v<int:number>-<str:language>.pdf"
 msgstr ""
 "my-account/orders/<uuid:public_id>/report/v<int:number>-<str:language>.pdf"
+
+#: apps/reports/urls.py:15
+msgid "my-account/orders/<uuid:public_id>/report/"
+msgstr "my-account/orders/<uuid:public_id>/report/"
+
+#: apps/reports/urls.py:17
+msgid "my-account/orders/<uuid:public_id>/report/share/"
+msgstr "my-account/orders/<uuid:public_id>/report/share/"
+
+#: apps/reports/urls.py:22
+msgid "my-account/orders/<uuid:public_id>/report/share/<int:pk>/revoke/"
+msgstr "my-account/orders/<uuid:public_id>/report/share/<int:pk>/revoke/"
+
+#: apps/reports/urls.py:26
+msgid "shared-report/<str:token>/"
+msgstr "shared-report/<str:token>/"
+
+#: apps/reports/urls.py:28
+msgid "shared-report/<str:token>/v<int:number>-<str:language>.pdf"
+msgstr "shared-report/<str:token>/v<int:number>-<str:language>.pdf"
+
+#: apps/reports/views.py:107
+msgid "Share link created. Anyone with the link can read the report."
+msgstr "Share link created. Anyone with the link can read the report."
+
+#: apps/reports/views.py:130
+msgid "The share link no longer works."
+msgstr "The share link no longer works."
 
 #: config/settings/base.py:141
 msgid "French"
@@ -3452,6 +3679,7 @@ msgstr ""
 " when your report is ready."
 
 #: templates/emails/receipt.txt:17 templates/reports/pdf.html:65
+#: templates/reports/report_page.html:29
 msgid ""
 "This report is physical and environmental due diligence from remote data. It"
 " is not a legal title search, a survey or a valuation."
@@ -3475,7 +3703,7 @@ msgstr ""
 "upload the surveyor's coordinates."
 
 #: templates/orders/intake/_area_check.html:9
-#: templates/portal/order_detail.html:69
+#: templates/portal/order_detail.html:70
 msgid "Area of the boundary"
 msgstr "Area of the boundary"
 
@@ -3672,7 +3900,7 @@ msgid "Map of the parcel boundary"
 msgstr "Map of the parcel boundary"
 
 #: templates/orders/intake/step_review.html:22
-#: templates/portal/order_detail.html:64
+#: templates/portal/order_detail.html:65
 msgid ""
 "Our analyst will place your site plan on the map before the analysis starts."
 msgstr ""
@@ -3861,7 +4089,7 @@ msgstr "Chat with us on WhatsApp"
 msgid "optional"
 msgstr "optional"
 
-#: templates/pages/contact.html:38 templates/portal/order_detail.html:105
+#: templates/pages/contact.html:38 templates/portal/order_detail.html:106
 msgid "Send"
 msgstr "Send"
 
@@ -3985,7 +4213,7 @@ msgstr ""
 "Upload a photo or PDF of the plan. Our analyst places it on the map and "
 "traces the boundary before the analysis starts."
 
-#: templates/pages/how_it_works.html:24 templates/portal/order_detail.html:113
+#: templates/pages/how_it_works.html:24 templates/portal/order_detail.html:114
 msgid "Want someone on the ground?"
 msgstr "Want someone on the ground?"
 
@@ -4300,7 +4528,7 @@ msgid "Order %(ref)s"
 msgstr "Order %(ref)s"
 
 #: templates/payments/upgrade.html:3 templates/payments/upgrade.html:7
-#: templates/portal/order_detail.html:115
+#: templates/portal/order_detail.html:116
 msgid "Add field verification"
 msgstr "Add field verification"
 
@@ -4376,30 +4604,35 @@ msgstr "Pay now"
 msgid "Version %(n)s, issued %(date)s"
 msgstr "Version %(n)s, issued %(date)s"
 
-#: templates/portal/order_detail.html:43
+#: templates/portal/order_detail.html:42
+msgid "Open the interactive report"
+msgstr "Open the interactive report"
+
+#: templates/portal/order_detail.html:44 templates/reports/report_page.html:25
 #, python-format
 msgid "Download PDF (%(lang)s)"
 msgstr "Download PDF (%(lang)s)"
 
-#: templates/portal/order_detail.html:46 templates/reports/pdf.html:48
-#: templates/reports/pdf.html:56 templates/reports/verify.html:8
+#: templates/portal/order_detail.html:47 templates/reports/pdf.html:48
+#: templates/reports/pdf.html:56 templates/reports/report_page.html:21
+#: templates/reports/verify.html:8
 msgid "Report ID"
 msgstr "Report ID"
 
-#: templates/portal/order_detail.html:46 templates/reports/verify.html:3
+#: templates/portal/order_detail.html:47 templates/reports/verify.html:3
 #: templates/reports/verify.html:7
 msgid "Verify a report"
 msgstr "Verify a report"
 
-#: templates/portal/order_detail.html:49
+#: templates/portal/order_detail.html:50
 msgid "This order was refunded, so no report will be produced."
 msgstr "This order was refunded, so no report will be produced."
 
-#: templates/portal/order_detail.html:51
+#: templates/portal/order_detail.html:52
 msgid "Your report will be prepared once the payment is received."
 msgstr "Your report will be prepared once the payment is received."
 
-#: templates/portal/order_detail.html:53
+#: templates/portal/order_detail.html:54
 msgid ""
 "Your report will appear here once an analyst has reviewed it. We will email "
 "you when it is ready."
@@ -4407,49 +4640,49 @@ msgstr ""
 "Your report will appear here once an analyst has reviewed it. We will email "
 "you when it is ready."
 
-#: templates/portal/order_detail.html:61
+#: templates/portal/order_detail.html:62
 msgid "Map of the parcel"
 msgstr "Map of the parcel"
 
-#: templates/portal/order_detail.html:68 templates/reports/pdf.html:60
+#: templates/portal/order_detail.html:69 templates/reports/pdf.html:60
 msgid "Location given as"
 msgstr "Location given as"
 
-#: templates/portal/order_detail.html:77
+#: templates/portal/order_detail.html:78
 msgid "Your files"
 msgstr "Your files"
 
-#: templates/portal/order_detail.html:87
+#: templates/portal/order_detail.html:88
 msgid "Messages"
 msgstr "Messages"
 
-#: templates/portal/order_detail.html:93
+#: templates/portal/order_detail.html:94
 msgid "You"
 msgstr "You"
 
-#: templates/portal/order_detail.html:93
+#: templates/portal/order_detail.html:94
 msgid "Our team"
 msgstr "Our team"
 
-#: templates/portal/order_detail.html:100
+#: templates/portal/order_detail.html:101
 msgid "Questions about your parcel or the report? Write to the analyst here."
 msgstr "Questions about your parcel or the report? Write to the analyst here."
 
-#: templates/portal/order_detail.html:114
+#: templates/portal/order_detail.html:115
 msgid ""
 "Add a visit by a licensed surveyor or notary. You pay only the difference."
 msgstr ""
 "Add a visit by a licensed surveyor or notary. You pay only the difference."
 
-#: templates/portal/order_detail.html:120
+#: templates/portal/order_detail.html:121
 msgid "Progress"
 msgstr "Progress"
 
-#: templates/portal/order_detail.html:135
+#: templates/portal/order_detail.html:136
 msgid "field verification"
 msgstr "field verification"
 
-#: templates/portal/order_detail.html:136
+#: templates/portal/order_detail.html:137
 #, python-format
 msgid "%(amount)s refunded"
 msgstr "%(amount)s refunded"
@@ -4467,7 +4700,8 @@ msgstr "You have no orders yet."
 msgid "Check this report is genuine:"
 msgstr "Check this report is genuine:"
 
-#: templates/reports/pdf.html:53
+#: templates/reports/pdf.html:53 templates/reports/report_page.html:3
+#: templates/reports/report_page.html:18
 msgid "Land due-diligence report"
 msgstr "Land due-diligence report"
 
@@ -4483,31 +4717,31 @@ msgstr ""
 "Approximate location: only a pin was given. The analysis covers a circle "
 "around it, not the exact parcel."
 
-#: templates/reports/pdf.html:68
+#: templates/reports/pdf.html:68 templates/reports/report_page.html:34
 msgid "Summary"
 msgstr "Summary"
 
-#: templates/reports/pdf.html:83
+#: templates/reports/pdf.html:83 templates/reports/report_page.html:44
 msgid "Analyst note"
 msgstr "Analyst note"
 
-#: templates/reports/pdf.html:95
+#: templates/reports/pdf.html:95 templates/reports/report_page.html:55
 msgid "Rating adjusted by the analyst"
 msgstr "Rating adjusted by the analyst"
 
-#: templates/reports/pdf.html:96
+#: templates/reports/pdf.html:96 templates/reports/report_page.html:76
 msgid "Map unavailable for this section."
 msgstr "Map unavailable for this section."
 
-#: templates/reports/pdf.html:109
+#: templates/reports/pdf.html:109 templates/reports/report_page.html:107
 msgid "This section is not included in this version of the report."
 msgstr "This section is not included in this version of the report."
 
-#: templates/reports/pdf.html:115
+#: templates/reports/pdf.html:115 templates/reports/report_page.html:145
 msgid "Methods, data sources and limitations"
 msgstr "Methods, data sources and limitations"
 
-#: templates/reports/pdf.html:117
+#: templates/reports/pdf.html:117 templates/reports/report_page.html:147
 msgid "Licence"
 msgstr "Licence"
 
@@ -4570,6 +4804,97 @@ msgstr ""
 "Regulatory checks cover only the constraints that are mapped or uploaded; "
 "setback strips are measured from mapped centrelines, and widths marked * are"
 " indicative. The commune's urban planning office has the final word."
+
+#: templates/reports/report_page.html:21
+#, python-format
+msgid "Version %(n)s, %(date)s"
+msgstr "Version %(n)s, %(date)s"
+
+#: templates/reports/report_page.html:27
+msgid "Back to the order"
+msgstr "Back to the order"
+
+#: templates/reports/report_page.html:30
+msgid ""
+"The location was given as a pin: the analysis uses a small circle around it,"
+" so figures about the parcel are approximate."
+msgstr ""
+"The location was given as a pin: the analysis uses a small circle around it,"
+" so figures about the parcel are approximate."
+
+#: templates/reports/report_page.html:60
+#, python-format
+msgid "Interactive map: %(t)s"
+msgstr "Interactive map: %(t)s"
+
+#: templates/reports/report_page.html:61
+msgid ""
+"Hover over the map to read values. Use the list to show or hide layers."
+msgstr ""
+"Hover over the map to read values. Use the list to show or hide layers."
+
+#: templates/reports/report_page.html:63
+msgid "Map layers"
+msgstr "Map layers"
+
+#: templates/reports/report_page.html:70
+msgid "Maps as printed in the PDF"
+msgstr "Maps as printed in the PDF"
+
+#: templates/reports/report_page.html:70
+msgid "Maps"
+msgstr "Maps"
+
+#: templates/reports/report_page.html:72
+#, python-format
+msgid "Map: %(t)s"
+msgstr "Map: %(t)s"
+
+#: templates/reports/report_page.html:86
+msgid "Chart data"
+msgstr "Chart data"
+
+#: templates/reports/report_page.html:114
+msgid "Share this report"
+msgstr "Share this report"
+
+#: templates/reports/report_page.html:115
+msgid ""
+"Anyone with a share link can read the report and download the PDF, without "
+"an account. They do not see your messages, payments or details. You can "
+"revoke a link at any time."
+msgstr ""
+"Anyone with a share link can read the report and download the PDF, without "
+"an account. They do not see your messages, payments or details. You can "
+"revoke a link at any time."
+
+#: templates/reports/report_page.html:119
+msgid "Link valid for"
+msgstr "Link valid for"
+
+#: templates/reports/report_page.html:121
+#, python-format
+msgid "%(days)s day"
+msgid_plural "%(days)s days"
+msgstr[0] "%(days)s day"
+msgstr[1] "%(days)s days"
+
+#: templates/reports/report_page.html:124
+msgid "Create a share link"
+msgstr "Create a share link"
+
+#: templates/reports/report_page.html:131
+#, python-format
+msgid "Expires %(date)s · opened %(n)s time(s)"
+msgstr "Expires %(date)s · opened %(n)s time(s)"
+
+#: templates/reports/report_page.html:134
+msgid "Copy"
+msgstr "Copy"
+
+#: templates/reports/report_page.html:135
+msgid "Revoke"
+msgstr "Revoke"
 
 #: templates/reports/verify.html:12
 #, python-format

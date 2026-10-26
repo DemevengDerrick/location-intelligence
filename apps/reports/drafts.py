@@ -44,6 +44,7 @@ def build_draft(run):
                 },
                 "charts": result.charts,
                 "maps": result.maps,
+                "layers": result.layers,
                 "datasets": result.dataset_versions,
                 "unavailable": unavailable,
                 "hidden": False,

@@ -1,8 +1,8 @@
 """Population around the parcel from WorldPop age-sex rasters (TRD §4.1).
 
 `PopulationProvider` is the interface; `WorldPopRasters` reads the downloaded R2025A stack
-(apps.analysis.worldpop). Results are cached by geometry, release and year (FR-56), so a
-commune is computed once and reused across orders.
+and the older Global1 totals (apps.analysis.worldpop). Results are cached by geometry,
+release and year (FR-56), so a commune is computed once and reused across orders.
 """
 
 import hashlib
@@ -81,21 +81,34 @@ class PopulationProvider(Protocol):
 
     def density(self, west, south, east, north, year): ...
 
+    # Totals before the main release starts, from an older release with another method.
+    history_release: str
+    history_dataset: str
+
+    def history_years(self) -> list[int]: ...
+
+    def history_total(self, geom, year) -> float: ...
+
 
 class WorldPopRasters:
-    """The downloaded WorldPop R2025A stack (manage.py load_worldpop)."""
+    """The downloaded WorldPop R2025A stack and Global1 totals (manage.py load_worldpop)."""
 
     release = worldpop.RELEASE
     dataset = "worldpop-r2025a"
+    history_release = worldpop.HISTORY_RELEASE
+    history_dataset = "worldpop-global1"
 
     def years(self):
         return worldpop.available_years()
 
-    def _window(self, west, south, east, north, year):
+    def history_years(self):
+        return worldpop.available_history_years()
+
+    def _window(self, west, south, east, north, path):
         import rasterio
         from rasterio.windows import from_bounds
 
-        with rasterio.open(worldpop.vrt_path(year)) as src:
+        with rasterio.open(path) as src:
             window = from_bounds(west, south, east, north, src.transform).round_offsets()
             window = window.round_lengths()
             data = src.read(window=window, masked=True, boundless=True, fill_value=src.nodata)
@@ -104,23 +117,29 @@ class WorldPopRasters:
         values[values < 0] = 0.0
         return values, transform
 
-    def age_sex(self, geom, year):
+    def _sums(self, geom, path):
+        """Per-band sums of the cells whose centre falls inside the geometry."""
         from rasterio.features import geometry_mask
 
-        west, south, east, north = geom.extent
-        values, transform = self._window(west, south, east, north, year)
+        values, transform = self._window(*geom.extent, path)
         inside = geometry_mask(
             [json.loads(geom.json)], out_shape=values.shape[1:], transform=transform, invert=True
         )
-        sums = values[:, inside].sum(axis=1).tolist()
+        return values[:, inside].sum(axis=1).tolist()
+
+    def age_sex(self, geom, year):
+        sums = self._sums(geom, worldpop.vrt_path(year))
         half = len(worldpop.AGES)
         return AgeSex(sums[:half], sums[half:])
+
+    def history_total(self, geom, year):
+        return float(self._sums(geom, worldpop.history_path(year))[0])
 
     def density(self, west, south, east, north, year):
         """People per km² on the 100 m grid, for maps."""
         from .providers import Grid
 
-        values, transform = self._window(west, south, east, north, year)
+        values, transform = self._window(west, south, east, north, worldpop.vrt_path(year))
         lat = (south + north) / 2
         cell_km2 = (abs(transform.a) * 111.32 * np.cos(np.radians(lat))) * (
             abs(transform.e) * 110.574
@@ -132,16 +151,16 @@ def population_provider() -> PopulationProvider:
     return WorldPopRasters()
 
 
-def geometry_key(geom, provider, year):
+def geometry_key(geom, dataset, release, year):
     digest = hashlib.sha1(bytes(geom.ewkb)).hexdigest()
-    return f"{provider.dataset}:{provider.release}:{year}:{digest}"
+    return f"{dataset}:{release}:{year}:{digest}"
 
 
 def cached_age_sex(provider, geom, year):
     """AgeSex for a geometry and year, from the cache when it was computed before."""
     from .models import PopulationStat
 
-    key = geometry_key(geom, provider, year)
+    key = geometry_key(geom, provider.dataset, provider.release, year)
     cached = PopulationStat.objects.filter(key=key).first()
     if cached:
         return AgeSex.from_json(cached.values)
@@ -151,3 +170,18 @@ def cached_age_sex(provider, geom, year):
         defaults={"release": provider.release, "year": year, "values": stats.as_json()},
     )
     return stats
+
+
+def cached_total(dataset, release, geom, year, compute):
+    """A population total for a geometry and year, from the cache when computed before."""
+    from .models import PopulationStat
+
+    key = geometry_key(geom, dataset, release, year)
+    cached = PopulationStat.objects.filter(key=key).first()
+    if cached:
+        return cached.values["total"]
+    total = compute()
+    PopulationStat.objects.update_or_create(
+        key=key, defaults={"release": release, "year": year, "values": {"total": total}}
+    )
+    return total

@@ -2,7 +2,7 @@
 
 A bilingual (FR/EN) Django + GeoDjango platform that sells reviewed physical and environmental due-diligence reports on land parcels in Cameroon. The requirements are in [`input/land-due-diligence-trd.md`](input/land-due-diligence-trd.md).
 
-**Status:** Phases 1 and 2 are done. Phase 3 (analysis modules) is in progress: location, current imagery, buildings, change over time, flood and water, terrain, access and services, demographics and area growth, and regulatory red flags are done, with analyst review, bilingual PDF reports with verification, and delivery to the portal. The interactive report page in the portal (3g) and area signals come next.
+**Status:** Phases 1 and 2 are done. Phase 3 (analysis modules) is in progress: location, current imagery, buildings, change over time, flood and water, terrain, access and services, demographics and area growth, and regulatory red flags are done, with analyst review, bilingual PDF reports with verification, and an interactive report page in the portal with shareable links. Area signals (Phase 5) come later.
 
 ## Stack
 
@@ -74,8 +74,8 @@ docker compose up -d valhalla   # first start builds the routing tiles (several 
 Load the population and built-up data once (about 3 GB; an interrupted load can simply be re-run):
 
 ```sh
-docker compose exec web python manage.py load_worldpop   # WorldPop R2025A age-sex rasters, 2020/2025/2030
-docker compose exec web python manage.py load_ghsl       # GHSL built-up tiles for Cameroon, 1975–2020
+docker compose exec web python manage.py load_worldpop   # WorldPop R2025A age-sex 2015–2030, Global1 totals 2000–2010
+docker compose exec web python manage.py load_ghsl       # GHSL tiles for Cameroon: built-up 1975–2020, population 2000–2030
 ```
 
 The extract is refreshed every Sunday at 02:00 (Celery beat, editable under Periodic tasks; also **OSM imports → Download and load the latest extract now** in the admin). A refresh loads beside the current data and switches over only when complete. To rebuild the routing tiles after a refresh: `docker compose run --rm -e force_rebuild=True valhalla`.
@@ -149,7 +149,7 @@ Every status change emails the customer in their own language. The payment steps
    | Current imagery | Sentinel-2 L2A from AWS Earth Search: cloud-masked median of the last 12 months | Mostly not vegetated → amber (never red: pixels can't tell buildings from bare soil) |
    | Change over time | Sentinel-2 dry-season (Dec–Feb) composites, one per year since 2017 | Vegetation lost in the last 5 years → amber |
    | Access and services | Local OSM copy (roads, schools, health facilities, markets, water points), Valhalla routing | No road within 500 m → red; parcel not on a road, paved road over 2 km, health facility over 30 min by car or school over 30 min on foot → amber |
-   | Demographics and growth | WorldPop R2025A age-sex rasters (2020, 2025, 2030 projected) for 1 km, 5 km and the commune; GHSL built-up epochs | Annual growth within 5 km: 2 % or more → green; 0–2 % → amber; falling → red |
+   | Demographics and growth | WorldPop R2025A age-sex rasters (2015, 2020, 2025, 2030 projected) for 1 km, 5 km and the commune, plus growth per 5-year period since 2000 compared with GHSL population (GHS-POP), shown as rates only: WorldPop 2000–2010 is the older Global1 release, and no rate spans the two releases; GHSL built-up epochs | Annual growth within 5 km: 2 % or more → green; 0–2 % → amber; falling → red |
    | Regulatory red flags | Setback rules (Core → Settings → `setback_rules`) around OSM watercourses, water bodies, shore, main roads, railways and power lines; OSM protected areas; uploaded official layers | Protected area or DUP zone on the parcel, or setbacks over 10 % of it → red; any other constraint on or within 200 m → amber |
    | Flood and water | JRC Global Surface Water (1984–2021), Copernicus EMS/JRC 1-in-100-year river flood maps, OSM rivers, water bodies and wetlands, height above nearest water from the DEM | Water seen on, flood zone on, or wetland on the parcel → red; nearby water, nearby flood zone or low height above water → amber |
 
@@ -158,6 +158,10 @@ Every status change emails the customer in their own language. The payment steps
 3. **Review.** When all modules have finished, the order moves to *In review*. In the admin, go to **Reports → Open review** to see each finding beside its map. There you can edit the wording in both languages, override a rating (a reason is required), hide a section (a reason is required) and add a note. Then click **Approve and deliver**. You can also re-run the analysis there, or reopen a delivered report. A reopened report is approved as a new version; earlier versions are kept.
 
 4. **Approval.** Approving renders A4 PDFs in French and English with WeasyPrint. Each page carries the report ID and a QR code that links to `/fr/verifier/<report-id>/`. That public page confirms a PDF is genuine and unaltered by comparing its SHA-256 with the stored one. The customer gets an email, and the summary and both PDFs appear on their order page.
+
+5. **Interactive report.** Delivered reports open at `/fr/mon-compte/commandes/<id>/rapport/` (`/en/my-account/orders/<id>/report/`), from the order page. The page shows the latest approved version (with the analyst's edits) in the reader's language: summary tiles, every section with a MapLibre map of its layers (toggles, legends, hover readouts, a swipe between imagery years for change over time), interactive Vega-Lite charts from the same specs as the PDF with a data table under each, and the PDFs. Each module stores its layers on `ModuleResult.layers` (`apps/analysis/layers.py`); image layers are PNGs in the private bucket served through short-lived signed URLs. Maps start only when scrolled into view.
+
+6. **Share links.** The owner can create read-only links valid 7, 30 or 90 days (`REPORT_SHARE_DAYS`), copy and revoke them on the report page. A shared page shows the report and PDFs only (no messages, payments or account data), is marked `noindex` and sends no referrer. Creating, viewing and revoking links are written to the audit log.
 
 **Re-running:** to analyse an order again, use Orders → action **Run the analysis** (for orders that are processing or in review).
 

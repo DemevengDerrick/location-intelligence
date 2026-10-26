@@ -18,6 +18,8 @@ from .. import style
 from ..charts import spec
 from ..config import thresholds
 from ..formatting import fmt
+from ..layers import legend_entry, vector_layer
+from ..layers import per_language as layer_text
 from ..maps import ParcelMap
 from ..models import Rating
 from ..providers import osm_provider, routing_provider
@@ -167,11 +169,86 @@ class AccessModule(Module):
                 "walk": self.render_maps(lambda: draw("walk")),
                 "drive": self.render_maps(lambda: draw("drive")),
             },
+            layers=self._layers(
+                osm, isochrones, centre, self._fit_radius(isochrones["drive"], origin)
+            ),
             charts={
                 "times": self.per_language(lambda: self._times_chart(results, osm)),
                 "services": {"table": self.per_language(lambda: self._table(results))},
             },
         )
+
+    @staticmethod
+    def _layers(osm, isochrones, centre, radius):
+        def walk_label(m):
+            return _("Within %(m)s min on foot") % {"m": m}
+
+        def drive_label(m):
+            return _("Within %(m)s min by car") % {"m": m}
+
+        layers = []
+        for mode, title, label in (
+            ("walk", lambda: _("Areas reached on foot"), walk_label),
+            ("drive", lambda: _("Areas reached by car"), drive_label),
+        ):
+            areas = sorted(isochrones[mode].items(), reverse=True)  # largest drawn first
+            colours = {m: style.ISOCHRONE_COLOURS.get(m, "#D9F0D3") for m, _area in areas}
+            layers.append(
+                vector_layer(
+                    f"{mode}-areas",
+                    title,
+                    [
+                        (
+                            area,
+                            {
+                                "color": colours[m],
+                                "minutes": layer_text(lambda m=m, label=label: label(m)),
+                            },
+                        )
+                        for m, area in areas
+                    ],
+                    kind="fill",
+                    color="#7FBF7B",
+                    outline="#1B7837",
+                    opacity=0.45,
+                    hover=[("minutes", lambda: _("Travel time"))],
+                    legend=[
+                        legend_entry(colours[m], lambda m=m, label=label: label(m))
+                        for m, _a in areas
+                    ],
+                    visible=mode == "walk",
+                )
+            )
+        points = []
+        for category in SERVICES:
+            colour, _marker = style.SERVICE_STYLE[str(category)]
+            kind = layer_text(lambda c=category: destination_labels()[c])
+            for feature in in_box(osm, category, *radius_bounds(centre, radius)):
+                points.append(
+                    (feature.geom, {"color": colour, "name": feature.name or "–", "type": kind})
+                )
+        layers.append(
+            vector_layer(
+                "services",
+                lambda: _("Services"),
+                points,
+                kind="circle",
+                color="#0072B2",
+                outline="#FFFFFF",
+                opacity=1,
+                width=5,
+                hover=[("type", lambda: _("Service")), ("name", lambda: _("Name"))],
+                legend=[
+                    legend_entry(
+                        style.SERVICE_STYLE[str(c)][0],
+                        lambda c=c: destination_labels()[c],
+                        "circle",
+                    )
+                    for c in SERVICES
+                ],
+            )
+        )
+        return layers
 
     @staticmethod
     def _quickest(router, origin, candidates, approach_s):

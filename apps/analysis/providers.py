@@ -456,16 +456,16 @@ class SurfaceWaterAndFloods:
         return names
 
 
-class GhslBuiltSurface:
-    """GHSL built-up surface (R2023A, ~90 m, m² of buildings per cell) for one epoch
-    (1975–2030 every 5 years; 2025 and 2030 are projections), read over HTTP from the zipped
+class GhslTiles:
+    """A GHSL R2023A product (~90 m, epochs 1975–2030 every 5 years; 2025 and 2030 are
+    projections), read from local copies (manage.py load_ghsl) or over HTTP from the zipped
     10° tiles."""
 
-    dataset, version = "ghsl-built-s", "R2023A"
-    BASE = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"
+    BASE = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/"
+    PRODUCT = ""
+    version = "R2023A"
     TOP, LEFT = 89.0995832, -180.0079166  # the tile grid's origin
-
-    EPOCHS = (1975, 1990, 2000, 2010, 2020)  # the ones the urban-expansion map uses
+    EPOCHS = ()
     CAMEROON = (8.4, 1.6, 16.2, 13.1)
 
     def tiles(self, west, south, east, north):
@@ -473,13 +473,13 @@ class GhslBuiltSurface:
         cols = range(int((west - self.LEFT) // 10) + 1, int((east - self.LEFT) // 10) + 2)
         return [(r, c) for r in rows for c in cols]
 
-    @staticmethod
-    def name(epoch):
-        return f"GHS_BUILT_S_E{epoch}_GLOBE_R2023A_4326_3ss"
+    def name(self, epoch):
+        return f"{self.PRODUCT}_E{epoch}_GLOBE_R2023A_4326_3ss"
 
     def tile_url(self, epoch, row, col):
         name = self.name(epoch)
-        return f"{self.BASE}{name}/V1-0/tiles/{name}_V1_0_R{row}_C{col}.zip"
+        folder = f"{self.BASE}{self.PRODUCT}_GLOBE_R2023A/{name}/V1-0/tiles"
+        return f"{folder}/{name}_V1_0_R{row}_C{col}.zip"
 
     def local_zip(self, epoch, row, col):
         from pathlib import Path
@@ -511,9 +511,9 @@ class GhslBuiltSurface:
                         for chunk in response.iter_bytes():
                             out.write(chunk)
                 partial.replace(target)
-                log(f"GHSL {epoch} R{row} C{col}: ready")
+                log(f"{self.PRODUCT} {epoch} R{row} C{col}: ready")
 
-    def built(self, west, south, east, north, epoch):
+    def _mosaic(self, west, south, east, north, epoch):
         import rasterio
         from rasterio.merge import merge
         from rasterio.session import DummySession
@@ -530,8 +530,46 @@ class GhslBuiltSurface:
         return Grid(mosaic[0], transform)
 
 
+class GhslBuiltSurface(GhslTiles):
+    """GHSL built-up surface: m² of buildings per cell."""
+
+    dataset, PRODUCT = "ghsl-built-s", "GHS_BUILT_S"
+    EPOCHS = (1975, 1990, 2000, 2010, 2020)  # the ones the urban-expansion map uses
+
+    def built(self, west, south, east, north, epoch):
+        return self._mosaic(west, south, east, north, epoch)
+
+
+class GhslPopulation(GhslTiles):
+    """GHSL population (GHS-POP): people per cell, a second model to compare trends with."""
+
+    dataset, PRODUCT = "ghsl-pop", "GHS_POP"
+    EPOCHS = (2000, 2005, 2010, 2015, 2020, 2025, 2030)
+    PROJECTED_FROM = 2025
+
+    def total(self, geom, epoch):
+        """People in the cells whose centre falls inside the geometry."""
+        import json
+
+        from rasterio.features import geometry_mask
+
+        grid = self._mosaic(*geom.extent, epoch)
+        inside = geometry_mask(
+            [json.loads(geom.json)],
+            out_shape=grid.values.shape,
+            transform=grid.transform,
+            invert=True,
+        )
+        values = np.where(grid.values > 0, grid.values, 0)
+        return float(values[inside].sum())
+
+
 def ghsl_provider():
     return GhslBuiltSurface()
+
+
+def ghsl_population_provider():
+    return GhslPopulation()
 
 
 class LocalOsm:

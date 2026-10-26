@@ -177,21 +177,54 @@ class FakeRouter:
 
 
 # A young population: share of each raster band (ages 0, 1–4, 5–9 ... 90+), per sex.
-AGE_SHARES = [0.036, 0.13, 0.14, 0.12, 0.11, 0.1, 0.09, 0.07, 0.055, 0.045, 0.035, 0.025, 0.02,
-              0.015, 0.01, 0.008, 0.005, 0.003, 0.002, 0.002]  # fmt: skip
+AGE_SHARES = [
+    0.036,
+    0.13,
+    0.14,
+    0.12,
+    0.11,
+    0.1,
+    0.09,
+    0.07,
+    0.055,
+    0.045,
+    0.035,
+    0.025,
+    0.02,
+    0.015,
+    0.01,
+    0.008,
+    0.005,
+    0.003,
+    0.002,
+    0.002,
+]
 
 
 class FakePopulation:
     """Constant density (people/km² in 2020) growing `growth` % a year; fixed age structure."""
 
     release, dataset = "R2025A", "worldpop-r2025a"
+    history_release, history_dataset = "Global1", "worldpop-global1"
 
-    def __init__(self, density=4000, growth=3.0, years=(2020, 2025, 2030)):
+    def __init__(self, density=4000, growth=3.0, years=(2020, 2025, 2030), history=()):
         self.density_2020, self.growth, self._years = density, growth, list(years)
-        self.calls = 0
+        self._history = list(history)
+        self.calls = self.history_calls = 0
 
     def years(self):
         return self._years
+
+    def history_years(self):
+        return self._history
+
+    def history_total(self, geom, year):
+        """Global1 differs from R2025A (another method); in cities it counts fewer people."""
+        from apps.parcels.geometry import utm_srid_for
+
+        self.history_calls += 1
+        km2 = geom.transform(utm_srid_for(geom.centroid), clone=True).area / 1e6
+        return self._density(year) * km2 * 0.5
 
     def _density(self, year):
         return self.density_2020 * (1 + self.growth / 100) ** (year - 2020)
@@ -212,6 +245,26 @@ class FakePopulation:
         cols, rows = math.ceil((east - west) / res), math.ceil((north - south) / res)
         values = np.full((rows, cols), self._density(year), dtype="float32")
         return providers.Grid(values, from_origin(west, north, res, res))
+
+
+class FakeGhslPopulation:
+    """GHS-POP: the same density as FakePopulation in 2020, growing `growth` % a year."""
+
+    dataset, version = "ghsl-pop", "R2023A"
+    EPOCHS = (2000, 2005, 2010, 2015, 2020, 2025, 2030)
+    PROJECTED_FROM = 2025
+
+    def __init__(self, growth=2.5, fail=False):
+        self.growth, self.fail, self.calls = growth, fail, 0
+
+    def total(self, geom, epoch):
+        from apps.parcels.geometry import utm_srid_for
+
+        if self.fail:
+            raise OSError("tiles unreachable")
+        self.calls += 1
+        km2 = geom.transform(utm_srid_for(geom.centroid), clone=True).area / 1e6
+        return 4000 * (1 + self.growth / 100) ** (epoch - 2020) * km2
 
 
 class FakeGhsl:
@@ -266,6 +319,7 @@ def data(monkeypatch):
         "water_features": FakeWaterFeatures(),
         "router": FakeRouter(),
         "population": FakePopulation(),
+        "ghsl_population": FakeGhslPopulation(),
         "ghsl": FakeGhsl(),
         "osm": None,  # built on first use, so tests can replace it first
     }
@@ -294,6 +348,10 @@ def data(monkeypatch):
         "apps.analysis.modules.demographics.population_provider", lambda: state["population"]
     )
     monkeypatch.setattr("apps.analysis.modules.demographics.ghsl_provider", lambda: state["ghsl"])
+    monkeypatch.setattr(
+        "apps.analysis.modules.demographics.ghsl_population_provider",
+        lambda: state["ghsl_population"],
+    )
     return state
 
 
@@ -1098,10 +1156,13 @@ def test_growing_area_rates_demographics_green(data, paid_order):
     assert kinds == {"Estimate", "Projection"}  # projected years drawn dashed
 
 
-@pytest.mark.parametrize(("growth", "rating", "lead"), [
-    (1.0, "amber", "The area is growing slowly."),
-    (-1.0, "red", "The area's population is falling."),
-])  # fmt: skip
+@pytest.mark.parametrize(
+    ("growth", "rating", "lead"),
+    [
+        (1.0, "amber", "The area is growing slowly."),
+        (-1.0, "red", "The area's population is falling."),
+    ],
+)
 def test_slow_or_falling_growth(data, paid_order, growth, rating, lead):
     data["population"] = FakePopulation(growth=growth)
     demo = findings(paid_order())["demographics"]
@@ -1118,7 +1179,60 @@ def test_population_figures_are_cached_per_area_and_year(data, paid_order):
     run = AnalysisRun.objects.get()
     MODULES["demographics"].run(run.parcel)
     assert data["population"].calls == calls  # all from the cache
-    assert PopulationStat.objects.count() == 9
+    assert PopulationStat.objects.count() == 9 + 21  # and GHSL: 3 areas x 7 epochs
+
+
+def test_growth_since_2000_is_compared_as_rates_never_as_counts(data, paid_order):
+    data["population"] = FakePopulation(years=(2015, 2020, 2025, 2030), history=(2000, 2005, 2010))
+    demo = findings(paid_order())["demographics"]
+    r = demo["results"]
+    assert r["history_release"] == "Global1" and r["ghsl_pop_version"] == "R2023A"
+    five = r["areas"]["5km"]
+    assert five["growth_pct"] == pytest.approx(3.0, abs=0.01)  # the rating: R2025A only
+    worldpop, ghsl = five["trends"]["worldpop"], five["trends"]["ghsl"]
+    assert list(worldpop) == ["2000–2005", "2005–2010", "2015–2020", "2020–2025", "2025–2030"]
+    assert "2010–2015" not in worldpop  # never across the two releases
+    assert len(ghsl) == 6 and ghsl["2010–2015"] == pytest.approx(2.5, abs=0.01)
+    assert five["history_growth_pct"] == pytest.approx(3.0, abs=0.01)
+    assert {"worldpop-global1", "ghsl-pop"} <= set(demo["datasets"])
+
+    growth = demo["charts"]["growth"]["en"]["data"]["values"]
+    assert min(row["year"] for row in growth) == 2015  # counts: R2025A only
+
+    trends = demo["charts"]["trends"]["en"]
+    assert trends["title"]["text"] == (
+        "Within 5 km, +3.0 % a year (WorldPop) and +2.5 % a year (GHSL) from 2020 to 2025"
+    )
+    rows = trends["data"]["values"]
+    assert {row["source"] for row in rows} == {"WorldPop", "GHSL"}
+    projected = {(row["source"], row["period"]) for row in rows if row["kind"] == "Projection"}
+    assert projected == {("WorldPop", "2025–2030"), ("GHSL", "2020–2025"), ("GHSL", "2025–2030")}
+    subtitle = " ".join(trends["title"]["subtitle"])
+    assert "No rate is given across the two releases" in subtitle
+    assert "GHS-POP R2023A" in subtitle
+    assert "de 2020 à 2025" in demo["charts"]["trends"]["fr"]["title"]["text"]
+
+    table = demo["charts"]["areas"]["table"]["en"]
+    assert table["columns"][-1] == "Growth a year, 2000–2010 (Global1)"
+    assert table["rows"][1][-1] == "+3.0 %"
+    assert not any("2000 (" in column for column in table["columns"])  # no 2000 count
+
+    from apps.analysis.models import AnalysisRun as Run
+    from apps.analysis.modules import MODULES
+
+    calls = data["population"].history_calls, data["ghsl_population"].calls
+    assert calls == (9, 21)
+    MODULES["demographics"].run(Run.objects.get().parcel)
+    assert (data["population"].history_calls, data["ghsl_population"].calls) == calls  # cached
+
+
+def test_demographics_stand_without_ghsl_population(data, paid_order):
+    data["ghsl_population"] = FakeGhslPopulation(fail=True)
+    demo = findings(paid_order())["demographics"]
+    assert demo["rating"] == "green" and demo["results"]["ghsl_pop_version"] is None
+    assert "ghsl-pop" not in demo["datasets"]
+    sources = {row["source"] for row in demo["charts"]["trends"]["en"]["data"]["values"]}
+    assert sources == {"WorldPop"}
 
 
 def test_demographics_unavailable_without_worldpop(data, paid_order):
@@ -1149,6 +1263,15 @@ def test_worldpop_and_ghsl_file_names():
         "/R2025A/2025/CMR/v1/100m/constrained/cmr_f_05_2025_CN_100m_R2025A_v1.tif"
     )
     assert len(worldpop.band_names()) == 40
+    assert worldpop.history_url(2005).endswith("/Global_2000_2020/2005/CMR/cmr_ppp_2005.tif")
+    assert worldpop.history_path(2005).name == "cmr_ppp_2005_Global1_cog.tif"
+    from apps.analysis.providers import GhslPopulation
+
+    tile = GhslPopulation().tile_url(2000, 9, 19)
+    assert tile.endswith(
+        "/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/"
+        "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C19.zip"
+    )
     ghsl = GhslBuiltSurface()
     assert ghsl.tiles(9.6, 4.0, 9.8, 4.1) == [(9, 19)]  # Douala
     assert ghsl.tiles(*ghsl.CAMEROON) == [(8, 19), (8, 20), (9, 19), (9, 20)]
@@ -1210,9 +1333,11 @@ def test_uploaded_protected_area_over_the_parcel_is_red(data, paid_order):
     from apps.gazetteer.models import ReferenceLayer, ReferenceLayerKind
 
     ReferenceLayer.objects.create(
-        kind=ReferenceLayerKind.PROTECTED_AREA, name="Réserve de Douala-Edéa",
-        geometry=square_m(DOUALA[0] + 0.0002, DOUALA[1], 40), source="MINFOF",
-    )  # fmt: skip
+        kind=ReferenceLayerKind.PROTECTED_AREA,
+        name="Réserve de Douala-Edéa",
+        geometry=square_m(DOUALA[0] + 0.0002, DOUALA[1], 40),
+        source="MINFOF",
+    )
     flags = findings(paid_order())["red_flags"]
     assert flags["rating"] == "red"
     protected = flags["results"]["constraints"][0]
@@ -1225,9 +1350,11 @@ def test_public_utility_zone_nearby_is_amber(data, paid_order):
     from apps.osm.testing import offset
 
     ReferenceLayer.objects.create(
-        kind=ReferenceLayerKind.DUP_CORRIDOR, name="Pénétrante Est",
-        geometry=square_m(*offset(*DOUALA, 120, 0), 40), source="Décret 2020/123",
-    )  # fmt: skip
+        kind=ReferenceLayerKind.DUP_CORRIDOR,
+        name="Pénétrante Est",
+        geometry=square_m(*offset(*DOUALA, 120, 0), 40),
+        source="Décret 2020/123",
+    )
     flags = findings(paid_order())["red_flags"]
     assert flags["rating"] == "amber"
     dup = flags["results"]["constraints"][0]
@@ -1246,3 +1373,33 @@ def test_setback_rules_are_editable_in_the_admin(data, paid_order):
     data["osm"] = osm_around_parcel(water=stream_line(30))
     flags = findings(paid_order())["red_flags"]
     assert flags["rating"] == "green"  # the stream is 10 m from the parcel, beyond 5 m
+
+
+# --- 3g: interactive layers for the portal ---------------------------------------------------
+
+
+def test_modules_store_interactive_layers_for_the_portal(data, paid_order):
+    from django.core.files.storage import default_storage
+
+    order = paid_order()
+    layers = {r.module: r.layers for r in ModuleResult.objects.all()}
+    ids = {module: [layer["id"] for layer in found] for module, found in layers.items()}
+    assert ids["terrain"] == ["slope"]
+    assert ids["buildings"] == ["buildings", "ring"]
+    assert "imagery" in ids["imagery"] and "landcover" in ids["imagery"]
+    assert {"walk-areas", "drive-areas", "services"} <= set(ids["access"])
+    assert {"density", "built", "rings"} <= set(ids["demographics"])
+    slope = layers["terrain"][0]
+    assert "png" not in slope and default_storage.exists(slope["image"])  # stored as a PNG
+    assert slope["title"] == {"fr": "Pente", "en": "Slope"}
+    assert len(slope["coordinates"]) == 4 and slope["hover"]["unit"]["en"] == "°"
+    years = [layer for layer in layers["change"] if layer.get("group") == "years"]
+    assert len(years) >= 3 and years[-1]["visible"] and not years[0]["visible"]
+    buildings = layers["buildings"][0]["data"]["features"]
+    assert buildings and buildings[0]["properties"]["status"]["en"] in {
+        "On the parcel",
+        "Within 20 m of the boundary",
+        "Other buildings",
+    }
+    draft = Report.objects.get(order=order).draft
+    assert any(f["layers"] for f in draft["findings"])

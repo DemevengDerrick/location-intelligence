@@ -8,6 +8,8 @@ from apps.parcels.geometry import utm_srid_for
 from .. import style
 from ..config import thresholds
 from ..formatting import fmt
+from ..layers import legend_entry, vector_layer
+from ..layers import per_language as _per_language
 from ..maps import ParcelMap
 from ..models import Rating
 from ..providers import buildings_provider
@@ -97,7 +99,47 @@ class BuildingsModule(Module):
             parameters={"building_buffer_m": t.building_buffer_m},
             datasets={source.dataset: source.version},
             maps={"main": self.render_maps(draw)},
+            layers=self._layers(inside, near, other, buffer_ll, t.building_buffer_m),
         )
+
+    @staticmethod
+    def _layers(inside, near, other, ring, buffer_m):
+        groups = (
+            (other, style.BUILDING_OTHER, lambda: _("Other buildings")),
+            (
+                near,
+                style.BUILDING_NEAR,
+                lambda: _("Within %(m)s m of the boundary") % {"m": f"{buffer_m:g}"},
+            ),
+            (inside, style.BUILDING_INSIDE, lambda: _("On the parcel")),
+        )
+        features = [
+            (building, {"color": style_colour, "status": _per_language(label)})
+            for group, style_colour, label in groups
+            for building in group
+        ]
+        return [
+            vector_layer(
+                "buildings",
+                lambda: _("Buildings"),
+                features,
+                kind="fill",
+                color=style.BUILDING_OTHER,
+                outline="#333333",
+                opacity=0.8,
+                hover=[("status", lambda: _("Building"))],
+                legend=[legend_entry(colour, label) for _g, colour, label in groups],
+            ),
+            vector_layer(
+                "ring",
+                lambda: _("%(m)s m around the boundary") % {"m": f"{buffer_m:g}"},
+                [(ring, {})],
+                kind="line",
+                color="#333333",
+                dash=True,
+                width=1,
+            ),
+        ]
 
     def key_figure(self, results):
         return _("%(inside)s on the parcel · %(near)s nearby") % {
