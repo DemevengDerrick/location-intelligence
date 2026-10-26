@@ -121,6 +121,8 @@ class Attachment(TimeStampedModel):
     size_bytes = models.PositiveBigIntegerField(_("size (bytes)"), default=0)
     exif_location = models.PointField(_("EXIF location"), srid=4326, null=True, blank=True)
     exif_taken_at = models.DateTimeField(_("EXIF time"), null=True, blank=True)
+    # Site plans: the analyst's control points and the fitted corners (FR-39).
+    georeference = models.JSONField(_("georeference"), null=True, blank=True)
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name=_("uploaded by"),

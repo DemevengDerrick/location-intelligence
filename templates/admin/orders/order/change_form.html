@@ -1,0 +1,74 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  .order-panels { margin: 1rem 0 2rem; display: grid; gap: 1.5rem; }
+  .order-panels table { width: 100%; }
+  .order-panels .tools a { margin-right: 1rem; font-weight: bold; }
+  .order-panels .late { color: #b91c1c; font-weight: bold; }
+  .order-panels .status-failed { color: #b91c1c; }
+  .order-panels .status-pending { color: var(--body-quiet-color); }
+  .order-panels pre { white-space: pre-wrap; margin: 0; font-size: .85em; }
+</style>
+{% endblock %}
+{% block after_related_objects %}{{ block.super }}
+{% if original %}
+<div class="order-panels">
+  <section class="module">
+    <h2>{% translate "Staff tools" %}</h2>
+    <p class="tools" style="padding: .5rem 1rem">
+      {% for parcel in parcels %}
+        <a href="{% url 'admin:parcels_parcel_geometry' parcel.pk %}">{% if parcel.geometry %}{% translate "Edit the boundary" %}{% else %}{% translate "Georeference the site plan" %}{% endif %}</a>
+      {% endfor %}
+      {% if review_url %}<a href="{{ review_url }}">{% translate "Open the report review" %}</a>{% endif %}
+    </p>
+    {% if due %}
+    <p style="padding: 0 1rem">{% translate "Service-level target" %}: {{ due|date:"DATETIME_FORMAT" }}{% if overdue %} · <span class="late">⚠ {% translate "past target" %}</span>{% endif %}</p>
+    {% endif %}
+  </section>
+
+  <section class="module">
+    <h2>{% translate "Analysis" %}{% if run %} · {% blocktranslate with n=run.pk status=run.get_status_display %}run {{ n }}, {{ status }}{% endblocktranslate %}{% endif %}</h2>
+    {% if module_results %}
+    <table>
+      <thead><tr><th>{% translate "Module" %}</th><th>{% translate "Status" %}</th><th>{% translate "Rating" %}</th><th>{% translate "Ran at" %}</th><th>{% translate "Error" %}</th></tr></thead>
+      <tbody>
+        {% for r in module_results %}
+        <tr>
+          <td>{{ r.module }}</td>
+          <td class="status-{{ r.status }}">{{ r.get_status_display }}</td>
+          <td>{{ r.get_rating_display|default:"–" }}</td>
+          <td>{{ r.ran_at|date:"DATETIME_FORMAT"|default:"–" }}</td>
+          <td><pre>{{ r.error|truncatechars:300 }}</pre></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="padding: .5rem 1rem">{% translate "No analysis has run yet." %}</p>
+    {% endif %}
+  </section>
+
+  <section class="module">
+    <h2>{% translate "Audit log" %}</h2>
+    {% if audit_entries %}
+    <table>
+      <thead><tr><th>{% translate "When" %}</th><th>{% translate "Who" %}</th><th>{% translate "Action" %}</th><th>{% translate "Details" %}</th></tr></thead>
+      <tbody>
+        {% for e in audit_entries %}
+        <tr>
+          <td>{{ e.created_at|date:"DATETIME_FORMAT" }}</td>
+          <td>{{ e.actor|default:_("system") }}</td>
+          <td><code>{{ e.action }}</code></td>
+          <td><pre>{% if e.data %}{{ e.data }}{% endif %}</pre></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="padding: .5rem 1rem">{% translate "Nothing recorded yet." %}</p>
+    {% endif %}
+  </section>
+</div>
+{% endif %}
+{% endblock %}

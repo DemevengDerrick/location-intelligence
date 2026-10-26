@@ -1,0 +1,131 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{% block extrahead %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/maplibre/maplibre-gl.css' %}">
+<script src="{% static 'vendor/maplibre/maplibre-gl.js' %}" defer></script>
+<script src="{% static 'vendor/terra-draw.umd.js' %}" defer></script>
+<script src="{% static 'vendor/terra-draw-maplibre-gl-adapter.umd.js' %}" defer></script>
+<script src="{% static 'js/geometry-editor.js' %}" defer></script>
+{% endblock %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  .editor { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; }
+  .editor.with-plan { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 22rem; }
+  #editor-map { height: 70vh; min-height: 420px; border: 1px solid var(--hairline-color); }
+  .plan-pane { display: none; }
+  .with-plan .plan-pane { display: block; }
+  #plan-viewport { position: relative; height: 70vh; min-height: 420px; overflow: hidden; border: 1px solid var(--hairline-color); background: #f4f4f4; cursor: crosshair; }
+  #plan-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  #plan-stage img { display: block; max-width: none; user-select: none; -webkit-user-drag: none; }
+  .cp-dot { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #e11d48; color: #fff; font: bold 12px/22px sans-serif; text-align: center; border: 2px solid #fff; box-shadow: 0 0 2px #000; pointer-events: none; }
+  .cp-dot.pending { background: #f59e0b; }
+  .cp-marker { width: 22px; height: 22px; border-radius: 50%; background: #e11d48; color: #fff; font: bold 12px/22px sans-serif; text-align: center; border: 2px solid #fff; box-shadow: 0 0 2px #000; }
+  .panel section { border: 1px solid var(--hairline-color); border-radius: 6px; padding: .75rem; margin-bottom: 1rem; }
+  .panel h2 { margin: 0 0 .5rem; font-size: 1rem; }
+  .panel textarea { width: 100%; box-sizing: border-box; font-family: monospace; }
+  .panel .row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+  .panel table { width: 100%; }
+  .status { min-height: 1.2em; color: var(--body-quiet-color); }
+  .status.error { color: #b91c1c; }
+  .plan-tools { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; flex-wrap: wrap; }
+  @media (max-width: 1100px) { .editor, .editor.with-plan { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  › <a href="{% url 'admin:orders_order_change' order.pk %}">{% translate "Order" %} {{ order.public_id|stringformat:"s"|slice:":8" }}</a>
+  › {% translate "Boundary" %}
+</div>
+{% endblock %}
+{% block content %}
+<p>
+  {{ order.customer.email }} · {{ order.get_status_display }} · {{ parcel.get_input_method_display }}
+  {% if parcel.computed_area_m2 %} · {{ parcel.computed_area_m2|floatformat:"0g" }} m²{% endif %}
+  {% if parcel.stated_area_m2 %} · {% translate "seller-stated" %}: {{ parcel.stated_area_m2|floatformat:"0g" }} m²{% endif %}
+  {% if parcel.quartier or parcel.commune %} · {{ parcel.quartier }} {{ parcel.commune }}{% endif %}
+</p>
+{% if not editable %}<p class="errornote">{% translate "This order is closed: the boundary can no longer be changed." %}</p>{% endif %}
+
+<div class="editor" id="editor">
+  <div class="plan-pane">
+    <div class="plan-tools">
+      <button type="button" class="button" data-plan-zoom="1.25">+</button>
+      <button type="button" class="button" data-plan-zoom="0.8">−</button>
+      <button type="button" class="button" data-plan-zoom="fit">{% translate "Fit" %}</button>
+      <span class="status" id="plan-status"></span>
+    </div>
+    <div id="plan-viewport" aria-label="{% translate 'Site plan' %}"><div id="plan-stage"><img id="plan-image" alt="{% translate 'Site plan' %}"></div></div>
+  </div>
+
+  <div>
+    <div id="editor-map" role="region" aria-label="{% translate 'Boundary map' %}"></div>
+    <p class="status" id="map-status"></p>
+  </div>
+
+  <div class="panel">
+    <section>
+      <h2>{% translate "Boundary" %}</h2>
+      <div class="row">
+        <button type="button" class="button" id="draw-new">{% translate "Draw a new boundary" %}</button>
+        <button type="button" class="button" id="edit-shape">{% translate "Edit corners" %}</button>
+        <button type="button" class="button" id="reset-shape">{% translate "Undo changes" %}</button>
+      </div>
+      <p class="help">{% translate "Corners snap to nearby corners and edges. Drag a corner to move it; click a midpoint to add one; right-click a corner to delete it." %}</p>
+    </section>
+
+    <section>
+      <h2>{% translate "Type coordinates" %}</h2>
+      <label for="coords-crs">{% translate "Coordinate system" %}</label>
+      <select id="coords-crs">{% for value, label in crs_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+      <textarea id="coords-text" rows="7" placeholder="9.7031, 4.0511&#10;9.7035, 4.0511&#10;9.7035, 4.0507"></textarea>
+      <p class="help">{% translate "One corner per line, in order around the parcel: longitude, latitude (or easting, northing for UTM)." %}</p>
+      <div class="row">
+        <button type="button" class="button" id="coords-show">{% translate "Show on the map" %}</button>
+        <button type="button" class="button" id="coords-copy">{% translate "Copy the current corners" %}</button>
+      </div>
+    </section>
+
+    {% if config.plans %}
+    <section>
+      <h2>{% translate "Georeference a site plan" %}</h2>
+      <select id="plan-select">
+        <option value="">{% translate "Choose a plan" %}</option>
+        {% for plan in config.plans %}<option value="{{ plan.id }}">{{ plan.name }}</option>{% endfor %}
+      </select>
+      <div id="plan-controls" hidden>
+        <p class="help">{% translate "Click a recognisable point on the plan (a corner, a road junction), then the same point on the map. Repeat for at least 3 points spread around the plan." %}</p>
+        <table id="cp-table"><thead><tr><th>#</th><th>{% translate "Error (m)" %}</th><th></th></tr></thead><tbody></tbody></table>
+        <p class="status" id="fit-status"></p>
+        <label for="plan-opacity">{% translate "Plan opacity on the map" %}</label>
+        <input type="range" id="plan-opacity" min="0" max="1" step="0.05" value="0.6">
+        <div class="row">
+          <button type="button" class="button" id="cp-start">{% translate "Add control points" %}</button>
+          <button type="button" class="button" id="cp-done">{% translate "Trace the boundary" %}</button>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="geometry" id="geometry-input">
+      <label for="note">{% translate "Note for the audit log (optional)" %}</label>
+      <textarea name="note" id="note" rows="2"></textarea>
+      <div class="submit-row" style="margin-top: .5rem">
+        <input type="submit" class="default" value="{% translate 'Save and re-run the analysis' %}" {% if not editable %}disabled{% endif %}>
+      </div>
+      <p class="help">{% translate "The previous boundary is kept in the history." %}</p>
+    </form>
+
+    {% if history %}
+    <section>
+      <h2>{% translate "Previous boundaries" %}</h2>
+      <ul>{% for h in history %}<li>{{ h.replaced_at|date:"DATETIME_FORMAT" }} · {{ h.get_input_method_display }} · {{ h.replaced_by|default:"–" }}</li>{% endfor %}</ul>
+      <p class="help">{% translate "Shown as dashed yellow outlines on the map." %}</p>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{{ config|json_script:"editor-config" }}
+{% endblock %}

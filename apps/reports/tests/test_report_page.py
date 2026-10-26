@@ -286,3 +286,18 @@ def test_only_the_owner_can_share_or_revoke(client, customer, make_user):
     assert response.status_code == 404
     link.refresh_from_db()
     assert link.revoked_at is None
+
+
+def test_drafts_from_before_per_language_maps_still_open(client, customer):
+    """Early drafts stored each static map as one file, not one per language."""
+    from apps.reports.page import map_key
+
+    assert map_key("analysis/run-1/location-boundary.svg", "fr").endswith("boundary.svg")
+    assert map_key({"fr": "a-fr.svg", "en": "a-en.svg"}, "en") == "a-en.svg"
+    assert map_key({"en": "a-en.svg"}, "fr") == "a-en.svg"
+    report = delivered(customer)
+    for version in report.versions.all():
+        version.content["findings"][0]["maps"] = {"boundary": "analysis/old/location.svg"}
+        version.save()
+    client.force_login(customer)
+    assert client.get(page_url(report)).status_code == 200

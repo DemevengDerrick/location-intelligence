@@ -49,6 +49,22 @@ def start_runs(order):
     return runs
 
 
+def restart_module(result):
+    """Run one module again on its existing run (FR-42). When it finishes, only that module's
+    finding is rebuilt in the draft; the analyst's edits to the others are kept."""
+    from .tasks import run_module
+
+    with transaction.atomic():
+        run = AnalysisRun.objects.select_for_update().get(pk=result.run_id)
+        result.status = ModuleStatus.PENDING
+        result.error = ""
+        result.save(update_fields=["status", "error", "updated_at"])
+        if run.status != RunStatus.RUNNING:
+            run.status = RunStatus.RUNNING
+            run.save(update_fields=["status", "updated_at"])
+        transaction.on_commit(lambda: run_module.delay(result.pk))
+
+
 def execute_module(result_id, can_retry=False):
     result = ModuleResult.objects.select_related("run__parcel").get(pk=result_id)
     module = MODULES[result.module]
@@ -104,14 +120,25 @@ def finish_run_if_complete(run_id):
         return False
     if run.module_results.filter(status=ModuleStatus.PENDING).exists():
         return False
+    previous_finish = run.finished_at  # set when single modules were re-run on a finished run
     run.status = RunStatus.COMPLETED
     run.finished_at = timezone.now()
     run.save(update_fields=["status", "finished_at", "updated_at"])
 
-    from apps.reports.drafts import store_draft  # reports depends on analysis, not the reverse
+    from apps.reports.drafts import refresh_findings, store_draft  # reports depends on analysis
+
+    if AnalysisRun.objects.filter(parcel_id=run.parcel_id, pk__gt=run.pk).exists():
+        return False  # superseded (the boundary changed): the newer run builds the draft
 
     order = Order.objects.select_for_update().get(pk=run.parcel.order_id)
-    store_draft(order, run)
+    report = getattr(order, "report", None)
+    if previous_finish and report is not None and report.run_id == run.pk:
+        rerun = run.module_results.filter(ran_at__gt=previous_finish).values_list(
+            "module", flat=True
+        )
+        refresh_findings(report, run, set(rerun))
+    else:
+        store_draft(order, run)
     if order.status == OrderStatus.PROCESSING:
         transition(order, OrderStatus.IN_REVIEW, note="analysis complete")
     return True

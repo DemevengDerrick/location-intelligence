@@ -1403,3 +1403,55 @@ def test_modules_store_interactive_layers_for_the_portal(data, paid_order):
     }
     draft = Report.objects.get(order=order).draft
     assert any(f["layers"] for f in draft["findings"])
+
+
+# --- Phase 4: single-module re-runs, boundary changes, review maps ---------------------------
+
+
+def test_rerunning_one_module_keeps_edits_to_the_others(
+    data, paid_order, analyst_client, django_capture_on_commit_callbacks
+):
+    data["population"] = FakePopulation(years=())  # WorldPop missing: the module fails
+    order = paid_order()
+    assert findings(order)["demographics"]["unavailable"]
+    analyst_client.post(
+        review_url(order), review_form(order, text_en_0="Checked by the analyst.", action="save")
+    )
+    data["population"] = FakePopulation()  # the data is back
+
+    with django_capture_on_commit_callbacks(execute=True):
+        response = analyst_client.post(review_url(order), {"action": "rerun:demographics"})
+    assert response.status_code == 302
+    order.refresh_from_db()
+    assert order.status == OrderStatus.IN_REVIEW
+    after = findings(order)
+    assert not after["demographics"]["unavailable"]  # rebuilt
+    assert after["demographics"]["rating"] == "green"
+    assert after["location"]["text"]["en"] == "Checked by the analyst."  # kept
+    assert AnalysisRun.objects.count() == 1
+    assert AnalysisRun.objects.get().status == RunStatus.COMPLETED
+
+
+def test_an_older_run_never_overwrites_the_draft_of_a_newer_one(data, paid_order):
+    from apps.analysis import pipeline
+
+    order = paid_order()
+    parcel = order.parcels.get()
+    old = AnalysisRun.objects.get()
+    newer = AnalysisRun.objects.create(parcel=parcel, status=RunStatus.RUNNING)
+    report = Report.objects.get(order=order)
+    report.run = newer
+    report.save()
+    old.status = RunStatus.RUNNING
+    old.save()
+    assert pipeline.finish_run_if_complete(old.pk) is False
+    report.refresh_from_db()
+    assert report.run_id == newer.pk
+
+
+def test_review_screen_shows_interactive_maps(data, paid_order, analyst_client):
+    order = paid_order()
+    html = analyst_client.get(review_url(order)).content.decode()
+    assert 'data-report-map="map-terrain-config"' in html
+    assert 'value="rerun:terrain"' in html
+    assert reverse("admin:parcels_parcel_geometry", args=[order.parcels.get().pk]) in html

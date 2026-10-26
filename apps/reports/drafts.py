@@ -16,47 +16,57 @@ def _key_figure(module_name, results, language):
         return MODULES[module_name].key_figure(results)
 
 
+def build_finding(name, result):
+    unavailable = result.status == ModuleStatus.FAILED
+    rating = Rating.GREY if unavailable else result.rating
+    return {
+        "module": name,
+        "computed_rating": rating,
+        "rating": rating,
+        "override_reason": "",
+        "text": {
+            lang: unavailable_text(lang)
+            if unavailable
+            else render_finding(name, rating, result.results, lang)
+            for lang in LANGUAGES
+        },
+        "results": result.results,
+        "key": {
+            lang: "" if unavailable else _key_figure(name, result.results, lang)
+            for lang in LANGUAGES
+        },
+        "charts": result.charts,
+        "maps": result.maps,
+        "layers": result.layers,
+        "datasets": result.dataset_versions,
+        "unavailable": unavailable,
+        "hidden": False,
+        "hidden_reason": "",
+    }
+
+
 def build_draft(run):
     results = {r.module: r for r in run.module_results.all()}
-    findings = []
-    for name in MODULES:  # report order
-        result = results.get(name)
-        if result is None:
-            continue
-        unavailable = result.status == ModuleStatus.FAILED
-        rating = Rating.GREY if unavailable else result.rating
-        findings.append(
-            {
-                "module": name,
-                "computed_rating": rating,
-                "rating": rating,
-                "override_reason": "",
-                "text": {
-                    lang: unavailable_text(lang)
-                    if unavailable
-                    else render_finding(name, rating, result.results, lang)
-                    for lang in LANGUAGES
-                },
-                "results": result.results,
-                "key": {
-                    lang: "" if unavailable else _key_figure(name, result.results, lang)
-                    for lang in LANGUAGES
-                },
-                "charts": result.charts,
-                "maps": result.maps,
-                "layers": result.layers,
-                "datasets": result.dataset_versions,
-                "unavailable": unavailable,
-                "hidden": False,
-                "hidden_reason": "",
-            }
-        )
+    findings = [build_finding(name, results[name]) for name in MODULES if name in results]
     return {
         "run": run.pk,
         "approximate": run.parcel.is_approximate,
         "findings": findings,
         "note": {lang: "" for lang in LANGUAGES},
     }
+
+
+def refresh_findings(report, run, modules):
+    """Rebuild only the findings of re-run modules; the analyst's other edits stay."""
+    results = {r.module: r for r in run.module_results.filter(module__in=modules)}
+    draft = dict(report.draft)
+    draft["findings"] = [
+        build_finding(f["module"], results[f["module"]]) if f["module"] in results else f
+        for f in draft.get("findings", [])
+    ]
+    report.draft = draft
+    report.save(update_fields=["draft", "updated_at"])
+    return report
 
 
 def store_draft(order, run):

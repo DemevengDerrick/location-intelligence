@@ -2,7 +2,7 @@
 
 A bilingual (FR/EN) Django + GeoDjango platform that sells reviewed physical and environmental due-diligence reports on land parcels in Cameroon. The requirements are in [`input/land-due-diligence-trd.md`](input/land-due-diligence-trd.md).
 
-**Status:** Phases 1 and 2 are done. Phase 3 (analysis modules) is in progress: location, current imagery, buildings, change over time, flood and water, terrain, access and services, demographics and area growth, and regulatory red flags are done, with analyst review, bilingual PDF reports with verification, and an interactive report page in the portal with shareable links. Area signals (Phase 5) come later.
+**Status:** Phases 1 and 2 are done. Phase 3 (analysis modules) is in progress: location, current imagery, buildings, change over time, flood and water, terrain, access and services, demographics and area growth, and regulatory red flags are done, with analyst review, bilingual PDF reports with verification, and an interactive report page in the portal with shareable links. Phase 4 (staff tools: order queue, boundary editor, site-plan georeferencing, review with maps) is done. Area signals (Phase 5) come later.
 
 ## Stack
 
@@ -155,7 +155,7 @@ Every status change emails the customer in their own language. The payment steps
 
 2. **Findings.** Each module's finding is a sentence from **Analysis → Finding templates** (French and English, with placeholders like `{area}`), filled with computed numbers. Findings are never written by an LLM.
 
-3. **Review.** When all modules have finished, the order moves to *In review*. In the admin, go to **Reports → Open review** to see each finding beside its map. There you can edit the wording in both languages, override a rating (a reason is required), hide a section (a reason is required) and add a note. Then click **Approve and deliver**. You can also re-run the analysis there, or reopen a delivered report. A reopened report is approved as a new version; earlier versions are kept.
+3. **Review.** When all modules have finished, the order moves to *In review*. In the admin, go to **Reports → Open review** to see each finding beside its interactive map (the same layers as the customer's report page). There you can edit the wording in both languages, override a rating (a reason is required), hide a section (a reason is required) and add a note. Then click **Approve and deliver**. **Re-run this module** runs one module again and rebuilds only its finding, keeping your edits to the others; **Re-run analysis** starts over and replaces the draft. A delivered report can be reopened; it is approved as a new version and earlier versions are kept.
 
 4. **Approval.** Approving renders A4 PDFs in French and English with WeasyPrint. Each page carries the report ID and a QR code that links to `/fr/verifier/<report-id>/`. That public page confirms a PDF is genuine and unaltered by comparing its SHA-256 with the stored one. The customer gets an email, and the summary and both PDFs appear on their order page.
 
@@ -164,6 +164,13 @@ Every status change emails the customer in their own language. The payment steps
 6. **Share links.** The owner can create read-only links valid 7, 30 or 90 days (`REPORT_SHARE_DAYS`), copy and revoke them on the report page. A shared page shows the report and PDFs only (no messages, payments or account data), is marked `noindex` and sends no referrer. Creating, viewing and revoking links are written to the audit log.
 
 **Re-running:** to analyse an order again, use Orders → action **Run the analysis** (for orders that are processing or in review).
+
+### Staff tools (Phase 4)
+
+- **Order queue** (Orders): filters for service level, status, tier, region, the customer's deadline and age since payment. The *due* column shows the service-level target, in red when it has passed. Targets are business days (Monday to Friday, public holidays not counted) per tier in Core → Settings → `service_levels` (`{"desk": 3}`; a tier without a number is never flagged).
+- **Order page**: under the usual fields, the status of each analysis module (with errors), the audit log for the order, its parcel, payments and report, and links to the boundary editor and the review.
+- **Boundary editor** (order page → *Edit the boundary*, or Parcels → *Open the editor*): draw or edit the boundary over Esri imagery with snapping, or type corner coordinates (WGS 84 or UTM 32N/33N). Saving validates the shape like the order form, keeps the previous boundary in the history (dashed yellow on the map), sets the input method to *Digitized by analyst*, writes the audit log and re-runs the whole analysis. A delivered order goes back through review and gets a new version. A run that a newer boundary has superseded never touches the draft.
+- **Site-plan georeferencing** (same page, for orders with a plan): pick the plan (image or PDF, first page), click a point on the plan then the same point on the map, at least 3 times. The plan is fitted with an affine transform by least squares in UTM and overlaid with adjustable opacity; with 4 or more points each point's error in metres and the RMSE show a misplaced point. Then trace the boundary on top. The control points are saved on the attachment. Orders that were *Needs georeferencing* start processing when the boundary is saved.
 
 **Land cover** has three classes: vegetation, water, and "built-up or bare ground". At 10 m, Sentinel-2 cannot reliably separate roofs from cleared laterite, so whether a parcel is built on comes from the Buildings section.
 

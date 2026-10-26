@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 14:17+0100\n"
+"POT-Creation-Date: 2026-10-26 20:44+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -71,7 +71,7 @@ msgid "language"
 msgstr "langue"
 
 #: apps/accounts/models.py:61 apps/orders/models.py:65
-#: apps/orders/models.py:220 apps/payments/models.py:54
+#: apps/orders/models.py:222 apps/payments/models.py:54
 #: apps/payments/models.py:151 apps/pricing/models.py:44
 msgid "currency"
 msgstr "devise"
@@ -80,7 +80,7 @@ msgstr "devise"
 msgid "phone"
 msgstr "téléphone"
 
-#: apps/accounts/models.py:79 apps/orders/models.py:182
+#: apps/accounts/models.py:79 apps/orders/models.py:184
 msgid "user"
 msgstr "utilisateur"
 
@@ -88,7 +88,7 @@ msgstr "utilisateur"
 msgid "users"
 msgstr "utilisateurs"
 
-#: apps/analysis/apps.py:8
+#: apps/analysis/apps.py:8 templates/admin/orders/order/change_form.html:31
 msgid "Analysis"
 msgstr "Analyse"
 
@@ -667,7 +667,7 @@ msgid "Female"
 msgstr "Femmes"
 
 #: apps/analysis/modules/demographics.py:403
-#: apps/analysis/modules/demographics.py:607
+#: apps/analysis/modules/demographics.py:608
 msgid "Share of the population (%)"
 msgstr "Part de la population (%)"
 
@@ -714,7 +714,7 @@ msgid "Dashed: projection."
 msgstr "En pointillés : projection."
 
 #: apps/analysis/modules/demographics.py:482
-#: apps/analysis/modules/demographics.py:645
+#: apps/analysis/modules/demographics.py:646
 msgid "People"
 msgstr "Habitants"
 
@@ -755,58 +755,58 @@ msgstr ""
 msgid "Growth a year (%)"
 msgstr "Croissance par an (%)"
 
-#: apps/analysis/modules/demographics.py:571
+#: apps/analysis/modules/demographics.py:572
 msgid "Under 5"
 msgstr "Moins de 5 ans"
 
-#: apps/analysis/modules/demographics.py:572
+#: apps/analysis/modules/demographics.py:573
 msgid "5–14 (school age)"
 msgstr "5–14 ans (âge scolaire)"
 
-#: apps/analysis/modules/demographics.py:573
+#: apps/analysis/modules/demographics.py:574
 msgid "15–64"
 msgstr "15–64 ans"
 
-#: apps/analysis/modules/demographics.py:574
+#: apps/analysis/modules/demographics.py:575
 msgid "65 and over"
 msgstr "65 ans et plus"
 
-#: apps/analysis/modules/demographics.py:589
+#: apps/analysis/modules/demographics.py:590
 #, python-format
 msgid "%(ratio)s dependants for every 100 people aged 15–64 within 5 km"
 msgstr ""
 "%(ratio)s personnes à charge pour 100 personnes de 15 à 64 ans à moins de 5 "
 "km"
 
-#: apps/analysis/modules/demographics.py:641
+#: apps/analysis/modules/demographics.py:642
 #, python-format
 msgid "Population in %(year)s (WorldPop %(release)s)"
 msgstr "Population en %(year)s (WorldPop %(release)s)"
 
-#: apps/analysis/modules/demographics.py:644
+#: apps/analysis/modules/demographics.py:645
 msgid "Area"
 msgstr "Zone"
 
-#: apps/analysis/modules/demographics.py:646
+#: apps/analysis/modules/demographics.py:647
 msgid "Per km²"
 msgstr "Par km²"
 
-#: apps/analysis/modules/demographics.py:647
+#: apps/analysis/modules/demographics.py:648
 #, python-format
 msgid "Growth a year, %(a)s–%(b)s"
 msgstr "Croissance par an, %(a)s–%(b)s"
 
-#: apps/analysis/modules/demographics.py:648
+#: apps/analysis/modules/demographics.py:649
 #, python-format
 msgid "Projected, %(a)s–%(b)s"
 msgstr "Projection, %(a)s–%(b)s"
 
-#: apps/analysis/modules/demographics.py:651
+#: apps/analysis/modules/demographics.py:652
 #, python-format
 msgid "Growth a year, %(a)s–%(b)s (%(release)s)"
 msgstr "Croissance par an, %(a)s–%(b)s (%(release)s)"
 
-#: apps/analysis/modules/demographics.py:667
+#: apps/analysis/modules/demographics.py:668
 #, python-format
 msgid ""
 "Built-up land within 5 km grew from %(a)s km² in %(y1)s to %(b)s km² in "
@@ -815,7 +815,7 @@ msgstr ""
 "Les surfaces bâties à moins de 5 km sont passées de %(a)s km² en %(y1)s à "
 "%(b)s km² en %(y2)s."
 
-#: apps/analysis/modules/demographics.py:691
+#: apps/analysis/modules/demographics.py:692
 #, python-format
 msgid "%(n)s people within 5 km · %(g)s %%/yr"
 msgstr "%(n)s habitants à moins de 5 km · %(g)s %%/an"
@@ -1361,7 +1361,7 @@ msgstr "URL"
 msgid "commercial use allowed"
 msgstr "usage commercial autorisé"
 
-#: apps/core/models.py:72 apps/orders/models.py:76 apps/orders/models.py:210
+#: apps/core/models.py:72 apps/orders/models.py:76 apps/orders/models.py:212
 #: apps/partners/models.py:120
 msgid "notes"
 msgstr "notes"
@@ -1499,7 +1499,8 @@ msgstr "type"
 msgid "geometry"
 msgstr "géométrie"
 
-#: apps/gazetteer/models.py:27 apps/orders/models.py:205
+#: apps/gazetteer/models.py:27 apps/orders/admin.py:25
+#: apps/orders/admin.py:178 apps/orders/models.py:207
 #: apps/parcels/models.py:29
 msgid "region"
 msgstr "région"
@@ -1512,7 +1513,7 @@ msgstr "département"
 msgid "arrondissement"
 msgstr "arrondissement"
 
-#: apps/gazetteer/models.py:30 apps/orders/models.py:204
+#: apps/gazetteer/models.py:30 apps/orders/models.py:206
 #: apps/parcels/models.py:28
 msgid "commune"
 msgstr "commune"
@@ -1670,7 +1671,7 @@ msgstr "Empiètement sur le domaine public"
 msgid "Other"
 msgstr "Autre"
 
-#: apps/incidents/models.py:79
+#: apps/incidents/models.py:79 apps/parcels/admin.py:167
 msgid "Point"
 msgstr "Point"
 
@@ -1750,19 +1751,79 @@ msgstr "source d'incident"
 msgid "incident sources"
 msgstr "sources d'incident"
 
-#: apps/orders/admin.py:17
+#: apps/orders/admin.py:43
+msgid "customer deadline"
+msgstr "échéance du client"
+
+#: apps/orders/admin.py:48
+msgid "Passed"
+msgstr "Dépassée"
+
+#: apps/orders/admin.py:49
+msgid "In the next 7 days"
+msgstr "Dans les 7 prochains jours"
+
+#: apps/orders/admin.py:50
+msgid "Later"
+msgstr "Plus tard"
+
+#: apps/orders/admin.py:51
+msgid "None given"
+msgstr "Aucune"
+
+#: apps/orders/admin.py:68
+msgid "age since payment"
+msgstr "ancienneté depuis le paiement"
+
+#: apps/orders/admin.py:73
+msgid "Under 1 day"
+msgstr "Moins d'un jour"
+
+#: apps/orders/admin.py:74
+msgid "1 to 3 days"
+msgstr "1 à 3 jours"
+
+#: apps/orders/admin.py:75
+msgid "3 to 7 days"
+msgstr "3 à 7 jours"
+
+#: apps/orders/admin.py:76
+msgid "Over 7 days"
+msgstr "Plus de 7 jours"
+
+#: apps/orders/admin.py:93
+msgid "service level"
+msgstr "délai de service"
+
+#: apps/orders/admin.py:97
+msgid "Past target"
+msgstr "Délai dépassé"
+
+#: apps/orders/admin.py:97
+msgid "Within target"
+msgstr "Dans les délais"
+
+#: apps/orders/admin.py:111
 msgid "Bank transfer reference"
 msgstr "Référence du virement"
 
-#: apps/orders/admin.py:19
+#: apps/orders/admin.py:113
 msgid "As shown on the bank statement."
 msgstr "Telle qu'elle apparaît sur le relevé bancaire."
 
-#: apps/orders/admin.py:82
+#: apps/orders/admin.py:182
+msgid "due"
+msgstr "échéance"
+
+#: apps/orders/admin.py:189
+msgid "late"
+msgstr "en retard"
+
+#: apps/orders/admin.py:248
 msgid "Run the analysis"
 msgstr "Lancer l'analyse"
 
-#: apps/orders/admin.py:90
+#: apps/orders/admin.py:256
 #, python-format
 msgid ""
 "Analysis started for %(n)s order(s). Orders must be processing or in review."
@@ -1770,23 +1831,23 @@ msgstr ""
 "Analyse lancée pour %(n)s commande(s). Les commandes doivent être en "
 "traitement ou en relecture."
 
-#: apps/orders/admin.py:98
+#: apps/orders/admin.py:264
 msgid "Mark as paid (bank transfer)"
 msgstr "Marquer comme payée (virement)"
 
-#: apps/orders/admin.py:101
+#: apps/orders/admin.py:267
 msgid "Select exactly one order."
 msgstr "Sélectionnez une seule commande."
 
-#: apps/orders/admin.py:106
+#: apps/orders/admin.py:272
 msgid "Only unpaid orders can be marked as paid."
 msgstr "Seules les commandes non payées peuvent être marquées comme payées."
 
-#: apps/orders/admin.py:114
+#: apps/orders/admin.py:280
 msgid "Order marked as paid."
 msgstr "Commande marquée comme payée."
 
-#: apps/orders/admin.py:121
+#: apps/orders/admin.py:287
 msgid "Mark as paid"
 msgstr "Marquer comme payée"
 
@@ -1953,7 +2014,9 @@ msgstr "<uuid:token>/fichiers/<int:pk>/supprimer/"
 msgid "Location"
 msgstr "Localisation"
 
-#: apps/orders/intake_views.py:36 templates/orders/intake/step_review.html:28
+#: apps/orders/intake_views.py:36
+#: templates/admin/orders/order/change_form.html:56
+#: templates/orders/intake/step_review.html:28
 msgid "Details"
 msgstr "Détails"
 
@@ -2048,11 +2111,11 @@ msgstr "identifiant public"
 msgid "customer"
 msgstr "client"
 
-#: apps/orders/models.py:62 apps/orders/models.py:213
+#: apps/orders/models.py:62 apps/orders/models.py:215
 msgid "tier"
 msgstr "formule"
 
-#: apps/orders/models.py:63 apps/orders/models.py:214
+#: apps/orders/models.py:63 apps/orders/models.py:216
 msgid "add-ons"
 msgstr "options"
 
@@ -2064,23 +2127,23 @@ msgstr "prix"
 msgid "discount"
 msgstr "remise"
 
-#: apps/orders/models.py:72 apps/orders/models.py:217
+#: apps/orders/models.py:72 apps/orders/models.py:219
 msgid "report language"
 msgstr "langue du rapport"
 
-#: apps/orders/models.py:74 apps/orders/models.py:208
+#: apps/orders/models.py:74 apps/orders/models.py:210
 msgid "intended use"
 msgstr "usage prévu"
 
-#: apps/orders/models.py:75 apps/orders/models.py:215
+#: apps/orders/models.py:75 apps/orders/models.py:217
 msgid "deadline"
 msgstr "échéance"
 
-#: apps/orders/models.py:77 apps/orders/models.py:226
+#: apps/orders/models.py:77 apps/orders/models.py:228
 msgid "terms version accepted"
 msgstr "version des conditions acceptée"
 
-#: apps/orders/models.py:78 apps/orders/models.py:227
+#: apps/orders/models.py:78 apps/orders/models.py:229
 msgid "terms accepted at"
 msgstr "conditions acceptées le"
 
@@ -2093,7 +2156,7 @@ msgid "delivered at"
 msgstr "livrée le"
 
 #: apps/orders/models.py:83 apps/orders/models.py:103
-#: apps/orders/models.py:148 apps/orders/models.py:231
+#: apps/orders/models.py:150 apps/orders/models.py:233
 #: apps/parcels/models.py:16 apps/partners/models.py:73
 #: apps/payments/models.py:43 apps/reports/models.py:14
 msgid "order"
@@ -2104,6 +2167,7 @@ msgid "orders"
 msgstr "commandes"
 
 #: apps/orders/models.py:92 apps/parcels/choices.py:9
+#: templates/admin/parcels/parcel/geometry.html:58
 msgid "Site plan"
 msgstr "Plan de situation"
 
@@ -2115,7 +2179,7 @@ msgstr "Photo"
 msgid "Document"
 msgstr "Document"
 
-#: apps/orders/models.py:111 apps/orders/models.py:239
+#: apps/orders/models.py:111 apps/orders/models.py:241
 msgid "intake draft"
 msgstr "brouillon de commande"
 
@@ -2143,96 +2207,100 @@ msgstr "position EXIF"
 msgid "EXIF time"
 msgstr "heure EXIF"
 
-#: apps/orders/models.py:126
+#: apps/orders/models.py:125
+msgid "georeference"
+msgstr "géoréférencement"
+
+#: apps/orders/models.py:128
 msgid "uploaded by"
 msgstr "téléversé par"
 
-#: apps/orders/models.py:133
+#: apps/orders/models.py:135
 msgid "attachment"
 msgstr "pièce jointe"
 
-#: apps/orders/models.py:134
+#: apps/orders/models.py:136
 msgid "attachments"
 msgstr "pièces jointes"
 
-#: apps/orders/models.py:152
+#: apps/orders/models.py:154
 msgid "author"
 msgstr "auteur"
 
-#: apps/orders/models.py:157 apps/orders/models.py:161 apps/pages/models.py:85
+#: apps/orders/models.py:159 apps/orders/models.py:163 apps/pages/models.py:85
 msgid "message"
 msgstr "message"
 
-#: apps/orders/models.py:158
+#: apps/orders/models.py:160
 msgid "read at"
 msgstr "lu le"
 
-#: apps/orders/models.py:162
+#: apps/orders/models.py:164
 msgid "messages"
 msgstr "messages"
 
-#: apps/orders/models.py:179 apps/reports/models.py:91
+#: apps/orders/models.py:181 apps/reports/models.py:91
 msgid "token"
 msgstr "jeton"
 
-#: apps/orders/models.py:188
+#: apps/orders/models.py:190
 msgid "session"
 msgstr "session"
 
-#: apps/orders/models.py:189
+#: apps/orders/models.py:191
 msgid "furthest step"
 msgstr "étape la plus avancée"
 
-#: apps/orders/models.py:193 apps/parcels/models.py:19
+#: apps/orders/models.py:195 apps/parcels/models.py:19
 #: apps/parcels/models.py:58
 msgid "input method"
 msgstr "méthode de saisie"
 
-#: apps/orders/models.py:195 apps/parcels/models.py:18
-#: apps/parcels/models.py:57
+#: apps/orders/models.py:197 apps/parcels/admin.py:57
+#: apps/parcels/models.py:18 apps/parcels/models.py:57
 msgid "boundary"
 msgstr "limite"
 
-#: apps/orders/models.py:196
+#: apps/orders/models.py:198
 msgid "pin"
 msgstr "repère"
 
-#: apps/orders/models.py:197 apps/parcels/models.py:26
+#: apps/orders/models.py:199 apps/parcels/models.py:26
 msgid "computed area (m²)"
 msgstr "superficie calculée (m²)"
 
-#: apps/orders/models.py:198 apps/parcels/models.py:21
-#: templates/admin/reports/review.html:18
+#: apps/orders/models.py:200 apps/parcels/models.py:21
+#: templates/admin/reports/review.html:41
 #: templates/orders/intake/step_review.html:16
 #: templates/portal/order_detail.html:69
 msgid "approximate location"
 msgstr "localisation approximative"
 
-#: apps/orders/models.py:199
+#: apps/orders/models.py:201
 msgid "location warnings"
 msgstr "avertissements de localisation"
 
-#: apps/orders/models.py:202 apps/parcels/models.py:25
+#: apps/orders/models.py:204 apps/parcels/models.py:25
 msgid "seller-stated area (m²)"
 msgstr "superficie déclarée par le vendeur (m²)"
 
-#: apps/orders/models.py:203 apps/parcels/models.py:27
+#: apps/orders/models.py:205 apps/parcels/models.py:27
 msgid "quartier"
 msgstr "quartier"
 
-#: apps/orders/models.py:206 apps/parcels/models.py:31
+#: apps/orders/models.py:208 apps/parcels/models.py:31
 msgid "land title number"
 msgstr "numéro de titre foncier"
 
-#: apps/orders/models.py:224
+#: apps/orders/models.py:226
 msgid "full name"
 msgstr "nom complet"
 
-#: apps/orders/models.py:225 apps/pages/models.py:84
+#: apps/orders/models.py:227 apps/pages/models.py:84
 msgid "phone or WhatsApp"
 msgstr "téléphone ou WhatsApp"
 
-#: apps/orders/models.py:240
+#: apps/orders/models.py:242
 msgid "intake drafts"
 msgstr "brouillons de commande"
 
@@ -2524,6 +2592,74 @@ msgstr ""
 msgid "Thank you. We will reply within one business day."
 msgstr "Merci. Nous vous répondrons sous un jour ouvrable."
 
+#: apps/parcels/admin.py:62
+msgid "Open the editor"
+msgstr "Ouvrir l'éditeur"
+
+#: apps/parcels/admin.py:117 apps/parcels/admin.py:169
+msgid "Draw the boundary on the map before saving."
+msgstr "Tracez la limite sur la carte avant d'enregistrer."
+
+#: apps/parcels/admin.py:134
+msgid "Boundary saved. The analysis has restarted with the new boundary."
+msgstr "Limite enregistrée. L'analyse a redémarré avec la nouvelle limite."
+
+#: apps/parcels/admin.py:136
+msgid "Boundary saved."
+msgstr "Limite enregistrée."
+
+#: apps/parcels/admin.py:161
+msgid "Click a point on the plan."
+msgstr "Cliquez sur un point du plan."
+
+#: apps/parcels/admin.py:162
+msgid "Now click the same point on the map."
+msgstr "Cliquez maintenant sur le même point sur la carte."
+
+#: apps/parcels/admin.py:163
+msgid "Add at least 3 control points."
+msgstr "Ajoutez au moins 3 points de calage."
+
+#: apps/parcels/admin.py:164
+msgid "3 points fit exactly: add a 4th to check the fit."
+msgstr ""
+"3 points se calent exactement : ajoutez-en un 4e pour vérifier le calage."
+
+#: apps/parcels/admin.py:165
+#, python-format
+msgid "Fit error (RMSE): %(m)s m"
+msgstr "Erreur de calage (RMSE) : %(m)s m"
+
+#: apps/parcels/admin.py:166 templates/orders/intake/step_details.html:35
+#: templates/payments/pay.html:35
+msgid "Remove"
+msgstr "Retirer"
+
+#: apps/parcels/admin.py:168 templates/admin/parcels/parcel/geometry.html:98
+msgid "Error (m)"
+msgstr "Erreur (m)"
+
+#: apps/parcels/admin.py:177
+#, python-format
+msgid "Boundary of order %(ref)s"
+msgstr "Limite de la commande %(ref)s"
+
+#: apps/parcels/admin.py:183
+msgid "Longitude, latitude (WGS 84)"
+msgstr "Longitude, latitude (WGS 84)"
+
+#: apps/parcels/admin.py:184
+msgid "UTM zone 32N (easting, northing)"
+msgstr "UTM zone 32N (est, nord)"
+
+#: apps/parcels/admin.py:185
+msgid "UTM zone 33N (easting, northing)"
+msgstr "UTM zone 33N (est, nord)"
+
+#: apps/parcels/admin.py:217 apps/parcels/georeference.py:47
+msgid "The control points are incomplete."
+msgstr "Les points de calage sont incomplets."
+
 #: apps/parcels/apps.py:8
 msgid "Parcels"
 msgstr "Parcelles"
@@ -2539,6 +2675,15 @@ msgstr "Polygone dessiné"
 #: apps/parcels/choices.py:10
 msgid "Digitized by analyst"
 msgstr "Numérisé par l'analyste"
+
+#: apps/parcels/georeference.py:40
+#, python-format
+msgid "Place at least %(n)s control points on both the plan and the map."
+msgstr "Placez au moins %(n)s points de calage, sur le plan et sur la carte."
+
+#: apps/parcels/georeference.py:56
+msgid "The control points are on one line. Spread them around the plan."
+msgstr "Les points de calage sont alignés. Répartissez-les sur tout le plan."
 
 #: apps/parcels/models.py:23
 msgid "Pin-only orders are analysed with a default buffer (FR-9)."
@@ -2622,6 +2767,16 @@ msgstr ""
 #: apps/parcels/parsers.py:184
 msgid "Longitude and latitude values are out of range."
 msgstr "Les valeurs de longitude et de latitude sont hors limites."
+
+#: apps/parcels/plans.py:26
+msgid "This file could not be read as an image or a PDF."
+msgstr "Ce fichier n'a pas pu être lu comme une image ou un PDF."
+
+#: apps/parcels/services.py:34
+#, python-format
+msgid "The boundary can no longer be changed: the order is %(status)s."
+msgstr ""
+"La limite ne peut plus être modifiée : la commande est au statut %(status)s."
 
 #: apps/parcels/validation.py:34
 msgid "This location is outside Cameroon."
@@ -2811,7 +2966,7 @@ msgstr "observations terrain"
 msgid "Amount to refund"
 msgstr "Montant à rembourser"
 
-#: apps/payments/admin.py:17 templates/admin/reports/review.html:46
+#: apps/payments/admin.py:17 templates/admin/reports/review.html:71
 msgid "Reason"
 msgstr "Motif"
 
@@ -2872,8 +3027,9 @@ msgstr "Virement bancaire"
 msgid "Free (full discount)"
 msgstr "Gratuit (remise totale)"
 
-#: apps/payments/models.py:29 templates/admin/reports/review.html:19
-#: templates/emails/receipt.txt:5 templates/reports/pdf.html:58
+#: apps/payments/models.py:29 templates/admin/parcels/parcel/geometry.html:37
+#: templates/admin/reports/review.html:42 templates/emails/receipt.txt:5
+#: templates/reports/pdf.html:58
 msgid "Order"
 msgstr "Commande"
 
@@ -3121,28 +3277,28 @@ msgstr "produits"
 msgid "prices"
 msgstr "prix"
 
-#: apps/reports/admin.py:42
+#: apps/reports/admin.py:47
 msgid "order status"
 msgstr "statut de la commande"
 
-#: apps/reports/admin.py:46
+#: apps/reports/admin.py:51
 msgid "review"
 msgstr "relecture"
 
-#: apps/reports/admin.py:51
+#: apps/reports/admin.py:56
 msgid "Open review"
 msgstr "Ouvrir la relecture"
 
-#: apps/reports/admin.py:73
+#: apps/reports/admin.py:78
 #, python-format
 msgid "Version %(n)s approved and delivered to the customer."
 msgstr "Version %(n)s approuvée et livrée au client."
 
-#: apps/reports/admin.py:76
+#: apps/reports/admin.py:81
 msgid "Draft saved."
 msgstr "Brouillon enregistré."
 
-#: apps/reports/admin.py:85
+#: apps/reports/admin.py:90
 msgid ""
 "Analysis restarted. The draft will be rebuilt when it finishes; current "
 "edits will be replaced."
@@ -3150,11 +3306,20 @@ msgstr ""
 "Analyse relancée. Le brouillon sera reconstruit à la fin ; les modifications"
 " en cours seront remplacées."
 
-#: apps/reports/admin.py:92
+#: apps/reports/admin.py:108
+#, python-format
+msgid ""
+"“%(m)s” is running again. Its finding will be rebuilt when it finishes; your"
+" edits to the other sections are kept."
+msgstr ""
+"« %(m)s » est relancé. Son constat sera reconstruit à la fin ; vos "
+"modifications des autres sections sont conservées."
+
+#: apps/reports/admin.py:116
 msgid "Report reopened. Approving again creates a new version."
 msgstr "Rapport rouvert. Une nouvelle approbation crée une nouvelle version."
 
-#: apps/reports/admin.py:116
+#: apps/reports/admin.py:153
 #, python-format
 msgid "Review report %(ref)s"
 msgstr "Relecture du rapport %(ref)s"
@@ -3410,6 +3575,7 @@ msgid "Import a layer"
 msgstr "Importer une couche"
 
 #: templates/admin/gazetteer/referencelayer/import.html:5
+#: templates/admin/parcels/parcel/geometry.html:36
 msgid "Home"
 msgstr "Accueil"
 
@@ -3436,25 +3602,224 @@ msgstr ""
 "Commande %(ref)s de %(customer)s : %(amount)s. Ne confirmez qu'une fois le "
 "virement reçu sur le compte bancaire."
 
+#: templates/admin/orders/order/change_form.html:18
+msgid "Staff tools"
+msgstr "Outils internes"
+
+#: templates/admin/orders/order/change_form.html:21
+#: templates/admin/reports/review.html:43
+msgid "Edit the boundary"
+msgstr "Modifier la limite"
+
+#: templates/admin/orders/order/change_form.html:21
+msgid "Georeference the site plan"
+msgstr "Géoréférencer le plan"
+
+#: templates/admin/orders/order/change_form.html:23
+msgid "Open the report review"
+msgstr "Ouvrir la relecture du rapport"
+
+#: templates/admin/orders/order/change_form.html:26
+msgid "Service-level target"
+msgstr "Échéance de service"
+
+#: templates/admin/orders/order/change_form.html:26
+msgid "past target"
+msgstr "délai dépassé"
+
+#: templates/admin/orders/order/change_form.html:31
+#, python-format
+msgid "run %(n)s, %(status)s"
+msgstr "analyse %(n)s, %(status)s"
+
+#: templates/admin/orders/order/change_form.html:34
+msgid "Module"
+msgstr "Module"
+
+#: templates/admin/orders/order/change_form.html:34
+msgid "Status"
+msgstr "Statut"
+
+#: templates/admin/orders/order/change_form.html:34
+#: templates/admin/reports/review.html:60
+msgid "Rating"
+msgstr "Note"
+
+#: templates/admin/orders/order/change_form.html:34
+msgid "Ran at"
+msgstr "Exécuté le"
+
+#: templates/admin/orders/order/change_form.html:34
+msgid "Error"
+msgstr "Erreur"
+
+#: templates/admin/orders/order/change_form.html:48
+msgid "No analysis has run yet."
+msgstr "Aucune analyse n'a encore été lancée."
+
+#: templates/admin/orders/order/change_form.html:53
+msgid "Audit log"
+msgstr "Journal d'audit"
+
+#: templates/admin/orders/order/change_form.html:56
+msgid "When"
+msgstr "Quand"
+
+#: templates/admin/orders/order/change_form.html:56
+msgid "Who"
+msgstr "Qui"
+
+#: templates/admin/orders/order/change_form.html:56
+msgid "Action"
+msgstr "Action"
+
+#: templates/admin/orders/order/change_form.html:61
+msgid "system"
+msgstr "système"
+
+#: templates/admin/orders/order/change_form.html:69
+msgid "Nothing recorded yet."
+msgstr "Rien d'enregistré pour l'instant."
+
+#: templates/admin/parcels/parcel/geometry.html:38
+#: templates/admin/parcels/parcel/geometry.html:68
+msgid "Boundary"
+msgstr "Limite"
+
+#: templates/admin/parcels/parcel/geometry.html:45
+msgid "seller-stated"
+msgstr "selon le vendeur"
+
+#: templates/admin/parcels/parcel/geometry.html:48
+msgid "This order is closed: the boundary can no longer be changed."
+msgstr "Cette commande est close : la limite ne peut plus être modifiée."
+
+#: templates/admin/parcels/parcel/geometry.html:55
+msgid "Fit"
+msgstr "Ajuster"
+
+#: templates/admin/parcels/parcel/geometry.html:62
+msgid "Boundary map"
+msgstr "Carte de la limite"
+
+#: templates/admin/parcels/parcel/geometry.html:70
+msgid "Draw a new boundary"
+msgstr "Tracer une nouvelle limite"
+
+#: templates/admin/parcels/parcel/geometry.html:71
+msgid "Edit corners"
+msgstr "Modifier les sommets"
+
+#: templates/admin/parcels/parcel/geometry.html:72
+msgid "Undo changes"
+msgstr "Annuler les modifications"
+
+#: templates/admin/parcels/parcel/geometry.html:74
+msgid ""
+"Corners snap to nearby corners and edges. Drag a corner to move it; click a "
+"midpoint to add one; right-click a corner to delete it."
+msgstr ""
+"Les sommets s'accrochent aux sommets et côtés voisins. Faites glisser un "
+"sommet pour le déplacer ; cliquez sur un point milieu pour en ajouter un ; "
+"clic droit sur un sommet pour le supprimer."
+
+#: templates/admin/parcels/parcel/geometry.html:78
+msgid "Type coordinates"
+msgstr "Saisir des coordonnées"
+
+#: templates/admin/parcels/parcel/geometry.html:79
+msgid "Coordinate system"
+msgstr "Système de coordonnées"
+
+#: templates/admin/parcels/parcel/geometry.html:82
+msgid ""
+"One corner per line, in order around the parcel: longitude, latitude (or "
+"easting, northing for UTM)."
+msgstr ""
+"Un sommet par ligne, dans l'ordre autour de la parcelle : longitude, "
+"latitude (ou est, nord en UTM)."
+
+#: templates/admin/parcels/parcel/geometry.html:84
+msgid "Show on the map"
+msgstr "Afficher sur la carte"
+
+#: templates/admin/parcels/parcel/geometry.html:85
+msgid "Copy the current corners"
+msgstr "Copier les sommets actuels"
+
+#: templates/admin/parcels/parcel/geometry.html:91
+msgid "Georeference a site plan"
+msgstr "Géoréférencer un plan"
+
+#: templates/admin/parcels/parcel/geometry.html:93
+msgid "Choose a plan"
+msgstr "Choisir un plan"
+
+#: templates/admin/parcels/parcel/geometry.html:97
+msgid ""
+"Click a recognisable point on the plan (a corner, a road junction), then the"
+" same point on the map. Repeat for at least 3 points spread around the plan."
+msgstr ""
+"Cliquez sur un point reconnaissable du plan (un angle, un carrefour), puis "
+"sur le même point sur la carte. Répétez pour au moins 3 points répartis sur "
+"le plan."
+
+#: templates/admin/parcels/parcel/geometry.html:100
+msgid "Plan opacity on the map"
+msgstr "Opacité du plan sur la carte"
+
+#: templates/admin/parcels/parcel/geometry.html:103
+msgid "Add control points"
+msgstr "Ajouter des points de calage"
+
+#: templates/admin/parcels/parcel/geometry.html:104
+msgid "Trace the boundary"
+msgstr "Tracer la limite"
+
+#: templates/admin/parcels/parcel/geometry.html:113
+msgid "Note for the audit log (optional)"
+msgstr "Note pour le journal d'audit (facultatif)"
+
+#: templates/admin/parcels/parcel/geometry.html:116
+msgid "Save and re-run the analysis"
+msgstr "Enregistrer et relancer l'analyse"
+
+#: templates/admin/parcels/parcel/geometry.html:118
+msgid "The previous boundary is kept in the history."
+msgstr "La limite précédente est conservée dans l'historique."
+
+#: templates/admin/parcels/parcel/geometry.html:123
+msgid "Previous boundaries"
+msgstr "Limites précédentes"
+
+#: templates/admin/parcels/parcel/geometry.html:125
+msgid "Shown as dashed yellow outlines on the map."
+msgstr "Affichées en tirets jaunes sur la carte."
+
 #: templates/admin/payments/refund.html:4
 #, python-format
 msgid "Payment %(ref)s: %(paid)s paid, %(left)s refundable."
 msgstr "Paiement %(ref)s : %(paid)s payés, %(left)s remboursables."
 
-#: templates/admin/reports/review.html:17
+#: templates/admin/reports/review.html:40
 #, python-format
 msgid "Order %(ref)s · %(email)s · status: <strong>%(status)s</strong>"
 msgstr "Commande %(ref)s · %(email)s · statut : <strong>%(status)s</strong>"
 
-#: templates/admin/reports/review.html:23
+#: templates/admin/reports/review.html:47
 msgid "No analysis results yet."
 msgstr "Pas encore de résultats d'analyse."
 
-#: templates/admin/reports/review.html:32
+#: templates/admin/reports/review.html:56
 msgid "computed"
 msgstr "calculée"
 
-#: templates/admin/reports/review.html:33
+#: templates/admin/reports/review.html:57
+msgid "Running again… reload the page in a minute to see the new result."
+msgstr ""
+"Relancé… rechargez la page dans une minute pour voir le nouveau résultat."
+
+#: templates/admin/reports/review.html:58
 msgid ""
 "This module failed. It will appear as unavailable unless you re-run the "
 "analysis."
@@ -3462,55 +3827,60 @@ msgstr ""
 "Ce module a échoué. Il apparaîtra comme indisponible, sauf si vous relancez "
 "l'analyse."
 
-#: templates/admin/reports/review.html:35
-msgid "Rating"
-msgstr "Note"
-
-#: templates/admin/reports/review.html:40
+#: templates/admin/reports/review.html:65
 msgid "Reason for changing it"
 msgstr "Motif de la modification"
 
-#: templates/admin/reports/review.html:42
+#: templates/admin/reports/review.html:67
 msgid "Finding (French)"
 msgstr "Constat (français)"
 
-#: templates/admin/reports/review.html:43
+#: templates/admin/reports/review.html:68
 msgid "Finding (English)"
 msgstr "Constat (anglais)"
 
-#: templates/admin/reports/review.html:45
+#: templates/admin/reports/review.html:70
 msgid "Hide this section"
 msgstr "Masquer cette section"
 
-#: templates/admin/reports/review.html:48
+#: templates/admin/reports/review.html:73
 msgid "Computed values"
 msgstr "Valeurs calculées"
 
-#: templates/admin/reports/review.html:48
+#: templates/admin/reports/review.html:73
 msgid "Data"
 msgstr "Données"
 
-#: templates/admin/reports/review.html:56
+#: templates/admin/reports/review.html:75
+msgid "Re-run this module"
+msgstr "Relancer ce module"
+
+#: templates/admin/reports/review.html:83
+#: templates/reports/report_page.html:70
+msgid "Maps as printed in the PDF"
+msgstr "Cartes telles qu'imprimées dans le PDF"
+
+#: templates/admin/reports/review.html:93
 msgid "Analyst note (optional, shown in the report)"
 msgstr "Note de l'analyste (facultative, affichée dans le rapport)"
 
-#: templates/admin/reports/review.html:64
+#: templates/admin/reports/review.html:101
 msgid "Save draft"
 msgstr "Enregistrer le brouillon"
 
-#: templates/admin/reports/review.html:65
+#: templates/admin/reports/review.html:102
 msgid "Approve and deliver"
 msgstr "Approuver et livrer"
 
-#: templates/admin/reports/review.html:68
+#: templates/admin/reports/review.html:105
 msgid "Re-run analysis"
 msgstr "Relancer l'analyse"
 
-#: templates/admin/reports/review.html:71
+#: templates/admin/reports/review.html:108
 msgid "Reopen for changes"
 msgstr "Rouvrir pour modification"
 
-#: templates/admin/reports/review.html:77
+#: templates/admin/reports/review.html:114
 msgid "Delivered versions"
 msgstr "Versions livrées"
 
@@ -3852,10 +4222,6 @@ msgstr "À propos de la parcelle"
 #: templates/orders/intake/step_details.html:30
 msgid "Files already added"
 msgstr "Fichiers déjà ajoutés"
-
-#: templates/orders/intake/step_details.html:35 templates/payments/pay.html:35
-msgid "Remove"
-msgstr "Retirer"
 
 #: templates/orders/intake/step_locate.html:11
 msgid "Where is the parcel?"
@@ -4909,10 +5275,6 @@ msgstr ""
 #: templates/reports/report_page.html:63
 msgid "Map layers"
 msgstr "Couches de la carte"
-
-#: templates/reports/report_page.html:70
-msgid "Maps as printed in the PDF"
-msgstr "Cartes telles qu'imprimées dans le PDF"
 
 #: templates/reports/report_page.html:70
 msgid "Maps"

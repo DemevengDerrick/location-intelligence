@@ -1,3 +1,5 @@
+import json
+
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
@@ -5,18 +7,21 @@ from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
+from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 
 from apps.accounts import roles
 from apps.accounts.permissions import has_role
 from apps.analysis.models import Rating
 from apps.analysis.modules import MODULES
+from apps.analysis.pipeline import restart_module
 from apps.analysis.style import RATING_COLOURS
 from apps.analysis.tasks import start_analysis
 from apps.orders.models import OrderStatus
 
 from . import services
 from .models import Report, ReportVersion
+from .page import finding_for_browser, map_key
 
 
 class ReportVersionInline(admin.TabularInline):
@@ -87,14 +92,42 @@ class ReportAdmin(admin.ModelAdmin):
                 ),
             )
             return redirect("admin:reports_report_review", pk=pk)
+        elif (
+            action
+            and action.startswith("rerun:")
+            and order.status == OrderStatus.IN_REVIEW
+            and report.run_id
+        ):
+            name = action.split(":", 1)[1]
+            result = report.run.module_results.filter(module=name).first()
+            if result is not None:
+                restart_module(result)
+                messages.info(
+                    request,
+                    _(
+                        "“%(m)s” is running again. Its finding will be rebuilt when it finishes; "
+                        "your edits to the other sections are kept."
+                    )
+                    % {"m": MODULES[name].title},
+                )
+            return redirect("admin:reports_report_review", pk=pk)
         elif action == "reopen" and order.status == OrderStatus.DELIVERED:
             services.reopen(report, analyst=request.user, request=request)
             messages.info(request, _("Report reopened. Approving again creates a new version."))
             return redirect("admin:reports_report_review", pk=pk)
 
+        language = get_language() or "en"
+        parcel = order.parcels.first()
+        parcel_geojson = json.loads(parcel.geometry.geojson) if parcel and parcel.geometry else None
+        statuses = (
+            dict(report.run.module_results.values_list("module", "status")) if report.run_id else {}
+        )
         findings = []
         for i, finding in enumerate(report.draft.get("findings", [])):
             maps = finding.get("maps", {})
+            browser = finding_for_browser(
+                finding, language, parcel_geojson, f"map-{finding['module']}"
+            )
             findings.append(
                 {
                     **finding,
@@ -102,10 +135,14 @@ class ReportAdmin(admin.ModelAdmin):
                     "title": MODULES[finding["module"]].title,
                     "colour": RATING_COLOURS[finding["rating"]],
                     "map_urls": [
-                        default_storage.url(by_language["en"])
-                        for by_language in maps.values()
-                        if by_language.get("en")
+                        default_storage.url(key)
+                        for key in (map_key(m, language) for m in maps.values())
+                        if key
                     ],
+                    "map": browser["map"],
+                    "map_id": browser["map_id"],
+                    "map_config_id": browser["map_config_id"],
+                    "running": statuses.get(finding["module"]) == "pending",
                 }
             )
         return TemplateResponse(
@@ -116,7 +153,10 @@ class ReportAdmin(admin.ModelAdmin):
                 "title": _("Review report %(ref)s") % {"ref": str(report.reference)[:8]},
                 "report": report,
                 "order": order,
-                "parcel": order.parcels.first(),
+                "parcel": parcel,
+                "geometry_url": reverse("admin:parcels_parcel_geometry", args=[parcel.pk])
+                if parcel
+                else None,
                 "findings": findings,
                 "ratings": Rating.choices,
                 "editable": order.status == OrderStatus.IN_REVIEW,

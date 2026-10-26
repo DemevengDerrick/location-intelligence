@@ -156,7 +156,10 @@
   });
 
   document.getElementById("clear-shape").addEventListener("click", () => {
-    draw.clear();
+    // draw.clear() would also remove Terra Draw's map layers (nothing would show afterwards).
+    draw.setMode("static");
+    const ids = draw.getSnapshot().map((f) => f.id);
+    if (ids.length) draw.removeFeatures(ids);
     removeMarker();
     marker = null;
     save(null);

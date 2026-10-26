@@ -32,6 +32,8 @@ dependencies = [
     "segno>=1.6",
     "vl-convert-python>=1.7",
     "pystac-client>=0.8",
+    "pillow>=10.4",
+    "pypdfium2>=4.30",
 ]
 
 [dependency-groups]

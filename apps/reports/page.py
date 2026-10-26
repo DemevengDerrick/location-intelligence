@@ -40,6 +40,14 @@ def _signed(key):
     return default_storage.url(key) if key else ""
 
 
+def map_key(stored, language):
+    """A stored static map: {"fr": key, "en": key}, or one key in drafts made before maps
+    were drawn per language."""
+    if isinstance(stored, str):
+        return stored
+    return (stored or {}).get(language) or (stored or {}).get("en") or ""
+
+
 def _layer_for_browser(layer, language):
     """Pick the reader's language everywhere and swap storage keys for signed URLs."""
     out = {k: v for k, v in layer.items() if k not in {"image", "title", "legend", "hover"}}
@@ -111,7 +119,7 @@ def _charts(finding, language):
     return rendered
 
 
-def _finding(finding, language, parcel_geojson, element_id):
+def finding_for_browser(finding, language, parcel_geojson, element_id):
     rating = finding["rating"]
     module = MODULES.get(finding["module"])
     layers = [_layer_for_browser(layer, language) for layer in finding.get("layers") or []]
@@ -127,7 +135,7 @@ def _finding(finding, language, parcel_geojson, element_id):
         "unavailable": finding.get("unavailable"),
         "overridden": rating != finding.get("computed_rating") and finding.get("override_reason"),
         "override_reason": finding.get("override_reason", ""),
-        "static_maps": [_signed(by_lang.get(language)) for by_lang in finding["maps"].values()],
+        "static_maps": [_signed(map_key(m, language)) for m in finding["maps"].values()],
         "charts": _charts(finding, language),
         "map_id": element_id,
         "map_config_id": f"{element_id}-config",
@@ -158,7 +166,9 @@ def page_context(report, language):
     parcel = order.parcels.first()
     parcel_geojson = json.loads(parcel.geometry.geojson) if parcel and parcel.geometry else None
     visible = [f for f in content.get("findings", []) if not f.get("hidden")]
-    findings = [_finding(f, language, parcel_geojson, f"map-{f['module']}") for f in visible]
+    findings = [
+        finding_for_browser(f, language, parcel_geojson, f"map-{f['module']}") for f in visible
+    ]
     by_module = {f["module"]: f for f in findings}
     sections = [
         {"key": key, "title": str(title), "findings": [by_module[m] for m in modules

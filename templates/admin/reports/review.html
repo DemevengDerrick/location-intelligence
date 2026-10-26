@@ -1,5 +1,10 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n static %}
+{% block extrahead %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/maplibre/maplibre-gl.css' %}">
+<script src="{% static 'vendor/maplibre/maplibre-gl.js' %}" defer></script>
+<script src="{% static 'js/report-page.js' %}" defer></script>
+{% endblock %}
 {% block extrastyle %}{{ block.super }}
 <style>
   .review { display: grid; gap: 1.5rem; }
@@ -9,6 +14,24 @@
   .finding textarea { width: 100%; box-sizing: border-box; }
   .unavailable { background: #fff4e5; padding: .5rem; }
   .meta { color: var(--body-quiet-color); font-size: .85em; }
+  .finding .map-box { position: relative; }
+  .finding .review-map { height: 28rem; width: 100%; border: 1px solid var(--hairline-color); }
+  .finding .layer-panel { margin-top: .5rem; font-size: .85em; }
+  .finding .layer-panel ul { list-style: none; padding-left: 0; margin: 0; }
+  .finding .layer-panel li { margin: .35rem 0; list-style: none; }
+  .finding .layer-panel fieldset { border: 1px solid var(--hairline-color); padding: .5rem; margin-bottom: .5rem; }
+  .finding .running { background: #eef6ff; padding: .5rem; }
+  /* The few utility classes report-page.js uses (the admin has no Tailwind). */
+  .finding .absolute { position: absolute; } .finding .relative { position: relative; }
+  .finding .left-0 { left: 0; } .finding .top-0 { top: 0; }
+  .finding .h-\[28rem\] { height: 28rem; } .finding .h-full { height: 100%; } .finding .w-full { width: 100%; }
+  .finding .w-0\.5 { width: 2px; } .finding .bg-white { background: #fff; }
+  .finding .overflow-hidden { overflow: hidden; } .finding .pointer-events-none { pointer-events: none; }
+  .finding .flex { display: flex; } .finding .items-center { align-items: center; } .finding .items-start { align-items: flex-start; }
+  .finding .gap-2 { gap: .5rem; } .finding .pl-6 { padding-left: 1.5rem !important; }
+  .finding .inline-block { display: inline-block; } .finding .h-3 { height: .75rem; } .finding .w-3 { width: .75rem; } .finding .shrink-0 { flex-shrink: 0; }
+  .finding .border { border: 1px solid #94a3b8; } .finding .text-xs { font-size: .8em; } .finding .block { display: block; }
+  .maplibregl-popup-content { font-size: .8em; }
   @media (max-width: 900px) { .finding { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
@@ -17,6 +40,7 @@
   {% blocktranslate with ref=order.public_id|stringformat:"s"|slice:":8" email=order.customer.email status=order.get_status_display %}Order {{ ref }} · {{ email }} · status: <strong>{{ status }}</strong>{% endblocktranslate %}
   {% if parcel %} · {{ parcel.get_input_method_display }}{% if parcel.is_approximate %} ({% translate "approximate location" %}){% endif %}{% endif %}
   · <a href="{% url 'admin:orders_order_change' order.pk %}">{% translate "Order" %}</a>
+  {% if geometry_url %} · <a href="{{ geometry_url }}">{% translate "Edit the boundary" %}</a>{% endif %}
 </p>
 
 {% if not findings %}
@@ -30,6 +54,7 @@
     <div>
       <h2>{{ f.title }} <span class="rating" style="background: {{ f.colour }}">{{ f.rating }}</span>
         {% if f.rating != f.computed_rating %}<span class="meta">({% translate "computed" %}: {{ f.computed_rating }})</span>{% endif %}</h2>
+      {% if f.running %}<p class="running">{% translate "Running again… reload the page in a minute to see the new result." %}</p>{% endif %}
       {% if f.unavailable %}<p class="unavailable">{% translate "This module failed. It will appear as unavailable unless you re-run the analysis." %}</p>{% endif %}
       <p>
         <label>{% translate "Rating" %}
@@ -46,8 +71,20 @@
         <input name="hidden_reason_{{ f.index }}" value="{{ f.hidden_reason }}" placeholder="{% translate "Reason" %}" size="30" {% if not editable %}disabled{% endif %}>
       </p>
       <details class="meta"><summary>{% translate "Computed values" %}</summary><pre>{{ f.results|pprint }}</pre><p>{% translate "Data" %}: {{ f.datasets }}</p></details>
+      {% if order.status == "in_review" and not f.running %}
+      <p><button type="submit" name="action" value="rerun:{{ f.module }}" formnovalidate>{% translate "Re-run this module" %}</button></p>
+      {% endif %}
     </div>
-    <div>{% for url in f.map_urls %}<img src="{{ url }}" alt="{{ f.title }}">{% endfor %}</div>
+    <div>
+      {% if f.map %}
+      <div class="map-box"><div id="{{ f.map_id }}" data-report-map="{{ f.map_config_id }}" class="review-map"></div></div>
+      <div data-layer-panel="{{ f.map_id }}" class="layer-panel"></div>
+      {{ f.map|json_script:f.map_config_id }}
+      {% if f.map_urls %}<details class="meta"><summary>{% translate "Maps as printed in the PDF" %}</summary>{% for url in f.map_urls %}<img src="{{ url }}" alt="{{ f.title }}">{% endfor %}</details>{% endif %}
+      {% else %}
+      {% for url in f.map_urls %}<img src="{{ url }}" alt="{{ f.title }}">{% endfor %}
+      {% endif %}
+    </div>
   </section>
   {% endfor %}
 
