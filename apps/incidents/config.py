@@ -6,17 +6,24 @@ from apps.core.site_settings import get_setting
 
 SETTING_KEY = "area_signals"
 
-# FR-22: land-issue keywords, French and English. An item is kept only if its title or
-# description contains one of them.
+# FR-22: land-issue keywords, French and English. An item is kept if its title or
+# description contains a strong keyword, or if its title contains a weak one, or its
+# description two different weak ones: words like "foncier" also turn up in passing in
+# investment or politics stories.
 DEFAULT_KEYWORDS = [
-    "litige foncier", "litiges fonciers", "conflit foncier", "conflits fonciers", "foncier",
+    "litige foncier", "litiges fonciers", "conflit foncier", "conflits fonciers",
     "double vente", "titre foncier", "titres fonciers", "retrait de titre",
-    "annulation de titre", "casse", "casses", "démolition", "démolitions", "déguerpissement",
-    "déguerpissements", "déguerpis", "expropriation", "expropriations", "exproprié",
-    "utilité publique", "spoliation", "accaparement", "lotissement", "domaine public",
-    "domaine national", "chefferie", "land dispute", "land disputes", "land grabbing",
-    "land grab", "land title", "land titles", "eviction", "evictions", "evicted",
-    "demolition", "demolitions", "expropriation", "public utility", "encroachment",
+    "annulation de titre", "démolition", "démolitions", "démoli", "démolis", "démolies",
+    "déguerpissement", "déguerpissements", "déguerpir", "déguerpi", "déguerpis",
+    "déguerpies", "expropriation", "expropriations", "exproprié", "expropriés",
+    "utilité publique", "spoliation", "land dispute", "land disputes", "land conflict",
+    "land grabbing", "land grab", "land title", "land titles", "eviction", "evictions",
+    "evicted", "demolition", "demolitions", "demolished", "public utility", "encroachment",
+]  # fmt: skip
+DEFAULT_WEAK_KEYWORDS = [
+    "foncier", "foncière", "fonciers", "foncières", "casse", "casses", "accaparement",
+    "lotissement", "lotissements", "domaine public", "domaine national", "chefferie",
+    "chefferies", "land", "landowner", "landowners",
 ]  # fmt: skip
 
 
@@ -32,7 +39,13 @@ class SignalsSettings:
     outlet_search_words: list = field(
         default_factory=lambda: ["foncier", "déguerpissement", "expropriation"]
     )
+    # The same for English-language outlets (Cameroon News Agency, The Post...)
+    outlet_search_words_en: list = field(default_factory=lambda: ["land", "eviction", "demolition"])
     keywords: list = field(default_factory=lambda: list(DEFAULT_KEYWORDS))
+    weak_keywords: list = field(default_factory=lambda: list(DEFAULT_WEAK_KEYWORDS))
+    # Off since October 2026: the free GDELT DOC API refused about half our requests and
+    # returned no articles. Set "gdelt_enabled": true in the setting to try it again.
+    gdelt_enabled: bool = False
     # GDELT rejects long queries, so it gets a shorter list
     gdelt_keywords: list = field(
         default_factory=lambda: [
@@ -64,5 +77,7 @@ def signals_settings() -> SignalsSettings:
             value = float(value)
         elif kind in ("int", int):
             value = int(value)
+        elif kind in ("bool", bool) and not isinstance(value, bool):
+            value = str(value).strip().lower() in {"1", "true", "yes", "on"}
         values[key] = value
     return SignalsSettings(**values)

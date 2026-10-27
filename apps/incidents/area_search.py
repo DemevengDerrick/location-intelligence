@@ -31,9 +31,10 @@ LEVELS = [  # finest first; one place per level
 
 
 def hierarchy(point, quartier_m=1500):
-    """One gazetteer place per level around the point, finest first: the nearest quartier,
-    village or lieu-dit within `quartier_m` (OSM maps most of them as points), then the
-    commune, department and region containing the point."""
+    """One gazetteer place per level around the point, finest first: the nearest quartier or
+    village within `quartier_m` (OSM maps most of them as points), or failing that the nearest
+    lieu-dit (a junction or landmark, which the press names less often), then the commune,
+    department and region containing the point."""
     chain = []
     srid = utm_srid_for(point)
     point_m = point.transform(srid, clone=True)
@@ -42,8 +43,9 @@ def hierarchy(point, quartier_m=1500):
     )
     distances = [(point_m.distance(p.geometry.transform(srid, clone=True)), p) for p in near]
     distances = [(d, p) for d, p in distances if d <= quartier_m]
-    if distances:
-        chain.append(min(distances, key=lambda dp: dp[0])[1])
+    settled = [(d, p) for d, p in distances if p.place_type != PlaceType.LIEU_DIT]
+    if settled or distances:
+        chain.append(min(settled or distances, key=lambda dp: dp[0])[1])
     containing = GazetteerPlace.objects.filter(
         geometry__intersects=point, place_type__in=[t for types in LEVELS[1:] for t in types]
     )
@@ -88,11 +90,14 @@ def _run_gdelt(place, settings, http):
 def _run_outlets(place, settings, http):
     entries, queries, errors = [], [], []
     sources = Source.objects.filter(is_active=True).exclude(search_url="")
-    words = [
-        f"{term} {word}" for word in settings.outlet_search_words for term in _outlet_terms(place)
-    ]
+    terms = _outlet_terms(place)
     for source in sources:
-        for query in words:
+        words = (
+            settings.outlet_search_words_en
+            if source.language == "en"
+            else (settings.outlet_search_words)
+        )
+        for query in (f"{term} {word}" for word in words for term in terms):
             url = collectors.search_feed_url(source, query)
             queries.append(url)
             try:
@@ -130,7 +135,7 @@ def run_search(place, provider, settings=None, http=None):
             text = f"{entry['title']} {entry.get('description', '')}"
             if not collectors.contains_any(text, names):
                 continue
-            if not collectors.relevant(entry, settings.keywords):
+            if not collectors.relevant(entry, settings.keywords, settings.weak_keywords):
                 continue
             items.append(collectors.store(entry, source or _gdelt_source())[0])
         search.query = query
@@ -171,7 +176,10 @@ def widen(point, settings=None, http=None):
     levels, total, failures, successes = [], set(), [], 0
     for place in hierarchy(point):
         searches, reused = [], True
-        for provider in (SearchProvider.OUTLETS, SearchProvider.GDELT):
+        providers = [SearchProvider.OUTLETS]
+        if settings.gdelt_enabled:
+            providers.append(SearchProvider.GDELT)
+        for provider in providers:
             try:
                 search, ran = ensure_search(place, provider, settings, http)
             except (httpx.HTTPError, ValueError) as exc:

@@ -30,24 +30,32 @@ def collect_sources():
         ):
             continue
         try:
-            created[source.name] = collectors.collect_source(source, settings.keywords, http)
+            created[source.name] = collectors.collect_source(
+                source, settings.keywords, http, settings.weak_keywords
+            )
         except (httpx.HTTPError, ValueError, SyntaxError) as exc:
             logger.warning("Collecting %s failed: %r", source.name, exc)
+    if settings.gdelt_enabled:
+        created["GDELT"] = _collect_gdelt(settings, http)
+    if llm.available():
+        extract_pending.delay()
+    return created
+
+
+def _collect_gdelt(settings, http):
     try:
         query = collectors.gdelt_query(["Cameroun", "Cameroon"], settings.gdelt_keywords)
         gdelt = _gdelt_source()
         count = 0
         for entry in collectors.gdelt_search(query, "1week", 250, http):
-            if collectors.relevant(entry, settings.keywords):
+            if collectors.relevant(entry, settings.keywords, settings.weak_keywords):
                 count += collectors.store(entry, gdelt)[1]
         gdelt.last_crawled_at = timezone.now()
         gdelt.save(update_fields=["last_crawled_at", "updated_at"])
-        created["GDELT"] = count
+        return count
     except (httpx.HTTPError, ValueError) as exc:
         logger.warning("GDELT national search failed: %r", exc)
-    if llm.available():
-        extract_pending.delay()
-    return created
+        return None
 
 
 @shared_task(acks_late=True)

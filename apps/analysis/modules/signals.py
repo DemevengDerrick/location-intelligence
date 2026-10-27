@@ -180,7 +180,8 @@ class SignalsModule(Module):
                 "max_age_days": settings.max_age_days,
                 "min_items": settings.min_items,
             },
-            datasets={"gdelt": searched_on, "news-outlets": searched_on},
+            datasets={"news-outlets": searched_on}
+            | ({"gdelt": searched_on} if settings.gdelt_enabled else {}),
             maps={"incidents": self.render_maps(draw)},
             charts=charts_,
             layers=self._layers(incidents, ring_m=parcel_m.buffer(settings.radius_km * 1000)),

@@ -129,6 +129,30 @@ def test_feeds_refuse_entity_expansion():
         collectors.parse_feed(bomb)
 
 
+def test_feed_with_a_repeated_attribute_is_repaired():
+    feed = rss(("Casse à Makepè", "https://a.cm/1", "x", WHEN)).replace(
+        '<rss version="2.0">',
+        '<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" '
+        'xmlns:media="http://search.yahoo.com/mrss/">',
+    )
+    assert [e["title"] for e in collectors.parse_feed(feed)] == ["Casse à Makepè"]
+
+
+def test_land_words_in_passing_do_not_make_an_item_relevant():
+    settings = SignalsSettings()
+
+    def relevant(title, description=""):
+        entry = {"title": title, "description": description}
+        return collectors.relevant(entry, settings.keywords, settings.weak_keywords)
+
+    assert relevant("Des habitants de Ngousso appelés à déguerpir")  # strong, in the title
+    assert relevant("Le préfet installé", "Il devra régler les litiges fonciers du Wouri")
+    assert relevant("Réforme foncière : le ministère passe à l'action")  # weak, in the title
+    assert relevant("Tensions à Bali", "La chefferie conteste un lotissement")  # two weak
+    assert not relevant("Un hôtel de 220 milliards", "fonds propres et foncier apportés")
+    assert not relevant("Plantain", "valorisation du foncier et des fonciers des universités")
+
+
 def test_robots_txt_is_respected():
     web = Web({"robots.txt": "User-agent: *\nDisallow: /\n"})
     assert collectors.fetch_feed("https://closed.example.cm/feed/", web.client()) == []
@@ -157,6 +181,7 @@ def test_daily_collection_keeps_land_items_only(outlet, monkeypatch):
     monkeypatch.setattr(collectors, "client", web.client)
     result = tasks.collect_sources()
     assert result["Journal test"] == 1
+    assert "GDELT" not in result and not any("gdelt" in url for url in web.requested)
     assert list(SourceItem.objects.values_list("title", flat=True)) == [
         "Déguerpissement à Bonabéri"
     ]
@@ -236,7 +261,7 @@ def test_search_widens_until_enough_items_and_saves_each_place(places, outlet):
             "api.gdeltproject.org": {"articles": []},
         }
     )
-    settings = SignalsSettings(min_items=3, outlet_search_words=["foncier"])
+    settings = SignalsSettings(min_items=3, outlet_search_words=["foncier"], gdelt_enabled=True)
     levels = area_search.widen(PARCEL, settings, web.client())
     assert [lv["place"].name for lv in levels] == ["Bonamoussadi", "Douala V", "Wouri"]
     assert [len(lv["item_ids"]) for lv in levels] == [1, 1, 2]  # the market story is not land
@@ -261,17 +286,44 @@ def test_stale_searches_run_again(places, outlet):
 
 def test_gdelt_failure_does_not_stop_the_search(places, outlet):
     web = Web({"api.gdeltproject.org": 503})
-    settings = SignalsSettings(min_items=1, outlet_search_words=["foncier"])
+    settings = SignalsSettings(min_items=1, outlet_search_words=["foncier"], gdelt_enabled=True)
     levels = area_search.widen(PARCEL, settings, web.client())
     assert len(levels) == 4  # nothing found, so up to the region
     failed = AreaSearch.objects.filter(provider=SearchProvider.GDELT, ok=False)
     assert failed.count() == 4  # tried again by the next order
 
 
+def test_search_starts_at_a_quartier_rather_than_a_closer_landmark(places):
+    GazetteerPlace.objects.create(
+        name="Carrefour Lycée",
+        place_type=PlaceType.LIEU_DIT,
+        geometry=Point(9.7005, 4.05, srid=4326),
+    )
+    assert area_search.hierarchy(PARCEL)[0] == places["quartier"]
+
+
+def test_english_outlets_are_searched_with_english_words(places, outlet):
+    outlet.language = "en"
+    outlet.save()
+    web = Web({"api.gdeltproject.org": {"articles": []}})
+    area_search.widen(PARCEL, SignalsSettings(min_items=1), web.client())
+    searched = [url for url in web.requested if "news.example.cm/?s=" in url]
+    assert "https://news.example.cm/?s=Bonamoussadi+land&feed=rss2" in searched
+    assert not any("foncier" in url for url in searched)
+
+
+def test_gdelt_is_off_by_default(places, outlet):
+    web = Web()
+    area_search.widen(PARCEL, SignalsSettings(min_items=1), web.client())
+    assert not any("gdeltproject" in url for url in web.requested)
+    assert not AreaSearch.objects.filter(provider=SearchProvider.GDELT).exists()
+
+
 def test_search_fails_only_if_every_provider_fails(places, outlet):
     web = Web({"api.gdeltproject.org": 503, "news.example.cm/?s=": 503})
     with pytest.raises(httpx.HTTPError):
-        area_search.widen(PARCEL, SignalsSettings(outlet_search_words=["foncier"]), web.client())
+        settings = SignalsSettings(outlet_search_words=["foncier"], gdelt_enabled=True)
+        area_search.widen(PARCEL, settings, web.client())
 
 
 # --- Extraction ---------------------------------------------------------------------------

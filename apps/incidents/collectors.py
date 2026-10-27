@@ -113,9 +113,25 @@ def _date(value):
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
+# An attribute repeated inside one tag, e.g. a WordPress plugin declaring xmlns:media twice
+DUPLICATE_ATTRIBUTE = re.compile(r'\s([\w:.-]+)="[^"]*"(?=[^<>]*\s\1=")')
+
+
+def _parse_xml(data):
+    """The feed's root element. Strict XML parsers reject a repeated attribute; some outlets'
+    feeds have one, so drop the earlier copy and try again."""
+    try:
+        return ElementTree.fromstring(data)
+    except ElementTree.ParseError as exc:
+        if "duplicate attribute" not in str(exc):
+            raise
+        repaired = DUPLICATE_ATTRIBUTE.sub("", data.decode("utf-8", errors="replace"))
+        return ElementTree.fromstring(repaired.encode("utf-8"))
+
+
 def parse_feed(xml_text):
     """Entries of an RSS 2.0 or Atom feed: dicts with url, title, description, published_at."""
-    root = ElementTree.fromstring(xml_text.encode() if isinstance(xml_text, str) else xml_text)
+    root = _parse_xml(xml_text.encode() if isinstance(xml_text, str) else xml_text)
     atom = "{http://www.w3.org/2005/Atom}"
     entries = []
     for item in root.iter("item"):
@@ -258,16 +274,28 @@ def store(entry, source=None):
     )
 
 
-def relevant(entry, keywords):
-    return contains_any(f"{entry['title']} {entry.get('description', '')}", keywords)
+def _families(text, phrases):
+    """Distinct weak keywords found, counting "foncier", "foncière", "fonciers" as one."""
+    return {normalise(p)[:6] for p in phrases if contains_any(text, [p])}
 
 
-def collect_source(source, keywords, http=None):
+def relevant(entry, keywords, weak_keywords=()):
+    """FR-22: is the item about land? A strong keyword anywhere, a weak one in the title, or
+    two different weak ones in the description."""
+    title, description = entry["title"], entry.get("description", "")
+    if contains_any(f"{title} {description}", keywords):
+        return True
+    if contains_any(title, weak_keywords):
+        return True
+    return len(_families(description, weak_keywords)) >= 2
+
+
+def collect_source(source, keywords, http=None, weak_keywords=()):
     """FR-22 daily collection from one outlet feed: store the land-related items."""
     entries = fetch_feed(source.url, http)
     created = 0
     for entry in entries:
-        if relevant(entry, keywords):
+        if relevant(entry, keywords, weak_keywords):
             created += store(entry, source)[1]
     source.last_crawled_at = timezone.now()
     source.save(update_fields=["last_crawled_at", "updated_at"])
