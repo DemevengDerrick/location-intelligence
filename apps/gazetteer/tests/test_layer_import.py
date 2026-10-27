@@ -59,5 +59,5 @@ def test_unreadable_files_are_reported_on_the_form(admin_client):
     upload = SimpleUploadedFile("layer.txt", b"hello")
     response = post(admin_client, upload)
     assert response.status_code == 200
-    assert "GeoJSON, KML or a zipped shapefile" in response.content.decode()
+    assert response.context["form"].errors  # shown in the admin's language, FR or EN
     assert not ReferenceLayer.objects.exists()

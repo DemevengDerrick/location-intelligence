@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 source = f"{SOURCE_PREFIX} {level} ({meta['buildDate']})"
                 places = [
                     GazetteerPlace(
-                        name=feature["properties"]["shapeName"],
+                        name=fix_mojibake(feature["properties"]["shapeName"]),
                         place_type=kind,
                         geometry=_as_multipolygon(feature["geometry"]),
                         source=source,
@@ -99,6 +99,16 @@ class Command(BaseCommand):
             if place.place_type == PlaceType.COMMUNE:
                 place.commune = place.arrondissement = place.name
             place.save(update_fields=["region", "department", "commune", "arrondissement"])
+
+
+def fix_mojibake(name):
+    """geoBoundaries ships some CMR names as UTF-8 read as Latin-1 ("YaoundÃ©"): undo that."""
+    if "Ã" not in name and "Â" not in name:
+        return name
+    try:
+        return name.encode("latin-1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return name
 
 
 def _as_multipolygon(geojson_geometry):

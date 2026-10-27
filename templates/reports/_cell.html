@@ -1,0 +1,1 @@
+{% if cell.0.href %}{% for link in cell %}<a href="{{ link.href }}" rel="noopener nofollow" target="_blank" class="underline">{{ link.text }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}{% else %}{{ cell }}{% endif %}

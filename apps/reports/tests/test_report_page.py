@@ -301,3 +301,30 @@ def test_drafts_from_before_per_language_maps_still_open(client, customer):
         version.save()
     client.force_login(customer)
     assert client.get(page_url(report)).status_code == 200
+
+
+def test_area_signals_show_the_statement_and_link_their_sources(client, customer):
+    table = {
+        "caption": "Reported land issues",
+        "columns": ["Date", "Type", "Where", "Summary", "Source"],
+        "rows": [
+            [
+                "2025-03-14",
+                "Demolition or eviction campaign",
+                "Bonamoussadi",
+                "Houses were demolished.",
+                [{"text": "Journal du Cameroun", "href": "https://example.cm/article"}],
+            ]
+        ],
+    }
+    report = delivered(
+        customer,
+        findings=[
+            finding("signals", "info", charts={"incidents": {"table": {"fr": table, "en": table}}})
+        ],
+    )
+    client.force_login(customer)
+    html = client.get(page_url(report)).content.decode()
+    assert "not findings about this parcel or its owners" in html  # FR-34
+    assert 'href="https://example.cm/article"' in html  # FR-33
+    assert "For information" in html

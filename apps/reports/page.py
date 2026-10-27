@@ -7,6 +7,7 @@ import json
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.http import Http404
+from django.utils import translation
 from django.utils.translation import gettext as _
 
 from apps.analysis import style
@@ -15,7 +16,7 @@ from apps.core.maps import basemap_url
 from apps.core.models import Dataset
 from apps.pages.models import Page, PageSlug
 
-from .structure import in_report_order, sections_for
+from .structure import in_report_order, sections_for, statement_for
 
 HIDDEN_CHART_FIELDS = {"order"}  # helper fields in chart data, not shown in data tables
 
@@ -170,11 +171,12 @@ def page_context(report, language):
         finding_for_browser(f, language, parcel_geojson, f"map-{f['module']}") for f in visible
     ]
     by_module = {f["module"]: f for f in findings}
-    sections = [
-        {"key": key, "title": str(title), "findings": [by_module[m] for m in modules
-                                                        if m in by_module]}
-        for key, title, modules in sections_for(order)
-    ]  # fmt: skip
+    with translation.override(language):
+        sections = [
+            {"key": key, "title": str(title), "statement": statement_for(key),
+             "findings": [by_module[m] for m in modules if m in by_module]}
+            for key, title, modules in sections_for(order)
+        ]  # fmt: skip
     dataset_slugs = {slug for f in visible for slug in f.get("datasets", {})}
     return {
         "report": report,

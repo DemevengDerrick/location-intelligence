@@ -6,14 +6,21 @@ stay readable in greyscale. Ratings are always shown with colour *and* an icon a
 
 from django.utils.translation import gettext_lazy
 
-RATING_COLOURS = {"green": "#009E73", "amber": "#E69F00", "red": "#D55E00", "grey": "#999999"}
-RATING_ICONS = {"green": "✓", "amber": "!", "red": "✕", "grey": "?"}
+RATING_COLOURS = {
+    "green": "#009E73",
+    "amber": "#E69F00",
+    "red": "#D55E00",
+    "grey": "#999999",
+    "info": "#0072B2",
+}
+RATING_ICONS = {"green": "✓", "amber": "!", "red": "✕", "grey": "?", "info": "i"}
 # The word shown with every rating badge, in reports and in the portal.
 RATING_WORDS = {
     "green": gettext_lazy("Good"),
     "amber": gettext_lazy("Check"),
     "red": gettext_lazy("Warning"),
     "grey": gettext_lazy("Unknown"),
+    "info": gettext_lazy("For information"),
 }
 
 PARCEL = {"edgecolor": "#000000", "facecolor": "none", "linewidth": 2.2, "zorder": 10}

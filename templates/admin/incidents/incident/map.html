@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{% block extrahead %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/maplibre/maplibre-gl.css' %}">
+<script src="{% static 'vendor/maplibre/maplibre-gl.js' %}" defer></script>
+<script src="{% static 'js/incident-map.js' %}" defer></script>
+{% endblock %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  #incident-map { height: 72vh; min-height: 420px; border: 1px solid var(--hairline-color); }
+  .map-filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin-bottom: .75rem; }
+  .map-filters label { display: flex; flex-direction: column; gap: .25rem; font-weight: 600; }
+  .incident-popup p { margin: .25rem 0; }
+</style>
+{% endblock %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  › <a href="{% url 'admin:incidents_incident_changelist' %}">{% translate "incidents" %}</a>
+  › {{ title }}
+</div>
+{% endblock %}
+{% block content %}
+<form id="incident-filters" class="map-filters">
+  <label>{% translate "Type" %}
+    <select name="type"><option value="">{% translate "All" %}</option>{% for value, label in types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+  </label>
+  <label>{% translate "Status" %}
+    <select name="status"><option value="">{% translate "All" %}</option>{% for value, label in statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+  </label>
+  <label>{% translate "From" %}<input type="date" name="from"></label>
+  <label>{% translate "To" %}<input type="date" name="to"></label>
+  <span id="incident-count" aria-live="polite"></span>
+</form>
+<div id="incident-map" role="region" aria-label="{% translate 'Map of incidents' %}"></div>
+<p class="help">{% translate "Area incidents (commune, department, region) are drawn at a point inside their area. Click a point to open the incident." %}</p>
+{{ config|json_script:"incident-map-config" }}
+<script id="incident-map-labels" type="application/json">{"count": "{% translate 'incidents shown' %}", "official": "{% translate 'Official act' %}", "open": "{% translate 'Open the incident' %}"}</script>
+{% endblock %}

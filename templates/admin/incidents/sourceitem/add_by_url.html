@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  › <a href="{% url 'admin:incidents_sourceitem_changelist' %}">{% translate "source items" %}</a>
+  › {{ title }}
+</div>
+{% endblock %}
+{% block content %}
+<p>{% translate "Paste the link of an article or official notice, or upload a PDF (gazette, communiqué). The text is kept private and is never shown to customers." %}</p>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <fieldset class="module aligned">
+    {% for field in form %}
+    <div class="form-row">{{ field.errors }}{{ field.label_tag }} {{ field }}{% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}</div>
+    {% endfor %}
+  </fieldset>
+  <div class="submit-row"><input type="submit" class="default" value="{% translate 'Add' %}"></div>
+</form>
+{% endblock %}

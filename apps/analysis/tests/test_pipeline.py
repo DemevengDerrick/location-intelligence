@@ -1,12 +1,13 @@
 import json
 import math
+from datetime import date
 
 import numpy as np
 import pytest
-from django.contrib.gis.geos import Polygon
+from django.contrib.gis.geos import Point, Polygon
 from django.core import mail
 from django.urls import reverse
-from django.utils import translation
+from django.utils import timezone, translation
 from rasterio.transform import from_origin
 
 from apps.analysis import providers
@@ -325,6 +326,7 @@ def data(monkeypatch):
         "ghsl_population": FakeGhslPopulation(),
         "ghsl": FakeGhsl(),
         "osm": None,  # built on first use, so tests can replace it first
+        "area_levels": [],  # what the widening news search returns (see signals tests)
     }
     monkeypatch.setattr(providers, "elevation_provider", lambda: state["dem"])
     monkeypatch.setattr(providers, "buildings_provider", lambda: state["buildings"])
@@ -353,6 +355,10 @@ def data(monkeypatch):
     monkeypatch.setattr(
         "apps.analysis.modules.demographics.ghsl_population_provider",
         lambda: state["ghsl_population"],
+    )
+    monkeypatch.setattr(
+        "apps.analysis.modules.signals.area_search.widen",
+        lambda point, settings=None, http=None: state["area_levels"],
     )
     return state
 
@@ -398,6 +404,7 @@ def test_payment_runs_all_modules_and_sends_the_order_to_review(data, paid_order
         "access",
         "demographics",
         "red_flags",
+        "signals",
     }
     assert order.status == OrderStatus.IN_REVIEW
 
@@ -685,8 +692,8 @@ def test_pdf_follows_the_report_structure(data, paid_order):
     order_of = [html.index(heading) for heading in headings]
     assert order_of == sorted(order_of)
     assert "Field verification findings" not in html  # desk tier
-    assert "not included in this version" in html  # sections whose modules come later
-    assert html.count('class="tile"') == 9
+    assert "not included in this version" not in html  # every section has its module now
+    assert html.count('class="tile"') == 10
     assert html.count("data:image/svg+xml") >= 20  # 12 maps + 8 charts + QR code
     assert "Population in 2025 (WorldPop R2025A)" in html  # the demographics table
     assert "Nearest services" in html and "École Les Lauriers" in html  # the services table
@@ -1511,3 +1518,134 @@ def test_review_screen_shows_interactive_maps(data, paid_order, analyst_client):
     assert 'data-report-map="map-terrain-config"' in html
     assert 'value="rerun:terrain"' in html
     assert reverse("admin:parcels_parcel_geometry", args=[order.parcels.get().pk]) in html
+
+
+# --- Phase 5: area signals ----------------------------------------------------------------
+
+
+def area_levels(*places):
+    from apps.incidents.models import AreaSearch, SearchProvider
+
+    levels = []
+    for place in places:
+        search = AreaSearch.objects.create(
+            place=place, provider=SearchProvider.OUTLETS, ok=True, searched_at=timezone.now()
+        )
+        levels.append({"place": place, "searches": [search], "item_ids": set(), "reused": False})
+    return levels
+
+
+def approved_incident(place, geometry, precision, **extra):
+    from apps.incidents.models import Incident, ReviewStatus
+
+    return Incident.objects.create(
+        incident_type=extra.pop("incident_type", "demolition"),
+        event_date=extra.pop("event_date", date(2025, 3, 14)),
+        summary_fr="Des maisons ont été démolies, selon la commune.",
+        summary_en="Houses were demolished, according to the council.",
+        place=place,
+        geometry=geometry,
+        precision=precision,
+        review_status=ReviewStatus.APPROVED,
+        **extra,
+    )
+
+
+@pytest.fixture
+def douala_places(db):
+    from apps.gazetteer.models import GazetteerPlace, PlaceType
+
+    region = GazetteerPlace.objects.create(
+        name="Littoral", place_type=PlaceType.REGION, geometry=square_m(*DOUALA, 80_000)
+    )
+    commune = GazetteerPlace.objects.create(
+        name="Douala V", place_type=PlaceType.COMMUNE, geometry=square_m(*DOUALA, 10_000)
+    )
+    quartier = GazetteerPlace.objects.create(
+        name="Bonamoussadi",
+        place_type=PlaceType.QUARTIER,
+        geometry=Point(DOUALA[0] + 0.005, DOUALA[1], srid=4326),
+    )
+    far = GazetteerPlace.objects.create(
+        name="Japoma", place_type=PlaceType.QUARTIER, geometry=Point(9.80, 4.0, srid=4326)
+    )
+    return {"region": region, "commune": commune, "quartier": quartier, "far": far}
+
+
+def test_signals_list_approved_incidents_nearby_and_in_searched_areas(
+    data, paid_order, douala_places
+):
+    from apps.incidents.models import LocationPrecision, ReviewStatus
+
+    p = douala_places
+    data["area_levels"] = area_levels(p["commune"])  # enough found at commune level
+    approved_incident(p["quartier"], p["quartier"].geometry, LocationPrecision.QUARTIER)
+    approved_incident(
+        p["commune"], p["commune"].geometry, LocationPrecision.COMMUNE,
+        incident_type="expropriation", is_official_act=True, event_date=date(2020, 1, 1),
+    )  # fmt: skip
+    approved_incident(p["far"], p["far"].geometry, LocationPrecision.QUARTIER)  # 12 km away
+    approved_incident(p["region"], p["region"].geometry, LocationPrecision.REGION)  # not reached
+    approved_incident(
+        p["quartier"], p["quartier"].geometry, LocationPrecision.QUARTIER,
+        event_date=date(2010, 1, 1),
+    )  # fmt: skip  # older than 10 years
+    unreviewed = approved_incident(p["quartier"], p["quartier"].geometry, "quartier")
+    unreviewed.review_status = ReviewStatus.UNREVIEWED
+    unreviewed.save()
+
+    order = paid_order()
+    signals = findings(order)["signals"]
+    results = ModuleResult.objects.get(module="signals").results
+    assert signals["rating"] == "info"
+    assert [(i["type"], i["level"]) for i in results["incidents"]] == [
+        ("expropriation", "commune"),  # official acts first (FR-33)
+        ("demolition", "nearby"),
+    ]
+    assert results["incidents"][1]["distance_m"] == pytest.approx(530, abs=40)
+    assert "2 reported land issue(s)" in signals["text"]["en"]
+    assert "1 of them involve an official act" in signals["text"]["en"]
+
+
+def test_signals_section_always_carries_the_area_statement(data, paid_order):
+    import weasyprint
+
+    from apps.reports.pdf import render_pdf
+
+    order = paid_order()
+    signals = findings(order)["signals"]
+    assert signals["rating"] == "info"
+    assert "No approved report" in signals["text"]["en"]
+    captured = {}
+
+    def capture(string, **kwargs):
+        captured["html"] = string
+        raise StopIteration
+
+    original, weasyprint.HTML = weasyprint.HTML, capture
+    try:
+        with pytest.raises(StopIteration):
+            render_pdf(
+                Report.objects.get(order=order), Report.objects.get(order=order).draft, "en", 1
+            )
+    finally:
+        weasyprint.HTML = original
+    html = captured["html"]
+    assert "not findings about this parcel or its owners" in html  # FR-34
+    assert "For information" in html  # the neutral tile
+
+
+def test_signals_queue_extraction_for_new_items_when_a_key_is_set(
+    data, paid_order, douala_places, settings, monkeypatch
+):
+    from apps.incidents.models import SourceItem
+
+    settings.ANTHROPIC_API_KEY = "test-key"
+    queued = []
+    monkeypatch.setattr("apps.incidents.tasks.extract_items.delay", queued.append)
+    item = SourceItem.objects.create(url="https://a.cm/1", title="Casse", content_hash="h1")
+    data["area_levels"] = area_levels(douala_places["commune"])
+    data["area_levels"][0]["item_ids"] = {item.pk}
+    paid_order()
+    assert queued == [[item.pk]]
+    assert ModuleResult.objects.get(module="signals").results["awaiting_extraction"] == 1

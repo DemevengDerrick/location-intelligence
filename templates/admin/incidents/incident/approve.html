@@ -1,0 +1,28 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  › <a href="{% url 'admin:incidents_incident_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  › {{ title }}
+</div>
+{% endblock %}
+{% block content %}
+<p>{% translate "Approved incidents appear in customers' reports. Read each summary once more." %}</p>
+<table>
+  <thead><tr><th>{% translate "Type" %}</th><th>{% translate "Date" %}</th><th>{% translate "Place" %}</th><th>{% translate "Summary (FR)" %}</th><th>{% translate "Summary (EN)" %}</th></tr></thead>
+  <tbody>
+  {% for incident in incidents %}
+    <tr><td>{{ incident.get_incident_type_display }}</td><td>{{ incident.event_date|default:"–" }}</td><td>{{ incident.place|default:"–" }}</td><td>{{ incident.summary_fr }}</td><td>{{ incident.summary_en }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<form method="post">
+  {% csrf_token %}
+  {% for incident in incidents %}<input type="hidden" name="{{ action_checkbox_name }}" value="{{ incident.pk }}">{% endfor %}
+  <input type="hidden" name="action" value="approve">
+  <input type="hidden" name="confirm" value="1">
+  <p>{{ form.no_private_names.errors }}{{ form.no_private_names }} {{ form.no_private_names.label_tag }}</p>
+  <div class="submit-row"><input type="submit" class="default" value="{% translate 'Approve' %}"></div>
+</form>
+{% endblock %}

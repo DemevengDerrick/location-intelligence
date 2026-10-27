@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{% static 'vendor/maplibre/maplibre-gl.css' %}">
 <script src="{% static 'vendor/maplibre/maplibre-gl.js' %}" defer></script>
 <script src="{% static 'js/report-page.js' %}" defer></script>
+<script src="{% static 'js/suggest-wording.js' %}" defer></script>
 {% endblock %}
 {% block extrastyle %}{{ block.super }}
 <style>
@@ -21,6 +22,7 @@
   .finding .layer-panel li { margin: .35rem 0; list-style: none; }
   .finding .layer-panel fieldset { border: 1px solid var(--hairline-color); padding: .5rem; margin-bottom: .5rem; }
   .finding .running { background: #eef6ff; padding: .5rem; }
+  .finding .suggestion { background: #f5f5f5; border-left: 3px solid #0072B2; padding: .5rem; margin-top: .25rem; }
   /* The few utility classes report-page.js uses (the admin has no Tailwind). */
   .finding .absolute { position: absolute; } .finding .relative { position: relative; }
   .finding .left-0 { left: 0; } .finding .top-0 { top: 0; }
@@ -64,8 +66,15 @@
         </label>
         <label>{% translate "Reason for changing it" %} <input name="override_reason_{{ f.index }}" value="{{ f.override_reason }}" size="40" {% if not editable %}disabled{% endif %}></label>
       </p>
-      <p><label>{% translate "Finding (French)" %}<br><textarea name="text_fr_{{ f.index }}" rows="3" {% if not editable %}disabled{% endif %}>{{ f.text.fr }}</textarea></label></p>
-      <p><label>{% translate "Finding (English)" %}<br><textarea name="text_en_{{ f.index }}" rows="3" {% if not editable %}disabled{% endif %}>{{ f.text.en }}</textarea></label></p>
+      <p><label>{% translate "Finding (French)" %}<br><textarea name="text_fr_{{ f.index }}" rows="3" {% if not editable %}disabled{% endif %}>{{ f.text.fr }}</textarea></label>
+        {% if editable and suggest_url %}<button type="button" class="suggest" data-target="text_fr_{{ f.index }}" data-language="fr">{% translate "Suggest clearer wording" %}</button>{% endif %}</p>
+      <p><label>{% translate "Finding (English)" %}<br><textarea name="text_en_{{ f.index }}" rows="3" {% if not editable %}disabled{% endif %}>{{ f.text.en }}</textarea></label>
+        {% if editable and suggest_url %}<button type="button" class="suggest" data-target="text_en_{{ f.index }}" data-language="en">{% translate "Suggest clearer wording" %}</button>{% endif %}</p>
+      {% if f.module == "signals" and f.results.pending_review or f.module == "signals" and f.results.awaiting_extraction %}
+      <p class="running">{% blocktranslate with n=f.results.pending_review m=f.results.awaiting_extraction %}{{ n }} incident(s) found for this area are waiting for review, and {{ m }} news item(s) are not extracted yet. Only approved incidents appear in the report: review them, then re-run this module.{% endblocktranslate %}
+        <a href="{% url 'admin:incidents_incident_changelist' %}?review_status__exact=unreviewed">{% translate "Review incidents" %}</a> ·
+        <a href="{% url 'admin:incidents_sourceitem_changelist' %}?extracted_at__isempty=1">{% translate "Items to extract" %}</a></p>
+      {% endif %}
       <p>
         <label><input type="checkbox" name="hidden_{{ f.index }}" {% if f.hidden %}checked{% endif %} {% if not editable %}disabled{% endif %}> {% translate "Hide this section" %}</label>
         <input name="hidden_reason_{{ f.index }}" value="{{ f.hidden_reason }}" placeholder="{% translate "Reason" %}" size="30" {% if not editable %}disabled{% endif %}>
@@ -110,6 +119,7 @@
   </div>
 </form>
 
+{% if suggest_url %}<script id="suggest-config" type="application/json">{"url": "{{ suggest_url }}", "accept": "{% translate 'Use this wording' %}", "dismiss": "{% translate 'Keep mine' %}", "working": "{% translate 'Asking for a suggestion…' %}"}</script>{% endif %}
 {% if versions %}
 <h2>{% translate "Delivered versions" %}</h2>
 <ul>

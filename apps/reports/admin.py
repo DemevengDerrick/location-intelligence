@@ -1,8 +1,10 @@
 import json
+import logging
 
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -17,12 +19,15 @@ from apps.analysis.modules import MODULES
 from apps.analysis.pipeline import restart_module
 from apps.analysis.style import RATING_COLOURS
 from apps.analysis.tasks import start_analysis
+from apps.core import llm
 from apps.orders.models import OrderStatus
 
-from . import services
+from . import services, wording
 from .models import Report, ReportVersion
 from .page import finding_for_browser, map_key
 from .structure import in_report_order
+
+logger = logging.getLogger(__name__)
 
 
 class ReportVersionInline(admin.TabularInline):
@@ -59,7 +64,31 @@ class ReportAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         review = self.admin_site.admin_view(self.review_view)
-        return [path("<int:pk>/review/", review, name="reports_report_review"), *super().get_urls()]
+        suggest = self.admin_site.admin_view(self.suggest_view)
+        return [
+            path("<int:pk>/review/", review, name="reports_report_review"),
+            path("<int:pk>/suggest/", suggest, name="reports_report_suggest"),
+            *super().get_urls(),
+        ]
+
+    def suggest_view(self, request, pk):
+        """FR-43: a clearer wording for one finding text; the analyst accepts it or not."""
+        if not has_role(request.user, roles.ANALYST) or request.method != "POST":
+            raise PermissionDenied
+        get_object_or_404(Report, pk=pk)
+        text = request.POST.get("text", "").strip()[:4000]
+        if not text:
+            return JsonResponse({"error": str(_("Nothing to reword."))}, status=400)
+        try:
+            suggestion = wording.suggest(text, request.POST.get("language", "fr"))
+        except llm.LlmUnavailable:
+            return JsonResponse({"error": str(_("Suggestions are off (no API key)."))}, status=503)
+        except Exception:  # the API down, a refusal: the analyst keeps their own text
+            logger.exception("Wording suggestion failed for report %s", pk)
+            return JsonResponse(
+                {"error": str(_("No suggestion this time. Try again later."))}, status=502
+            )
+        return JsonResponse({"suggestion": suggestion})
 
     def review_view(self, request, pk):
         """FR-41/42: findings and ratings beside their maps; edit, override, hide, approve."""
@@ -162,6 +191,9 @@ class ReportAdmin(admin.ModelAdmin):
                 "findings": findings,
                 "ratings": Rating.choices,
                 "editable": order.status == OrderStatus.IN_REVIEW,
+                "suggest_url": reverse("admin:reports_report_suggest", args=[report.pk])
+                if llm.available()
+                else "",
                 "opts": self.model._meta,
                 "versions": report.versions.order_by("-number", "language"),
             },

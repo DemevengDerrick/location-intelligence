@@ -232,6 +232,11 @@ BUILDINGS_DATA_DIR = env("BUILDINGS_DATA_DIR", default="/data/buildings")
 FLOOD_DATA_DIR = env("FLOOD_DATA_DIR", default="/data/flood")
 # Routing engine (Valhalla) for travel times and isochrones
 VALHALLA_URL = env("VALHALLA_URL", default="http://valhalla:8002")
+
+# Claude, for area-signals extraction and the analyst's "suggest wording" button (apps.core.llm).
+# Both stay off until a key is set.
+ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
+LLM_MODEL = env("LLM_MODEL", default="claude-opus-5-5")
 # Shared report links (FR-19): expiry choices offered to the customer, in days
 REPORT_SHARE_DAYS = [7, 30, 90]
 REPORT_SHARE_DEFAULT_DAYS = 30

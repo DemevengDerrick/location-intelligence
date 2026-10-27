@@ -9,6 +9,7 @@ from .flood import FloodModule
 from .imagery import ImageryModule
 from .location import LocationModule
 from .red_flags import RedFlagsModule
+from .signals import SignalsModule
 from .terrain import TerrainModule
 
 MODULES: dict[str, Module] = {
@@ -23,6 +24,7 @@ MODULES: dict[str, Module] = {
         BuildingsModule(),
         ChangeModule(),
         LocationModule(),
+        SignalsModule(),
     )
 }
 

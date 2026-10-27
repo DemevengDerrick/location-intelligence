@@ -2,7 +2,7 @@
 
 A bilingual (FR/EN) Django + GeoDjango platform that sells reviewed physical and environmental due-diligence reports on land parcels in Cameroon. The requirements are in [`input/land-due-diligence-trd.md`](input/land-due-diligence-trd.md).
 
-**Status:** Phases 1 and 2 are done. Phase 3 (analysis modules) is in progress: location, current imagery, buildings, change over time, flood and water, terrain, access and services, demographics and area growth, and regulatory red flags are done, with analyst review, bilingual PDF reports with verification, and an interactive report page in the portal with shareable links. Phase 4 (staff tools: order queue, boundary editor, site-plan georeferencing, review with maps) is done. Area signals (Phase 5) come later.
+**Status:** Phases 1 and 2 are done. Phase 3 (analysis modules) is in progress: location, current imagery, buildings, change over time, flood and water, terrain, access and services, demographics and area growth, and regulatory red flags are done, with analyst review, bilingual PDF reports with verification, and an interactive report page in the portal with shareable links. Phase 4 (staff tools: order queue, boundary editor, site-plan georeferencing, review with maps) is done. Phase 5 (area signals: news collection, per-order area search, LLM extraction, geocoding, incident review and the report section; and the optional *suggest wording* button) is built; LLM extraction and suggestions stay off until `ANTHROPIC_API_KEY` is set.
 
 ## Stack
 
@@ -86,6 +86,12 @@ Load the building footprints once (Google Open Buildings v3: six tiles, about 6.
 docker compose exec worker python manage.py load_buildings
 ```
 
+Load the quartiers, villages and lieux-dits from the OSM extract into the gazetteer (about 13,000 places, a minute). Area signals use them to search the parcel's own quartier first and to locate news about a neighbourhood. Re-run after an OSM refresh; aliases added by analysts are kept:
+
+```sh
+docker compose exec web python manage.py load_places
+```
+
 The extract is refreshed every Sunday at 02:00 (Celery beat, editable under Periodic tasks; also **OSM imports → Download and load the latest extract now** in the admin). A refresh loads beside the current data and switches over only when complete. To rebuild the routing tiles after a refresh: `docker compose run --rm -e force_rebuild=True valhalla`.
 
 ### Order form
@@ -160,6 +166,7 @@ Every status change emails the customer in their own language. The payment steps
    | Demographics and growth | WorldPop R2025A age-sex rasters (2015, 2020, 2025, 2030 projected) for 1 km, 5 km and the commune, plus growth per 5-year period since 2000 compared with GHSL population (GHS-POP), shown as rates only: WorldPop 2000–2010 is the older Global1 release, and no rate spans the two releases; GHSL built-up epochs | Annual growth within 5 km: 2 % or more → green; 0–2 % → amber; falling → red |
    | Regulatory red flags | Setback rules (Core → Settings → `setback_rules`) around OSM watercourses, water bodies, shore, main roads, railways and power lines; OSM protected areas; uploaded official layers | Protected area or DUP zone on the parcel, or setbacks over 10 % of it → red; any other constraint on or within 200 m → amber |
    | Flood and water | Copernicus EMS/JRC 1-in-100-year river flood depth (local tiles), JRC Global Surface Water (1984–2021), OSM rivers, water bodies and wetlands | 10 % of the parcel in the flood zone, any part 1 m deep or more, water seen on 10 % of it, or a wetland on it → red; any part in the flood zone, the zone within 200 m, or water seen on it → amber |
+   | Area signals | Approved land-issue incidents from Cameroonian outlets' feeds and the GDELT news index (see *Area signals* below) | Not rated: "for information" (blue *i*), since these are area-level reports, not findings about the parcel |
 
 2. **Findings.** Each module's finding is a sentence from **Analysis → Finding templates** (French and English, with placeholders like `{area}`), filled with computed numbers. Findings are never written by an LLM.
 
@@ -192,9 +199,26 @@ Every status change emails the customer in their own language. The payment steps
 
 **Red flags**: setback rules are a list in Core → Settings → `setback_rules` (category, OSM kinds, distance in metres, FR/EN label, legal basis, `confirmed`). The seeded river (25 m) and sea-shore (50 m) public-domain widths follow Ordonnance n° 74-2 of 1974; the road, railway and power-line widths are indicative. Every rule stays `confirmed: false`, shown with an asterisk in reports, until a Cameroonian lawyer has checked it. Upload public-utility (DUP) zones, infrastructure corridors, national protected areas and risk zones under **Gazetteer → Reference layers → Import a layer** (GeoJSON, KML or zipped shapefile; a `buffer_m` or `width_m` attribute widens lines into corridors). WDPA is not used: its licence excludes commercial use.
 
+**Report order:** after the summary, the sections lead with the most telling analysis: demographics, access, flood and terrain, red flags, then imagery and buildings, change over time, the boundary check, field findings and area signals last (`apps/reports/structure.py`). The summary tiles and the review screen follow the same order, including for drafts made before a change of order.
+
 **Network errors** (busy public servers, timeouts, 429/5xx) make a module retry after 1 and then 2 minutes before it is recorded as unavailable. Other errors are recorded at once.
 
 **PDF maps** use Sentinel-2 imagery (open licence, attributed) for current imagery and change. The other maps are vector maps; Esri imagery stays web-only until its print licensing is settled. Whether Esri imagery may be printed in paid reports is an open licensing question.
+
+### Area signals (Phase 5)
+
+Reported land issues near the parcel (TRD §5), from a reviewed incident database:
+
+1. **Collection.** Every day at 03:30 (Periodic tasks → *Collect land-issue news*) the outlets in **Incidents → Sources** are read through their RSS feeds, plus a national GDELT search. Only items that mention a land keyword (Core → Settings → `area_signals`, French and English) are kept. Every fetch checks the site's robots.txt first; no social networks or login pages. The text of an item (title and feed description) stays private and is never shown to customers. Analysts can add an item by URL or by uploading a PDF notice (**Source items → Add by URL or PDF**).
+2. **Area search for each order.** The signals module searches the parcel's area, widening step by step: the nearest quartier (within 1.5 km), the commune, the department, then the region (admin 1). It stops at the first level where at least `min_items` (5) relevant items have been found. Each search, per place and provider (outlets' own search feeds, and GDELT), is saved in **Area searches** and reused by later orders in the same place for `max_age_days` (30). Failed searches are saved too and tried again on the next order. GDELT allows one request every 5 seconds; after a 429 it is left alone for 10 minutes and the outlets carry on.
+3. **Extraction.** With `ANTHROPIC_API_KEY` set, each new item goes to Claude (`LLM_MODEL`, default `claude-opus-5-5`), which returns zero or more incidents: type (FR-27), place names, event date, a neutral summary of at most 40 words in French and English with no private individuals named, an official-act flag and a confidence score. Without a key nothing is sent anywhere: the action **Create an incident by hand from the item** opens a blank incident placed at the area searched.
+4. **Geocoding.** Place names are matched against the gazetteer (names and aliases, ignoring case and accents). When several places share a name, the one inside a commune or department the article also names wins. Unknown names go to **Unmatched place names**; mapping one to a place adds it as an alias and locates its incidents again. The geoBoundaries communes now carry the spellings the press uses ("Douala 5e" for Douala V), regions their French names, and Wouri and Mfoundi the city names.
+5. **Review.** New incidents are *unreviewed* and never reach a report. In **Incidents**, the *Approve* action shows the summaries once more and asks the analyst to confirm that no private individual is named (FR-31). Analysts can also reject, merge duplicates (the oldest keeps every source) and mark official acts. **Map of incidents** shows them all, filterable by type, status and dates (FR-35).
+6. **In the report.** The section lists approved incidents from the last 10 years: quartier and point incidents within 2 km, and commune, department or region incidents for the levels searched, official acts first and then newest first. Each entry has its date, type, place and precision, the summary and a link to the source. The section always carries the statement that these are public reports about the area, not findings about the parcel. On the review screen, the signals finding says how many incidents are waiting for review, so the analyst can approve them and re-run the module before delivery.
+
+This widening search is a deliberate change to FR-29, which kept incidents above commune level out of reports: they are now shown, labelled with their level ("In the region"). GDELT's free API only looks back three months; older history comes from the outlets' search feeds and from items analysts add by hand.
+
+**Suggest wording (FR-43).** With `ANTHROPIC_API_KEY` set, each finding on the review screen gets a *Suggest clearer wording* button. Claude proposes a plainer version that keeps every number, place and caveat; nothing changes until the analyst clicks *Use this wording*, and the analyst still saves the draft.
 
 ### Roles
 

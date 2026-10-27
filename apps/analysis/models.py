@@ -24,6 +24,7 @@ class Rating(models.TextChoices):
     AMBER = "amber", _("Amber")
     RED = "red", _("Red")
     GREY = "grey", _("Unknown")
+    INFO = "info", _("For information")  # area signals: reported, not rated (FR-34)
 
 
 class AnalysisRun(TimeStampedModel):

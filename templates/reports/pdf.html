@@ -33,6 +33,7 @@
   .data-table td { border-bottom: 1px solid #E5E5E5; padding: 1mm 2mm 1mm 0; }
   .visual img { max-width: 100%; height: auto; }
   .placeholder { border: 1px dashed #999; color: #555; padding: 3mm; font-size: 8.5pt; }
+  .statement { border: 1px solid #0072B2; background: #EEF5FB; padding: 2.5mm 3mm; font-size: 8.5pt; }
   .tiles { display: flex; flex-wrap: wrap; gap: 3mm; margin-bottom: 4mm; }
   .tile { width: 54mm; border: 1.5px solid; border-radius: 2mm; padding: 2.5mm; }
   .tile-label { margin: 2mm 0 0; font-weight: bold; font-size: 9pt; }
@@ -85,6 +86,7 @@
 {% for section in sections %}
 <section class="section-block">
   <h2>{{ forloop.counter }}. {{ section.title }}</h2>
+  {% if section.statement %}<p class="statement">{{ section.statement }}</p>{% endif %}
   {% for f in section.findings %}
   <div class="finding-block">
     <div class="finding-head">{# heading, rating and sentence stay together, with the first map #}
@@ -100,7 +102,7 @@
       <table class="data-table">
         <caption>{{ chart.table.caption }}</caption>
         <thead><tr>{% for column in chart.table.columns %}<th>{{ column }}</th>{% endfor %}</tr></thead>
-        <tbody>{% for row in chart.table.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        <tbody>{% for row in chart.table.rows %}<tr>{% for cell in row %}<td>{% include "reports/_cell.html" %}</td>{% endfor %}</tr>{% endfor %}</tbody>
       </table>
       {% else %}<p class="placeholder">{{ chart.reason }}</p>{% endif %}
     {% endfor %}

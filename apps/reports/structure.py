@@ -27,6 +27,15 @@ def sections_for(order):
     return [s for s in SECTIONS if s[0] != "field" or order.tier == "field"]
 
 
+def statement_for(key):
+    """Fixed text a section always carries, in the active language (FR-34 for area signals)."""
+    if key == "signals":
+        from apps.analysis.modules.signals import statement
+
+        return statement()
+    return ""
+
+
 def in_report_order(findings):
     """Findings sorted like the sections, so the summary scorecard reads in the same order
     (drafts made before a reorder keep their stored order otherwise)."""

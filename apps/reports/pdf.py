@@ -14,7 +14,7 @@ from apps.analysis.modules import MODULES
 from apps.core.models import Dataset
 from apps.pages.models import Page, PageSlug
 
-from .structure import in_report_order, sections_for
+from .structure import in_report_order, sections_for, statement_for
 
 
 def _svg_image(svg):
@@ -77,8 +77,12 @@ def render_pdf(report, content, language, number):
         findings = [_finding_context(f, language) for f in visible]
         by_module = {f["module"]: f for f in findings}
         sections = [
-            {"title": str(title), "findings": [by_module[m] for m in modules if m in by_module]}
-            for _key, title, modules in sections_for(order)
+            {
+                "title": str(title),
+                "statement": statement_for(key),
+                "findings": [by_module[m] for m in modules if m in by_module],
+            }
+            for key, title, modules in sections_for(order)
         ]
         dataset_slugs = {slug for f in findings for slug in f["datasets"]}
         url = verify_url(report, language)
