@@ -12,8 +12,8 @@ from apps.parcels.testing import DOUALA, square_m
 @pytest.mark.parametrize(
     ("tags", "shape", "expected"),
     [
-        ({"building": "yes"}, "area", [("building", "yes", None)]),
-        ({"building": "no"}, "area", []),
+        ({"building": "yes"}, "area", []),  # buildings come from Google Open Buildings
+        ({"natural": "water"}, "area", [("water", "water", None)]),
         ({"waterway": "river"}, "line", [("waterway", "river", None)]),
         ({"waterway": "drain"}, "line", []),  # drains line Douala's streets: left out
         ({"natural": "wetland"}, "area", [("wetland", "wetland", None)]),
@@ -39,7 +39,7 @@ from apps.parcels.testing import DOUALA, square_m
         (
             {"building": "school", "amenity": "school"},
             "area",
-            [("building", "school", None), ("school", "school", None)],
+            [("school", "school", None)],
         ),
     ],
 )
@@ -68,7 +68,7 @@ OSM_XML = """<?xml version="1.0" encoding="UTF-8"?>
   <node id="9" lat="4.0490" lon="9.7030" version="1"/>
   <way id="10" version="1">
     <nd ref="1"/><nd ref="2"/><nd ref="3"/><nd ref="4"/><nd ref="1"/>
-    <tag k="building" v="house"/>
+    <tag k="natural" v="water"/>
   </way>
   <way id="11" version="1">
     <nd ref="5"/><nd ref="6"/><tag k="highway" v="primary"/><tag k="name" v="Rue 1"/>
@@ -89,14 +89,14 @@ def test_loader_reads_an_extract_and_replaces_the_active_import(tmp_path):
     new = loader.load(path)
 
     assert new.status == ImportStatus.ACTIVE and OsmImport.active() == new
-    assert new.counts == {"building": 1, "road": 1, "school": 1}  # the drain is left out
+    assert new.counts == {"water": 1, "road": 1, "school": 1}  # the drain is left out
     old.refresh_from_db()
     assert old.status == ImportStatus.RETIRED
     assert not OsmFeature.objects.filter(osm_import=old).exists()  # old features dropped
     school = OsmFeature.objects.get(category=Category.SCHOOL)
     assert school.name == "École publique de Bonamoussadi" and school.geom.geom_type == "Point"
-    building = OsmFeature.objects.get(category=Category.BUILDING)
-    assert building.geom.geom_type == "MultiPolygon" and building.osm_ref == "w10"
+    pond = OsmFeature.objects.get(category=Category.WATER)
+    assert pond.geom.geom_type == "MultiPolygon" and pond.osm_ref == "w10"
 
 
 @pytest.mark.django_db

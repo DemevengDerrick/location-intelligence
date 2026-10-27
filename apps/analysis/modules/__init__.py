@@ -1,4 +1,4 @@
-"""Registry of analysis modules, in report order. Phase 3 adds the remaining modules here."""
+"""Registry of analysis modules, in report order (see apps.reports.structure.SECTIONS)."""
 
 from .access import AccessModule
 from .base import Module, ModuleOutput
@@ -14,15 +14,15 @@ from .terrain import TerrainModule
 MODULES: dict[str, Module] = {
     m.name: m
     for m in (
-        LocationModule(),
+        DemographicsModule(),
+        AccessModule(),
+        FloodModule(),
+        TerrainModule(),
+        RedFlagsModule(),
         ImageryModule(),
         BuildingsModule(),
         ChangeModule(),
-        FloodModule(),
-        TerrainModule(),
-        AccessModule(),
-        DemographicsModule(),
-        RedFlagsModule(),
+        LocationModule(),
     )
 }
 

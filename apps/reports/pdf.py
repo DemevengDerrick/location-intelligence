@@ -14,7 +14,7 @@ from apps.analysis.modules import MODULES
 from apps.core.models import Dataset
 from apps.pages.models import Page, PageSlug
 
-from .structure import sections_for
+from .structure import in_report_order, sections_for
 
 
 def _svg_image(svg):
@@ -72,7 +72,7 @@ def _finding_context(finding, language):
 def render_pdf(report, content, language, number):
     order = report.order
     parcel = order.parcels.first()
-    visible = [f for f in content["findings"] if not f["hidden"]]
+    visible = in_report_order(f for f in content["findings"] if not f["hidden"])
     with translation.override(language):
         findings = [_finding_context(f, language) for f in visible]
         by_module = {f["module"]: f for f in findings}

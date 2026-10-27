@@ -1,4 +1,5 @@
-"""Buildings on and near the parcel (TRD §4). Source: OpenStreetMap via Overpass for now."""
+"""Buildings on and near the parcel (TRD §4). Source: the local copy of Google Open Buildings
+(footprints detected from satellite imagery, manage.py load_buildings)."""
 
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
@@ -38,7 +39,10 @@ class BuildingsModule(Module):
 
         inside, near, other = [], [], []
         footprint_m2 = 0.0
-        for building in source.footprints:
+        confidences = source.confidences or [None] * len(source.footprints)
+        score = {}
+        for building, confidence in zip(source.footprints, confidences, strict=True):
+            score[id(building)] = confidence
             if building.srid is None:  # providers return lon/lat footprints
                 building.srid = 4326
             building_m = building.transform(srid, clone=True)
@@ -58,6 +62,7 @@ class BuildingsModule(Module):
             else 0,
             "near_count": len(near),
             "buffer_m": t.building_buffer_m,
+            "min_confidence": t.building_min_confidence,
         }
         rating = Rating.RED if inside else Rating.AMBER if near else Rating.GREEN
         buffer_ll = ring_m.transform(4326, clone=True)
@@ -89,21 +94,24 @@ class BuildingsModule(Module):
             )
             figure.add_parcel(geom, _("Parcel boundary"))
             return figure.to_svg(
-                _("Buildings © OpenStreetMap contributors (ODbL), data of %(date)s.")
-                % {"date": source.version[:10]}
+                _("Buildings: Google Open Buildings %(version)s, CC BY 4.0.")
+                % {"version": source.version}
             )
 
         return ModuleOutput(
             rating=rating,
             results=results,
-            parameters={"building_buffer_m": t.building_buffer_m},
+            parameters={
+                "building_buffer_m": t.building_buffer_m,
+                "building_min_confidence": t.building_min_confidence,
+            },
             datasets={source.dataset: source.version},
             maps={"main": self.render_maps(draw)},
-            layers=self._layers(inside, near, other, buffer_ll, t.building_buffer_m),
+            layers=self._layers(inside, near, other, buffer_ll, t.building_buffer_m, score),
         )
 
     @staticmethod
-    def _layers(inside, near, other, ring, buffer_m):
+    def _layers(inside, near, other, ring, buffer_m, score):
         groups = (
             (other, style.BUILDING_OTHER, lambda: _("Other buildings")),
             (
@@ -114,7 +122,14 @@ class BuildingsModule(Module):
             (inside, style.BUILDING_INSIDE, lambda: _("On the parcel")),
         )
         features = [
-            (building, {"color": style_colour, "status": _per_language(label)})
+            (
+                building,
+                {
+                    "color": style_colour,
+                    "status": _per_language(label),
+                    "confidence": _confidence(score.get(id(building))),
+                },
+            )
             for group, style_colour, label in groups
             for building in group
         ]
@@ -127,7 +142,10 @@ class BuildingsModule(Module):
                 color=style.BUILDING_OTHER,
                 outline="#333333",
                 opacity=0.8,
-                hover=[("status", lambda: _("Building"))],
+                hover=[
+                    ("status", lambda: _("Building")),
+                    ("confidence", lambda: _("Detection confidence")),
+                ],
                 legend=[legend_entry(colour, label) for _g, colour, label in groups],
             ),
             vector_layer(
@@ -155,3 +173,7 @@ class BuildingsModule(Module):
             "near_count": results["near_count"],
             "buffer": results["buffer_m"],
         }
+
+
+def _confidence(value):
+    return "" if value is None else f"{round(value * 100)} %"

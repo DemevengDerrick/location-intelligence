@@ -41,7 +41,6 @@ class OsmImport(TimeStampedModel):
 
 
 class Category(models.TextChoices):
-    BUILDING = "building", _("Building")
     WATERWAY = "waterway", _("River, stream or canal")
     WATER = "water", _("Water body")
     WETLAND = "wetland", _("Wetland")

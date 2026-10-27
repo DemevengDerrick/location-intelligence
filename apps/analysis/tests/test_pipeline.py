@@ -1,3 +1,4 @@
+import json
 import math
 
 import numpy as np
@@ -55,7 +56,9 @@ class FakeBuildings:
         self.footprints = footprints
 
     def fetch(self, west, south, east, north):
-        return providers.Buildings(self.footprints, "osm-buildings", "2026-10-25T00:00:00Z")
+        return providers.Buildings(
+            self.footprints, "google-open-buildings", "v3", [0.9] * len(self.footprints)
+        )
 
 
 VEGETATION = {"blue": 0.03, "green": 0.05, "red": 0.03, "nir": 0.40, "swir16": 0.15}
@@ -331,7 +334,6 @@ def data(monkeypatch):
     )
     monkeypatch.setattr("apps.analysis.modules.imagery.imagery_provider", lambda: state["imagery"])
     monkeypatch.setattr("apps.analysis.modules.change.imagery_provider", lambda: state["imagery"])
-    monkeypatch.setattr("apps.analysis.modules.flood.elevation_provider", lambda: state["dem"])
     monkeypatch.setattr("apps.analysis.modules.flood.water_provider", lambda: state["water"])
     monkeypatch.setattr(
         "apps.analysis.modules.flood.water_features_provider", lambda: state["water_features"]
@@ -451,7 +453,7 @@ def test_static_maps_have_the_required_furniture(data, paid_order):
     assert ">N<" in svg  # north arrow
     assert " m<" in svg  # scale bar label, e.g. "20 m"
     assert "Sur la parcelle" in svg  # translated legend
-    assert "OpenStreetMap" in svg  # source line
+    assert "Google Open Buildings v3" in svg  # source line
 
 
 # --- Review, approval and the PDF ----------------------------------------------------------
@@ -467,6 +469,11 @@ def analyst_client(client, make_user):
 
 def review_url(order):
     return reverse("admin:reports_report_review", args=[Report.objects.get(order=order).pk])
+
+
+def form_index(order, module):
+    """Position of a module's finding in the draft, as the review form numbers its fields."""
+    return [f["module"] for f in Report.objects.get(order=order).draft["findings"]].index(module)
 
 
 def review_form(order, **changes):
@@ -485,8 +492,9 @@ def review_form(order, **changes):
 
 def test_rating_override_needs_a_reason(data, paid_order, analyst_client):
     order = paid_order()
+    i = form_index(order, "location")
     response = analyst_client.post(
-        review_url(order), review_form(order, rating_0="red", action="save"), follow=True
+        review_url(order), review_form(order, **{f"rating_{i}": "red"}, action="save"), follow=True
     )
     assert "Give a reason" in response.content.decode()
     assert findings(order)["location"]["rating"] == "green"
@@ -494,7 +502,9 @@ def test_rating_override_needs_a_reason(data, paid_order, analyst_client):
     analyst_client.post(
         review_url(order),
         review_form(
-            order, rating_0="amber", override_reason_0="Seller's plan disagrees", action="save"
+            order,
+            **{f"rating_{i}": "amber", f"override_reason_{i}": "Seller's plan disagrees"},
+            action="save",
         ),
     )
     location = findings(order)["location"]
@@ -665,10 +675,11 @@ def test_pdf_follows_the_report_structure(data, paid_order):
         weasyprint.HTML = original
     html = captured["html"]
     headings = [
-        "1. Location and boundary check",
-        "2. Current imagery and occupation",
-        "3. Change over time",
-        "4. Flood, water and terrain",
+        "1. Demographics and area growth",
+        "2. Access and services",
+        "3. Flood, water and terrain",
+        "4. Regulatory red flags",
+        "5. Current imagery and occupation",
         "8. Area signals",
     ]
     order_of = [html.index(heading) for heading in headings]
@@ -765,20 +776,20 @@ def test_overpass_retries_then_falls_back_to_the_next_server():
             200, json={"elements": [], "osm3s": {"timestamp_osm_base": "2026-10-25"}}
         )
 
-    provider = providers.OverpassBuildings(
+    provider = providers.OverpassWater(
         urls=["https://first.test/api", "https://second.test/api"],
         client=httpx.Client(transport=httpx.MockTransport(handler)),
         backoff_s=0,
     )
     result = provider.fetch(9.7, 4.0, 9.71, 4.01)
-    assert result.footprints == [] and result.version == "2026-10-25"
+    assert result.lines == [] and result.version == "2026-10-25"
     assert calls == ["https://first.test/api", "https://first.test/api", "https://second.test/api"]
 
 
 def test_overpass_gives_up_after_all_servers_fail():
     import httpx
 
-    provider = providers.OverpassBuildings(
+    provider = providers.OverpassWater(
         urls=["https://only.test/api"],
         client=httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(504))),
         backoff_s=0,
@@ -810,21 +821,65 @@ def test_dry_parcel_far_from_water_rates_flood_green(data, paid_order):
     flood = findings(paid_order())["flood"]
     assert flood["rating"] == "green"
     assert flood["results"]["nearest_water_m"] is None
-    assert flood["key"]["en"] == "No river or water body within 1 km"
+    assert flood["key"]["en"] == "No 100-year flood zone within 1 km"
     assert "No river or water body is mapped within 1 km." in flood["text"]["en"]
-    assert set(flood["maps"]) == {"water", "hazard"}
-    assert set(flood["datasets"]) >= {"jrc-gsw", "jrc-flood-hazard", "osm-water"}
+    assert "large rivers only" in flood["text"]["en"]  # the model's limits are always stated
+    assert "grands cours d'eau" in flood["text"]["fr"]
+    assert list(flood["maps"]) == ["flood", "water"]  # the flood map comes first in the PDF
+    assert set(flood["datasets"]) == {"jrc-gsw", "jrc-flood-hazard", "osm-water"}
+    assert "height_above_water_mean_m" not in flood["results"]
 
 
-def test_nearby_stream_is_amber_with_distance_and_height(data, paid_order):
-    data["dem"] = FakeDEM(10)  # rising eastwards: the stream to the west lies lower
+def test_a_nearby_stream_is_named_but_does_not_change_the_rating(data, paid_order):
     data["water_features"] = FakeWaterFeatures(lines=[stream(-70)])
     flood = findings(paid_order())["flood"]
-    assert flood["rating"] == "amber"
+    assert flood["rating"] == "green"
     assert 20 <= flood["results"]["nearest_water_m"] <= 80
-    assert flood["results"]["height_above_water_mean_m"] >= 3
-    assert "a river or water body is" in flood["text"]["en"]
-    assert "m to water" in flood["key"]["en"]
+    assert "The nearest river or water body is" in flood["text"]["en"]
+    assert "None" not in flood["text"]["en"] + flood["text"]["fr"]
+    layers = [layer["id"] for layer in flood["layers"]]
+    assert "waterways" in layers and "flood" not in layers  # no flood zone in the window
+
+
+def test_long_rivers_and_estuaries_are_cut_to_the_analysis_window(data, paid_order):
+    """The local OSM copy returns whole features: a 50 km river must not zoom the map out."""
+    from django.contrib.gis.geos import LineString
+
+    lon, lat = DOUALA
+    river = LineString([(lon - 0.003, lat - 0.25), (lon - 0.003, lat + 0.25)], srid=4326)
+    estuary = box(lon + 0.2, lat, half_deg=0.195)  # reaches 0.005° (~550 m) east of the parcel
+    data["water_features"] = FakeWaterFeatures(lines=[river], wetlands=[estuary])
+    flood = findings(paid_order())["flood"]
+    for layer_id in ("waterways", "wetlands"):
+        layer = next(layer for layer in flood["layers"] if layer["id"] == layer_id)
+        assert len(layer["data"]["features"]) == 1
+        coords = json.dumps(layer["data"]["features"][0]["geometry"]["coordinates"])
+        values = [float(v) for v in coords.replace("[", " ").replace("]", " ").split(",")]
+        lons, lats = values[0::2], values[1::2]
+        assert max(lons) - lon < 0.02 and abs(min(lats) - lat) < 0.02 and max(lats) - lat < 0.02
+    assert flood["results"]["wetland_on_parcel"] is False
+
+
+@pytest.mark.parametrize(
+    ("share", "depth", "rating"),
+    [
+        (5, 0.3, "amber"),  # a shallow edge of the flood zone
+        (5, 1.2, "red"),  # a small part, but 1 m deep or more
+        (12, 0.2, "red"),  # 10 % of the parcel or more
+    ],
+)
+def test_flood_zone_share_and_depth_set_the_rating(share, depth, rating):
+    from apps.analysis.config import Thresholds
+    from apps.analysis.modules.flood import FloodModule
+
+    results = {"flood_share_pct": share, "flood_max_depth_m": depth, "flood_zone_distance_m": 0,
+               "water_seen_share_pct": 0, "wetland_on_parcel": False}  # fmt: skip
+    assert FloodModule._rate(results, Thresholds()) == rating
+    from django.utils import translation
+
+    with translation.override("en"):
+        key = FloodModule().key_figure(results)
+    assert key == f"{share} % in the 100-year flood zone · up to {depth:.1f} m"
 
 
 def test_parcel_in_the_100_year_flood_is_red(data, paid_order):
@@ -865,16 +920,6 @@ def test_flood_tile_names_follow_the_jrc_grid():
     assert sorted(_tiles(9.9, -0.1, 10.1, 0.1)) == [(0, 0), (0, 10), (10, 0), (10, 10)]
 
 
-def test_green_flood_finding_names_the_nearest_water(data, paid_order):
-    data["dem"] = FakeDEM(10)
-    data["water_features"] = FakeWaterFeatures(lines=[stream(-400)])
-    flood = findings(paid_order())["flood"]
-    assert flood["rating"] == "green"
-    assert "The nearest river or water body is" in flood["text"]["en"]
-    assert "m above the nearest water" in flood["text"]["en"]
-    assert "None" not in flood["text"]["en"] + flood["text"]["fr"]
-
-
 def test_large_water_relations_are_assembled_from_open_ways():
     """The Wouri estuary is a multipolygon relation made of many open ways, with islands."""
     from apps.analysis.providers import _osm_polygon
@@ -897,17 +942,6 @@ def test_large_water_relations_are_assembled_from_open_ways():
     assert polygon.area == pytest.approx(16 - 1)  # 4 × 4 square minus the 1 × 1 island
 
 
-def test_low_lying_parcel_next_to_a_stream_is_amber_never_red(data, paid_order):
-    """Height above water comes from a surface model (rooftops included): indicative only."""
-    data["dem"] = FakeDEM(0)
-    data["water_features"] = FakeWaterFeatures(lines=[stream(-60)])
-    flood = findings(paid_order())["flood"]
-    assert flood["rating"] == "amber"
-    assert "at about the same level as the nearest water" in flood["text"]["en"]
-    assert flood["key"]["en"].endswith("m to water · same level")
-    assert "-0" not in flood["text"]["en"]
-
-
 def test_nearby_flood_zone_is_amber(data, paid_order):
     data["water"] = FakeWater(flood_m=2, flood_east_m=150)
     flood = findings(paid_order())["flood"]
@@ -915,6 +949,8 @@ def test_nearby_flood_zone_is_amber(data, paid_order):
     assert flood["results"]["flood_share_pct"] == 0
     assert 60 <= flood["results"]["flood_zone_distance_m"] < 200
     assert "the 1-in-100-year flood zone is" in flood["text"]["en"]
+    assert flood["key"]["en"].startswith("100-year flood zone")
+    assert flood["layers"][0]["id"] == "flood"  # the flood depth is the first layer
 
 
 def test_drains_and_ditches_are_not_counted_as_water():
@@ -1086,24 +1122,39 @@ def test_access_is_unavailable_until_osm_is_imported(data, paid_order, monkeypat
     assert order.status == OrderStatus.IN_REVIEW
 
 
-def test_buildings_and_water_use_the_local_osm_copy_once_imported(db):
-    from apps.analysis.providers import (
-        LocalOsmBuildings,
-        LocalOsmWater,
-        OverpassBuildings,
-        buildings_provider,
-        water_features_provider,
-    )
+def test_water_uses_the_local_osm_copy_once_imported(db):
+    from apps.analysis.providers import LocalOsmWater, OverpassWater, water_features_provider
     from apps.osm.models import Category
     from apps.osm.testing import make_import
 
-    assert isinstance(buildings_provider(), OverpassBuildings)  # nothing imported yet
-    make_import([(Category.BUILDING, "house", "", None, square_m(*DOUALA, 10))])
-    assert isinstance(buildings_provider(), LocalOsmBuildings)
+    assert isinstance(water_features_provider(), OverpassWater)  # nothing imported yet
+    make_import([(Category.WATERWAY, "stream", "", None, stream(-50))])
     assert isinstance(water_features_provider(), LocalOsmWater)
+
+
+def test_buildings_come_only_from_the_local_google_copy(db):
+    from apps.analysis.providers import GoogleOpenBuildings, buildings_provider
+    from apps.buildings.testing import make_release
+
+    with pytest.raises(RuntimeError, match="load_buildings"):  # never a fallback to OSM
+        buildings_provider()
+    lon, lat = DOUALA
+    weak = box(lon + 0.0003, lat)
+    make_release([(square_m(*DOUALA, 10), 0.9), (weak, 0.66), (square_m(10.5, 5.5, 10), 0.9)])
+    provider = buildings_provider()
+    assert isinstance(provider, GoogleOpenBuildings) and provider.min_confidence == 0.7
     west, south, east, north = square_m(*DOUALA, 200).extent
-    found = buildings_provider().fetch(west, south, east, north)
-    assert len(found.footprints) == 1 and found.version == "2026-10-20T00:00:00Z"
+    found = provider.fetch(west, south, east, north)
+    assert len(found.footprints) == 1  # the weak detection and the far one are left out
+    assert found.confidences == [0.9] and found.version == "v3"
+
+
+def test_buildings_finding_credits_google_and_shows_confidence(data, paid_order):
+    buildings = findings(paid_order())["buildings"]
+    assert buildings["datasets"] == {"google-open-buildings": "v3"}
+    hover = buildings["layers"][0]["hover"]
+    assert hover[1]["property"] == "confidence"
+    assert hover[1]["label"] == {"fr": "Confiance de la détection", "en": "Detection confidence"}
 
 
 def test_very_short_trips_read_less_than_a_minute():
@@ -1415,7 +1466,12 @@ def test_rerunning_one_module_keeps_edits_to_the_others(
     order = paid_order()
     assert findings(order)["demographics"]["unavailable"]
     analyst_client.post(
-        review_url(order), review_form(order, text_en_0="Checked by the analyst.", action="save")
+        review_url(order),
+        review_form(
+            order,
+            **{f"text_en_{form_index(order, 'location')}": "Checked by the analyst."},
+            action="save",
+        ),
     )
     data["population"] = FakePopulation()  # the data is back
 

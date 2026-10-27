@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "apps.incidents",
     "apps.gazetteer",
     "apps.osm",
+    "apps.buildings",
     "apps.partners",
     "apps.pricing",
     "apps.pages",
@@ -220,6 +221,15 @@ OSM_DATA_DIR = env("OSM_DATA_DIR", default="/data/osm")
 WORLDPOP_DATA_DIR = env("WORLDPOP_DATA_DIR", default="/data/worldpop")
 # GHSL built-up tiles for Cameroon (manage.py load_ghsl); shares the population volume
 GHSL_DATA_DIR = env("GHSL_DATA_DIR", default="/data/worldpop/ghsl")
+# Google Open Buildings v3 footprints (manage.py load_buildings): one gzipped CSV per S2 cell
+OPEN_BUILDINGS_URL = env(
+    "OPEN_BUILDINGS_URL",
+    default="https://storage.googleapis.com/open-buildings-data/v3/polygons_s2_level_4_gzip/"
+    "{tile}_buildings.csv.gz",
+)
+BUILDINGS_DATA_DIR = env("BUILDINGS_DATA_DIR", default="/data/buildings")
+# JRC river flood hazard tiles for Cameroon (manage.py load_flood)
+FLOOD_DATA_DIR = env("FLOOD_DATA_DIR", default="/data/flood")
 # Routing engine (Valhalla) for travel times and isochrones
 VALHALLA_URL = env("VALHALLA_URL", default="http://valhalla:8002")
 # Shared report links (FR-19): expiry choices offered to the customer, in days

@@ -15,7 +15,7 @@ from apps.core.maps import basemap_url
 from apps.core.models import Dataset
 from apps.pages.models import Page, PageSlug
 
-from .structure import sections_for
+from .structure import in_report_order, sections_for
 
 HIDDEN_CHART_FIELDS = {"order"}  # helper fields in chart data, not shown in data tables
 
@@ -165,7 +165,7 @@ def page_context(report, language):
     order = report.order
     parcel = order.parcels.first()
     parcel_geojson = json.loads(parcel.geometry.geojson) if parcel and parcel.geometry else None
-    visible = [f for f in content.get("findings", []) if not f.get("hidden")]
+    visible = in_report_order(f for f in content.get("findings", []) if not f.get("hidden"))
     findings = [
         finding_for_browser(f, language, parcel_geojson, f"map-{f['module']}") for f in visible
     ]

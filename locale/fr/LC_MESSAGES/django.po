@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 20:44+0100\n"
+"POT-Creation-Date: 2026-10-26 23:49+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -120,7 +120,8 @@ msgstr "En cours"
 msgid "Completed"
 msgstr "Terminé"
 
-#: apps/analysis/models.py:12 apps/analysis/models.py:19 apps/osm/models.py:17
+#: apps/analysis/models.py:12 apps/analysis/models.py:19
+#: apps/buildings/models.py:17 apps/osm/models.py:17
 #: apps/payments/models.py:36
 msgid "Failed"
 msgstr "Échec"
@@ -159,8 +160,9 @@ msgid "parcel"
 msgstr "parcelle"
 
 #: apps/analysis/models.py:34 apps/analysis/models.py:59
-#: apps/orders/models.py:56 apps/osm/models.py:24 apps/partners/models.py:44
-#: apps/partners/models.py:82 apps/payments/models.py:65
+#: apps/buildings/models.py:24 apps/orders/models.py:56 apps/osm/models.py:24
+#: apps/partners/models.py:44 apps/partners/models.py:82
+#: apps/payments/models.py:65
 msgid "status"
 msgstr "statut"
 
@@ -176,7 +178,8 @@ msgstr "GeoJSON de la limite analysée."
 msgid "started at"
 msgstr "démarré le"
 
-#: apps/analysis/models.py:40 apps/osm/models.py:28
+#: apps/analysis/models.py:40 apps/buildings/models.py:28
+#: apps/osm/models.py:28
 msgid "finished at"
 msgstr "terminé le"
 
@@ -228,7 +231,8 @@ msgstr "graphiques"
 msgid "rating"
 msgstr "note"
 
-#: apps/analysis/models.py:75 apps/osm/models.py:27
+#: apps/analysis/models.py:75 apps/buildings/models.py:27
+#: apps/osm/models.py:27
 msgid "error"
 msgstr "erreur"
 
@@ -280,19 +284,19 @@ msgstr "statistiques de population"
 msgid "Paved road"
 msgstr "Route bitumée"
 
-#: apps/analysis/modules/access.py:41 apps/osm/models.py:49
+#: apps/analysis/modules/access.py:41 apps/osm/models.py:48
 msgid "School"
 msgstr "École"
 
-#: apps/analysis/modules/access.py:42 apps/osm/models.py:50
+#: apps/analysis/modules/access.py:42 apps/osm/models.py:49
 msgid "Health facility"
 msgstr "Établissement de santé"
 
-#: apps/analysis/modules/access.py:43 apps/osm/models.py:51
+#: apps/analysis/modules/access.py:43 apps/osm/models.py:50
 msgid "Market"
 msgstr "Marché"
 
-#: apps/analysis/modules/access.py:44 apps/osm/models.py:52
+#: apps/analysis/modules/access.py:44 apps/osm/models.py:51
 msgid "Water point"
 msgstr "Point d'eau"
 
@@ -315,11 +319,11 @@ msgstr "À moins de %(m)s min en voiture"
 msgid "Roads"
 msgstr "Routes"
 
-#: apps/analysis/modules/access.py:146 apps/analysis/modules/buildings.py:90
+#: apps/analysis/modules/access.py:146 apps/analysis/modules/buildings.py:95
 #: apps/analysis/modules/change.py:144
 #: apps/analysis/modules/demographics.py:209
 #: apps/analysis/modules/demographics.py:240
-#: apps/analysis/modules/flood.py:163 apps/analysis/modules/flood.py:188
+#: apps/analysis/modules/flood.py:168 apps/analysis/modules/flood.py:189
 #: apps/analysis/modules/imagery.py:106 apps/analysis/modules/location.py:73
 #: apps/analysis/modules/red_flags.py:199 apps/analysis/modules/terrain.py:129
 msgid "Parcel boundary"
@@ -463,7 +467,7 @@ msgid "Nearest services: %(list)s."
 msgstr "Services les plus proches : %(list)s."
 
 #: apps/analysis/modules/access.py:451 apps/analysis/modules/access.py:455
-#: apps/analysis/modules/flood.py:368 apps/analysis/modules/red_flags.py:381
+#: apps/analysis/modules/flood.py:331 apps/analysis/modules/red_flags.py:381
 msgid "; "
 msgstr " ; "
 
@@ -489,47 +493,51 @@ msgstr "Route à %(d)s m"
 msgid "%(road)s · clinic %(m)s min by car"
 msgstr "%(road)s · santé à %(m)s min en voiture"
 
-#: apps/analysis/modules/buildings.py:23
+#: apps/analysis/modules/buildings.py:24
 msgid "Buildings on the parcel"
 msgstr "Bâtiments sur la parcelle"
 
-#: apps/analysis/modules/buildings.py:68
-#: apps/analysis/modules/buildings.py:108
+#: apps/analysis/modules/buildings.py:73
+#: apps/analysis/modules/buildings.py:116
 msgid "Other buildings"
 msgstr "Autres bâtiments"
 
-#: apps/analysis/modules/buildings.py:72
-#: apps/analysis/modules/buildings.py:112
+#: apps/analysis/modules/buildings.py:77
+#: apps/analysis/modules/buildings.py:120
 #, python-format
 msgid "Within %(m)s m of the boundary"
 msgstr "À moins de %(m)s m des limites"
 
-#: apps/analysis/modules/buildings.py:74
-#: apps/analysis/modules/buildings.py:114
+#: apps/analysis/modules/buildings.py:79
+#: apps/analysis/modules/buildings.py:122
 #: apps/analysis/modules/red_flags.py:366
 msgid "On the parcel"
 msgstr "Sur la parcelle"
 
-#: apps/analysis/modules/buildings.py:87
-#: apps/analysis/modules/buildings.py:135
+#: apps/analysis/modules/buildings.py:92
+#: apps/analysis/modules/buildings.py:150
 #, python-format
 msgid "%(m)s m around the boundary"
 msgstr "%(m)s m autour des limites"
 
-#: apps/analysis/modules/buildings.py:92
+#: apps/analysis/modules/buildings.py:97
 #, python-format
-msgid "Buildings © OpenStreetMap contributors (ODbL), data of %(date)s."
-msgstr "Bâtiments © contributeurs OpenStreetMap (ODbL), données du %(date)s."
+msgid "Buildings: Google Open Buildings %(version)s, CC BY 4.0."
+msgstr "Bâtiments : Google Open Buildings %(version)s, CC BY 4.0."
 
-#: apps/analysis/modules/buildings.py:124
+#: apps/analysis/modules/buildings.py:139
 msgid "Buildings"
 msgstr "Bâtiments"
 
-#: apps/analysis/modules/buildings.py:130 apps/osm/models.py:44
+#: apps/analysis/modules/buildings.py:145
 msgid "Building"
 msgstr "Bâtiment"
 
 #: apps/analysis/modules/buildings.py:145
+msgid "Detection confidence"
+msgstr "Confiance de la détection"
+
+#: apps/analysis/modules/buildings.py:160
 #, python-format
 msgid "%(inside)s on the parcel · %(near)s nearby"
 msgstr "%(inside)s sur la parcelle · %(near)s à proximité"
@@ -820,25 +828,59 @@ msgstr ""
 msgid "%(n)s people within 5 km · %(g)s %%/yr"
 msgstr "%(n)s habitants à moins de 5 km · %(g)s %%/an"
 
-#: apps/analysis/modules/flood.py:67
+#: apps/analysis/modules/flood.py:63
+msgid "Under 0.5 m deep"
+msgstr "Moins de 0,5 m de profondeur"
+
+#: apps/analysis/modules/flood.py:63
+msgid "0.5–1 m"
+msgstr "0,5–1 m"
+
+#: apps/analysis/modules/flood.py:63
+msgid "1–2 m"
+msgstr "1–2 m"
+
+#: apps/analysis/modules/flood.py:63
+msgid "Over 2 m"
+msgstr "Plus de 2 m"
+
+#: apps/analysis/modules/flood.py:68
 msgid "Flood and water"
 msgstr "Inondations et eau"
 
-#: apps/analysis/modules/flood.py:147 apps/analysis/modules/flood.py:232
+#: apps/analysis/modules/flood.py:132 apps/analysis/modules/flood.py:253
+msgid "Rivers and streams"
+msgstr "Rivières et cours d'eau"
+
+#: apps/analysis/modules/flood.py:137 apps/analysis/modules/flood.py:261
+msgid "Water bodies"
+msgstr "Plans d'eau"
+
+#: apps/analysis/modules/flood.py:146 apps/analysis/modules/flood.py:270
+#: apps/osm/models.py:46
+msgid "Wetland"
+msgstr "Zone humide"
+
+#: apps/analysis/modules/flood.py:163
+#, python-format
+msgid "1-in-%(rp)s-year flood: %(depth)s"
+msgstr "Crue centennale (1 an sur %(rp)s) : %(depth)s"
+
+#: apps/analysis/modules/flood.py:171
+msgid ""
+"1-in-100-year river flood depth: Copernicus EMS / JRC global flood hazard "
+"maps, CC BY 4.0. Waterways © OpenStreetMap contributors."
+msgstr ""
+"Profondeur de la crue centennale des cours d'eau : cartes mondiales de "
+"l'aléa inondation Copernicus EMS / JRC, CC BY 4.0. Cours d'eau © les "
+"contributeurs d'OpenStreetMap."
+
+#: apps/analysis/modules/flood.py:186 apps/analysis/modules/flood.py:246
 #, python-format
 msgid "Water %(range)s of the time"
 msgstr "Eau %(range)s du temps"
 
-#: apps/analysis/modules/flood.py:151 apps/analysis/modules/flood.py:278
-msgid "Rivers and streams"
-msgstr "Rivières et cours d'eau"
-
-#: apps/analysis/modules/flood.py:156 apps/analysis/modules/flood.py:295
-#: apps/osm/models.py:47
-msgid "Wetland"
-msgstr "Zone humide"
-
-#: apps/analysis/modules/flood.py:166
+#: apps/analysis/modules/flood.py:192
 msgid ""
 "Surface water 1984–2021: EC JRC/Google (Pekel et al. 2016). Waterways © "
 "OpenStreetMap contributors."
@@ -846,79 +888,25 @@ msgstr ""
 "Eaux de surface 1984–2021 : CE JRC/Google (Pekel et al. 2016). Cours d'eau ©"
 " contributeurs OpenStreetMap."
 
-#: apps/analysis/modules/flood.py:179 apps/analysis/modules/flood.py:247
-msgid "Under 1 m above water"
-msgstr "Moins de 1 m au-dessus de l'eau"
-
-#: apps/analysis/modules/flood.py:179 apps/analysis/modules/flood.py:248
-msgid "1–3 m"
-msgstr "1–3 m"
-
-#: apps/analysis/modules/flood.py:179 apps/analysis/modules/flood.py:249
-msgid "3–10 m"
-msgstr "3–10 m"
-
-#: apps/analysis/modules/flood.py:179 apps/analysis/modules/flood.py:250
-msgid "Over 10 m"
-msgstr "Plus de 10 m"
-
-#: apps/analysis/modules/flood.py:186 apps/analysis/modules/flood.py:261
+#: apps/analysis/modules/flood.py:228
 #, python-format
 msgid "1-in-%(rp)s-year river flood"
 msgstr "Crue fluviale centennale (1 an sur %(rp)s)"
 
-#: apps/analysis/modules/flood.py:191
-msgid ""
-"Height above nearest mapped water from Copernicus DEM GLO-30. River flood "
-"hazard: Copernicus EMS / JRC global flood maps, CC BY 4.0."
-msgstr ""
-"Hauteur au-dessus de l'eau cartographiée la plus proche d'après Copernicus "
-"DEM GLO-30. Aléa de crue fluviale : cartes mondiales Copernicus EMS / JRC, "
-"CC BY 4.0."
+#: apps/analysis/modules/flood.py:234
+msgid "m deep"
+msgstr "m de profondeur"
 
-#: apps/analysis/modules/flood.py:227
+#: apps/analysis/modules/flood.py:241
 msgid "Water seen 1984–2021"
 msgstr "Eau observée 1984–2021"
 
-#: apps/analysis/modules/flood.py:233
+#: apps/analysis/modules/flood.py:247
 #, python-format
 msgid "% of the time"
 msgstr "% du temps"
 
-#: apps/analysis/modules/flood.py:241
-msgid "Height above the nearest water"
-msgstr "Hauteur au-dessus de l'eau la plus proche"
-
-#: apps/analysis/modules/flood.py:267
-msgid "Under 0.5 m deep"
-msgstr "Moins de 0,5 m de profondeur"
-
-#: apps/analysis/modules/flood.py:268
-msgid "0.5–1 m"
-msgstr "0,5–1 m"
-
-#: apps/analysis/modules/flood.py:269
-msgid "1–2 m"
-msgstr "1–2 m"
-
-#: apps/analysis/modules/flood.py:270
-msgid "Over 2 m"
-msgstr "Plus de 2 m"
-
-#: apps/analysis/modules/flood.py:272
-msgid "m deep"
-msgstr "m de profondeur"
-
-#: apps/analysis/modules/flood.py:286
-msgid "Water bodies"
-msgstr "Plans d'eau"
-
-#: apps/analysis/modules/flood.py:332
-#, python-format
-msgid "water was seen on %(share)s %% of the parcel since 1984"
-msgstr "de l'eau a été observée sur %(share)s %% de la parcelle depuis 1984"
-
-#: apps/analysis/modules/flood.py:338
+#: apps/analysis/modules/flood.py:304
 #, python-format
 msgid ""
 "the 1-in-%(rp)s-year river flood reaches %(share)s %% of the parcel, up to "
@@ -927,60 +915,43 @@ msgstr ""
 "la crue fluviale d'occurrence 1 an sur %(rp)s atteint %(share)s %% de la "
 "parcelle, jusqu'à %(depth)s m de profondeur"
 
-#: apps/analysis/modules/flood.py:348
+#: apps/analysis/modules/flood.py:315
+#, python-format
+msgid "water was seen on %(share)s %% of the parcel since 1984"
+msgstr "de l'eau a été observée sur %(share)s %% de la parcelle depuis 1984"
+
+#: apps/analysis/modules/flood.py:319
 msgid "a wetland is mapped on the parcel"
 msgstr "une zone humide est cartographiée sur la parcelle"
 
-#: apps/analysis/modules/flood.py:353
+#: apps/analysis/modules/flood.py:323
 #, python-format
 msgid "the 1-in-%(rp)s-year flood zone is %(d)s m away"
 msgstr "la zone inondable d'occurrence 1 an sur %(rp)s est à %(d)s m"
 
-#: apps/analysis/modules/flood.py:358
-#, python-format
-msgid "the parcel lies %(level)s"
-msgstr "la parcelle se trouve %(level)s"
-
-#: apps/analysis/modules/flood.py:361
-#, python-format
-msgid "a river or water body is %(d)s m away"
-msgstr "une rivière ou un plan d'eau se trouve à %(d)s m"
-
-#: apps/analysis/modules/flood.py:363
+#: apps/analysis/modules/flood.py:328
 msgid "No river or water body is mapped within 1 km."
 msgstr ""
 "Aucune rivière ni aucun plan d'eau n'est cartographié dans un rayon de 1 km."
 
-#: apps/analysis/modules/flood.py:366
+#: apps/analysis/modules/flood.py:330
 #, python-format
-msgid ""
-"The nearest river or water body is %(d)s m away; the parcel lies %(level)s."
-msgstr ""
-"La rivière ou le plan d'eau le plus proche est à %(d)s m ; la parcelle se "
-"trouve %(level)s."
+msgid "The nearest river or water body is %(d)s m away."
+msgstr "Le cours d'eau ou plan d'eau le plus proche est à %(d)s m."
 
-#: apps/analysis/modules/flood.py:372
-msgid "No river or water body within 1 km"
-msgstr "Ni rivière ni plan d'eau à moins de 1 km"
-
-#: apps/analysis/modules/flood.py:375
+#: apps/analysis/modules/flood.py:335
 #, python-format
-msgid "%(d)s m to water · same level"
-msgstr "%(d)s m de l'eau · même niveau"
+msgid "%(share)s %% in the 100-year flood zone · up to %(depth)s m"
+msgstr "%(share)s %% en zone inondable centennale · jusqu'à %(depth)s m"
 
-#: apps/analysis/modules/flood.py:376
+#: apps/analysis/modules/flood.py:341
+msgid "No 100-year flood zone within 1 km"
+msgstr "Aucune zone inondable centennale à moins de 1 km"
+
+#: apps/analysis/modules/flood.py:342
 #, python-format
-msgid "%(d)s m to water · %(h)s m above it"
-msgstr "%(d)s m de l'eau · %(h)s m au-dessus"
-
-#: apps/analysis/modules/flood.py:385
-msgid "at about the same level as the nearest water"
-msgstr "à peu près au même niveau que l'eau la plus proche"
-
-#: apps/analysis/modules/flood.py:386
-#, python-format
-msgid "about %(h)s m above the nearest water"
-msgstr "environ %(h)s m au-dessus de l'eau la plus proche"
+msgid "100-year flood zone %(d)s m away"
+msgstr "Zone inondable centennale à %(d)s m"
 
 #: apps/analysis/modules/imagery.py:47
 msgid "Vegetation"
@@ -1084,7 +1055,7 @@ msgstr "Signaux d'alerte réglementaires"
 
 #: apps/analysis/modules/red_flags.py:162
 #: apps/analysis/modules/red_flags.py:400 apps/gazetteer/models.py:46
-#: apps/osm/models.py:53
+#: apps/osm/models.py:52
 msgid "Protected area"
 msgstr "Aire protégée"
 
@@ -1267,6 +1238,46 @@ msgstr "Bon"
 msgid "Check"
 msgstr "À vérifier"
 
+#: apps/buildings/apps.py:8
+msgid "Building footprints"
+msgstr "Emprises de bâtiments"
+
+#: apps/buildings/models.py:14 apps/osm/models.py:14
+msgid "Loading"
+msgstr "Chargement"
+
+#: apps/buildings/models.py:15 apps/osm/models.py:15
+#: apps/partners/models.py:17
+msgid "Active"
+msgstr "Actif"
+
+#: apps/buildings/models.py:16 apps/osm/models.py:16
+msgid "Retired"
+msgstr "Remplacé"
+
+#: apps/buildings/models.py:21 apps/core/models.py:67 apps/pages/models.py:22
+#: apps/reports/models.py:49
+msgid "version"
+msgstr "version"
+
+#: apps/buildings/models.py:22 apps/gazetteer/models.py:31
+#: apps/gazetteer/models.py:57 apps/incidents/models.py:26
+#: apps/incidents/models.py:37 apps/osm/models.py:21
+msgid "source"
+msgstr "source"
+
+#: apps/buildings/models.py:26
+msgid "buildings"
+msgstr "bâtiments"
+
+#: apps/buildings/models.py:31
+msgid "building release"
+msgstr "version des bâtiments"
+
+#: apps/buildings/models.py:32
+msgid "building releases"
+msgstr "versions des bâtiments"
+
 #: apps/core/apps.py:8
 msgid "Core"
 msgstr "Noyau"
@@ -1339,10 +1350,6 @@ msgstr "identifiant"
 #: apps/payments/models.py:121
 msgid "provider"
 msgstr "fournisseur"
-
-#: apps/core/models.py:67 apps/pages/models.py:22 apps/reports/models.py:49
-msgid "version"
-msgstr "version"
 
 #: apps/core/models.py:68
 msgid "licence"
@@ -1517,12 +1524,6 @@ msgstr "arrondissement"
 #: apps/parcels/models.py:28
 msgid "commune"
 msgstr "commune"
-
-#: apps/gazetteer/models.py:31 apps/gazetteer/models.py:57
-#: apps/incidents/models.py:26 apps/incidents/models.py:37
-#: apps/osm/models.py:21
-msgid "source"
-msgstr "source"
 
 #: apps/gazetteer/models.py:34
 msgid "gazetteer place"
@@ -2360,18 +2361,6 @@ msgstr "La mise à jour s'exécute en arrière-plan."
 msgid "OpenStreetMap extract"
 msgstr "Extrait OpenStreetMap"
 
-#: apps/osm/models.py:14
-msgid "Loading"
-msgstr "Chargement"
-
-#: apps/osm/models.py:15 apps/partners/models.py:17
-msgid "Active"
-msgstr "Actif"
-
-#: apps/osm/models.py:16
-msgid "Retired"
-msgstr "Remplacé"
-
 #: apps/osm/models.py:22
 msgid "OSM data as of"
 msgstr "Données OSM du"
@@ -2388,27 +2377,27 @@ msgstr "Import OSM"
 msgid "OSM imports"
 msgstr "Imports OSM"
 
-#: apps/osm/models.py:45
+#: apps/osm/models.py:44
 msgid "River, stream or canal"
 msgstr "Rivière, ruisseau ou canal"
 
-#: apps/osm/models.py:46
+#: apps/osm/models.py:45
 msgid "Water body"
 msgstr "Plan d'eau"
 
-#: apps/osm/models.py:48
+#: apps/osm/models.py:47
 msgid "Road"
 msgstr "Route"
 
-#: apps/osm/models.py:54
+#: apps/osm/models.py:53
 msgid "Power line"
 msgstr "Ligne électrique"
 
-#: apps/osm/models.py:55
+#: apps/osm/models.py:54
 msgid "Railway"
 msgstr "Voie ferrée"
 
-#: apps/osm/models.py:56
+#: apps/osm/models.py:55
 msgid "Coastline"
 msgstr "Trait de côte"
 
@@ -3397,23 +3386,23 @@ msgstr "lien de partage de rapport"
 msgid "shared report links"
 msgstr "liens de partage de rapport"
 
-#: apps/reports/page.py:141
+#: apps/reports/page.py:149
 msgid "Compare two years"
 msgstr "Comparer deux années"
 
-#: apps/reports/page.py:142
+#: apps/reports/page.py:150
 msgid "Left"
 msgstr "À gauche"
 
-#: apps/reports/page.py:143
+#: apps/reports/page.py:151
 msgid "Right"
 msgstr "À droite"
 
-#: apps/reports/page.py:144
+#: apps/reports/page.py:152
 msgid "Divider position"
 msgstr "Position du séparateur"
 
-#: apps/reports/page.py:145
+#: apps/reports/page.py:153
 msgid ":"
 msgstr " :"
 
@@ -3492,11 +3481,11 @@ msgstr ""
 msgid "The share link no longer works."
 msgstr "Le lien de partage ne fonctionne plus."
 
-#: config/settings/base.py:141
+#: config/settings/base.py:142
 msgid "French"
 msgstr "Français"
 
-#: config/settings/base.py:141
+#: config/settings/base.py:142
 msgid "English"
 msgstr "Anglais"
 

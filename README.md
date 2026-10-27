@@ -25,7 +25,8 @@ apps/             one Django app per domain:
   partners        Partner, FieldJob, FieldObservation
   pricing         Product (tiers/add-ons), per-currency prices, currency switcher, money formatting
   pages           public site: editable pages, FAQ, sample reports, leads, sitemap, robots.txt
-  osm             local copy of the Cameroon OpenStreetMap extract (roads, services, buildings, water)
+  osm             local copy of the Cameroon OpenStreetMap extract (roads, services, water)
+  buildings       local copy of Google Open Buildings v3 footprints for Cameroon
 templates/        site layout, partials, public pages, emails, allauth layout override
 assets/           Tailwind source (compiled to static/css/app.css)
 static/           vendored htmx and Alpine, images, built CSS
@@ -64,7 +65,7 @@ Load Cameroon's administrative boundaries once (country, regions, departments, c
 docker compose exec web python manage.py load_boundaries
 ```
 
-Load the OpenStreetMap extract (about 225 MB from Geofabrik, then 10–20 minutes to import). Buildings, water, roads and services are then read from the database instead of the busy public Overpass servers, and Valhalla builds its routing tiles from the same file:
+Load the OpenStreetMap extract (about 225 MB from Geofabrik, then 10–20 minutes to import). Water, roads and services are then read from the database instead of the busy public Overpass servers, and Valhalla builds its routing tiles from the same file:
 
 ```sh
 docker compose exec worker python manage.py load_osm
@@ -76,6 +77,13 @@ Load the population and built-up data once (about 3 GB; an interrupted load can 
 ```sh
 docker compose exec web python manage.py load_worldpop   # WorldPop R2025A age-sex 2015–2030, Global1 totals 2000–2010
 docker compose exec web python manage.py load_ghsl       # GHSL tiles for Cameroon: built-up 1975–2020, population 2000–2030
+docker compose exec web python manage.py load_flood      # JRC 1-in-100-year river flood depth tiles covering Cameroon
+```
+
+Load the building footprints once (Google Open Buildings v3: six tiles, about 6.6 GB to download, then roughly an hour to keep the buildings inside Cameroon and load them). The buildings module needs it and reports "unavailable" until it is loaded. A re-run loads a new release beside the current one and switches over when complete:
+
+```sh
+docker compose exec worker python manage.py load_buildings
 ```
 
 The extract is refreshed every Sunday at 02:00 (Celery beat, editable under Periodic tasks; also **OSM imports → Download and load the latest extract now** in the admin). A refresh loads beside the current data and switches over only when complete. To rebuild the routing tiles after a refresh: `docker compose run --rm -e force_rebuild=True valhalla`.
@@ -145,13 +153,13 @@ Every status change emails the customer in their own language. The payment steps
    | --- | --- | --- |
    | Location | Parcel geometry, geoBoundaries | Stated vs computed area difference; grey for pin-only parcels |
    | Terrain | Copernicus DEM GLO-30, read as a small window over HTTP | Mean slope; share of the parcel over the erosion slope |
-   | Buildings | OpenStreetMap via Overpass (`OVERPASS_URL`, comma-separated servers, with retries) | On the parcel → red; within 20 m → amber |
+   | Buildings | Google Open Buildings v3 (local copy; detections below the `building_min_confidence` threshold, 0.7, are ignored) | On the parcel → red; within 20 m → amber |
    | Current imagery | Sentinel-2 L2A from AWS Earth Search: cloud-masked median of the last 12 months | Mostly not vegetated → amber (never red: pixels can't tell buildings from bare soil) |
    | Change over time | Sentinel-2 dry-season (Dec–Feb) composites, one per year since 2017 | Vegetation lost in the last 5 years → amber |
    | Access and services | Local OSM copy (roads, schools, health facilities, markets, water points), Valhalla routing | No road within 500 m → red; parcel not on a road, paved road over 2 km, health facility over 30 min by car or school over 30 min on foot → amber |
    | Demographics and growth | WorldPop R2025A age-sex rasters (2015, 2020, 2025, 2030 projected) for 1 km, 5 km and the commune, plus growth per 5-year period since 2000 compared with GHSL population (GHS-POP), shown as rates only: WorldPop 2000–2010 is the older Global1 release, and no rate spans the two releases; GHSL built-up epochs | Annual growth within 5 km: 2 % or more → green; 0–2 % → amber; falling → red |
    | Regulatory red flags | Setback rules (Core → Settings → `setback_rules`) around OSM watercourses, water bodies, shore, main roads, railways and power lines; OSM protected areas; uploaded official layers | Protected area or DUP zone on the parcel, or setbacks over 10 % of it → red; any other constraint on or within 200 m → amber |
-   | Flood and water | JRC Global Surface Water (1984–2021), Copernicus EMS/JRC 1-in-100-year river flood maps, OSM rivers, water bodies and wetlands, height above nearest water from the DEM | Water seen on, flood zone on, or wetland on the parcel → red; nearby water, nearby flood zone or low height above water → amber |
+   | Flood and water | Copernicus EMS/JRC 1-in-100-year river flood depth (local tiles), JRC Global Surface Water (1984–2021), OSM rivers, water bodies and wetlands | 10 % of the parcel in the flood zone, any part 1 m deep or more, water seen on 10 % of it, or a wetland on it → red; any part in the flood zone, the zone within 200 m, or water seen on it → amber |
 
 2. **Findings.** Each module's finding is a sentence from **Analysis → Finding templates** (French and English, with placeholders like `{area}`), filled with computed numbers. Findings are never written by an LLM.
 
@@ -176,7 +184,7 @@ Every status change emails the customer in their own language. The payment steps
 
 **Earth Search offset quirk:** for scenes processed since 2022, Earth Search's band metadata lists an offset of −0.1, but the stored values are already corrected (`earthsearch:boa_offset_applied`). Applying the offset again makes recent scenes far too dark and creates fake vegetation trends. See `reflectance_params()`.
 
-**Flood and water** counts natural water only (rivers, streams, canals, water bodies, wetlands, observed surface water). OSM drains and ditches are left out: in Douala they line most streets. The height above water comes from a surface model (rooftops included), so it can only make a parcel amber, never red. Global datasets are read as small windows over HTTP; the list of flood-map tiles is cached for 30 days.
+**Flood and water** overlays the parcel on the JRC 1-in-100-year river flood depth (~90 m, resampled to the 30 m surface-water grid). That model covers flooding from rivers with large catchments only, not flooding from heavy rain, blocked drains or the sea, and every green or amber finding says so. Rivers and water bodies (natural water only: OSM drains and ditches are left out, since in Douala they line most streets) are drawn for context and give the distance to the nearest water, which does not change the rating. The flood tiles are read from disk once `load_flood` has run (over HTTP until then); surface water is read as small windows over HTTP.
 
 **Access**: times start where Valhalla joins the road network nearest the parcel centre, plus the walk from the parcel to that road (4.5 km/h). For each service the 5 nearest (straight line) are routed and the quickest kept. Without a surface tag, only motorways, trunk and primary roads count as paved. "On a road" means a mapped road within 10 m of the boundary; it does not prove a legal right of way.
 

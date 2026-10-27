@@ -11,6 +11,8 @@ x-app: &app
     - .:/app
     - osm_data:/data/osm  # the downloaded OpenStreetMap extract (manage.py load_osm)
     - worldpop_data:/data/worldpop  # WorldPop age-sex rasters (manage.py load_worldpop)
+    - buildings_data:/data/buildings  # Google Open Buildings tiles (manage.py load_buildings)
+    - flood_data:/data/flood  # JRC 100-year river flood tiles (manage.py load_flood)
   depends_on:
     db:
       condition: service_healthy
@@ -102,3 +104,5 @@ volumes:
   pgdata:
   osm_data:
   worldpop_data:
+  buildings_data:
+  flood_data:

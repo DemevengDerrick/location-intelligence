@@ -77,6 +77,7 @@ class Buildings:
     footprints: list  # GEOS polygons, SRID 4326
     dataset: str
     version: str
+    confidences: list | None = None  # per footprint, when the source scores its detections
 
 
 class BuildingsProvider(Protocol):
@@ -117,22 +118,6 @@ class Overpass:
                     last_error = exc
                 time.sleep(self.backoff_s * (attempt + 1))
         raise last_error
-
-
-class OverpassBuildings(Overpass):
-    """Building footprints. Coverage varies: well mapped in central Douala and Yaoundé, patchy
-    elsewhere."""
-
-    dataset = "osm-buildings"
-
-    def fetch(self, west, south, east, north):
-        box = f"({south},{west},{north},{east})"
-        payload = self.query(
-            f'[out:json][timeout:50];(way["building"]{box};relation["building"]{box};);out geom;'
-        )
-        footprints = [p for p in (_osm_polygon(e) for e in payload["elements"]) if p is not None]
-        stamp = payload.get("osm3s", {}).get("timestamp_osm_base", "")
-        return Buildings(footprints, self.dataset, stamp)
 
 
 @dataclass
@@ -377,7 +362,7 @@ class Grid:
 
 
 def _read_mosaic(paths, west, south, east, north, nodata):
-    """Read the window from one or several (tile) GeoTIFFs over HTTP, as float32."""
+    """Read the window from one or several (tile) GeoTIFFs, local or over HTTP, as float32."""
     import rasterio
     from rasterio.merge import merge
     from rasterio.session import DummySession
@@ -387,7 +372,9 @@ def _read_mosaic(paths, west, south, east, north, nodata):
         GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
         CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".tif",
     ):
-        sources = [rasterio.open(f"/vsicurl/{path}") for path in paths]
+        sources = [
+            rasterio.open(path if path.startswith("/") else f"/vsicurl/{path}") for path in paths
+        ]
         try:
             mosaic, transform = merge(
                 sources, bounds=(west, south, east, north), nodata=nodata, dtype="float32"
@@ -406,8 +393,9 @@ def _tiles(west, south, east, north, size=10):
 
 
 class SurfaceWaterAndFloods:
-    """JRC Global Surface Water occurrence (1984–2021, ~30 m) and the Copernicus EMS / JRC
-    river flood hazard depth (~90 m), both read as small windows over HTTP."""
+    """JRC Global Surface Water occurrence (1984–2021, ~30 m), read as small windows over HTTP,
+    and the Copernicus EMS / JRC river flood hazard depth (~90 m), read from the local tiles
+    (manage.py load_flood) or over HTTP until they are downloaded."""
 
     GSW = "https://storage.googleapis.com/global-surface-water/downloads2021/occurrence/"
     FLOOD = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/"
@@ -425,27 +413,45 @@ class SurfaceWaterAndFloods:
         grid.values[grid.values == 255] = np.nan
         return grid
 
+    CAMEROON = (8.4, 1.6, 16.2, 13.1)
+
     def flood_depth(self, west, south, east, north, return_period=100):
         """Flood depth in metres for the return period; 0 where not flooded. None if no tile
         covers the area (no modelled river flooding there)."""
-        names = self._flood_tile_names(return_period)
         paths = []
-        for left, top in _tiles(west, south, east, north):
-            key = f"_{'N' if top >= 0 else 'S'}{abs(top)}_{'E' if left > 0 else 'W'}{abs(left)}_"
-            name = next((n for n in names if key in n), None)
-            if name:
-                paths.append(f"{self.FLOOD}RP{return_period}/{name}")
+        for name in self._names_for(west, south, east, north, return_period):
+            local = self.local_tile(return_period, name)
+            paths.append(str(local) if local.exists() else f"{self.FLOOD}RP{return_period}/{name}")
         if not paths:
             return None
         grid = _read_mosaic(paths, west, south, east, north, nodata=-9999)
         grid.values[~np.isfinite(grid.values) | (grid.values < 0)] = 0
         return grid
 
+    @staticmethod
+    def local_tile(return_period, name):
+        from pathlib import Path
+
+        return Path(settings.FLOOD_DATA_DIR) / f"RP{return_period}" / name
+
+    def _names_for(self, west, south, east, north, return_period):
+        names = self._flood_tile_names(return_period)
+        found = []
+        for left, top in _tiles(west, south, east, north):
+            key = f"_{'N' if top >= 0 else 'S'}{abs(top)}_{'E' if left > 0 else 'W'}{abs(left)}_"
+            found += [n for n in names if key in n][:1]
+        return found
+
     def _flood_tile_names(self, return_period):
+        """Tile names: those downloaded, else the JRC listing (cached for a month)."""
         import re
 
         from django.core.cache import cache
 
+        folder = self.local_tile(return_period, "x").parent
+        local = sorted(p.name for p in folder.glob("*.tif")) if folder.is_dir() else []
+        if local:
+            return local
         key = f"jrc-flood-tiles:{return_period}"
         names = cache.get(key)
         if names is None:
@@ -453,6 +459,18 @@ class SurfaceWaterAndFloods:
             pattern = rf"ID\d+_[NS]\d+_[EW]\d+_RP{return_period}_depth\.tif"
             names = sorted(set(re.findall(pattern, listing.raise_for_status().text)))
             cache.set(key, names, 60 * 60 * 24 * 30)
+        return names
+
+    def download(self, return_period=100, client=None, log=print):
+        """Download the depth tiles covering Cameroon (manage.py load_flood)."""
+        from apps.osm.loader import download as download_file
+
+        names = self._names_for(*self.CAMEROON, return_period)
+        for name in names:
+            target = self.local_tile(return_period, name)
+            if not target.exists():
+                download_file(f"{self.FLOOD}RP{return_period}/{name}", target, client=client)
+            log(f"RP{return_period} {name}: ready")
         return names
 
 
@@ -585,14 +603,24 @@ class LocalOsm:
         return [f.geom for f in in_box(self.osm_import, category, *bounds)]
 
 
-class LocalOsmBuildings(LocalOsm):
-    dataset = "osm-buildings"
+class GoogleOpenBuildings:
+    """Footprints from the local Google Open Buildings copy (apps.buildings), detected from
+    satellite imagery, so it covers informal areas OSM misses. Detections scoring below
+    `min_confidence` are left out."""
+
+    dataset = "google-open-buildings"
+
+    def __init__(self, release, min_confidence):
+        self.release, self.min_confidence = release, min_confidence
+        self.version = release.version
 
     def fetch(self, west, south, east, north):
-        from apps.osm.models import Category
+        from apps.buildings.queries import in_box
 
-        bounds = (west, south, east, north)
-        return Buildings(self._in_box(Category.BUILDING, bounds), self.dataset, self.version)
+        rows = list(in_box(self.release, west, south, east, north, self.min_confidence))
+        return Buildings(
+            [b.geom for b in rows], self.dataset, self.version, [b.confidence for b in rows]
+        )
 
 
 class LocalOsmWater(LocalOsm):
@@ -697,9 +725,15 @@ def elevation_provider() -> ElevationProvider:
 
 
 def buildings_provider() -> BuildingsProvider:
-    """The local OSM copy once imported (manage.py load_osm); the Overpass API until then."""
-    osm_import = _active_osm()
-    return LocalOsmBuildings(osm_import) if osm_import else OverpassBuildings()
+    """The local Google Open Buildings copy (manage.py load_buildings)."""
+    from apps.buildings.models import BuildingRelease
+
+    from .config import thresholds
+
+    release = BuildingRelease.active()
+    if release is None:
+        raise RuntimeError("No building footprints are loaded (manage.py load_buildings)")
+    return GoogleOpenBuildings(release, thresholds().building_min_confidence)
 
 
 def osm_provider():

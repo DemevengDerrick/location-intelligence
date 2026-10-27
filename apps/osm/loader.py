@@ -1,6 +1,6 @@
 """Load the features the analysis needs from a Geofabrik .osm.pbf extract into PostGIS.
 
-What is kept (see `classify`): buildings, rivers/streams/canals, water bodies, wetlands, roads
+What is kept (see `classify`): rivers/streams/canals, water bodies, wetlands, roads
 (with a paved flag), schools, health facilities, markets and water points. Drains and ditches
 are left out on purpose (they line most streets in Douala and Yaoundé).
 """
@@ -41,7 +41,7 @@ HEALTHCARE = {"hospital", "clinic", "centre", "doctor", "health_post"}
 WATER_POINT_AMENITIES = {"drinking_water", "water_point"}
 WATER_POINT_MAN_MADE = {"water_well", "water_tap", "borehole"}
 
-FILTER_KEYS = ("building", "highway", "waterway", "natural", "landuse", "amenity", "healthcare",
+FILTER_KEYS = ("highway", "waterway", "natural", "landuse", "amenity", "healthcare",
                "man_made", "boundary", "leisure", "power", "railway")  # fmt: skip
 
 
@@ -59,8 +59,6 @@ def classify(tags, shape):
     "line" (an open or closed way) or "area" (a closed way or multipolygon relation)."""
     found = []
     if shape == "area":
-        if tags.get("building", "no") != "no":
-            found.append((Category.BUILDING, tags["building"][:40], None))
         if (
             tags.get("natural") == "water"
             or tags.get("waterway") == "riverbank"

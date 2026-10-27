@@ -16,6 +16,7 @@ class Thresholds:
     slope_red_deg: float = 10
     erosion_slope_deg: float = 15  # share of the parcel steeper than this is reported
     building_buffer_m: float = 20  # "near the boundary" for buildings
+    building_min_confidence: float = 0.7  # Google Open Buildings detections below this are ignored
     # Occupation (current imagery): share of the parcel not vegetated (built-up or bare)
     open_amber_pct: float = 50
     # Change over time: vegetation lost in the last 5 years, in percentage points
@@ -28,8 +29,7 @@ class Thresholds:
     gsw_water_pct: float = 50  # surface-water occurrence counted as "water" (% of time)
     water_seen_red_pct: float = 10  # share of the parcel where water was ever seen
     flood_share_red_pct: float = 10  # share of the parcel in the 1-in-100-year flood
-    height_above_water_amber_m: float = 3  # parcel average; indicative, so never red
-    water_distance_amber_m: float = 100
+    flood_depth_red_m: float = 1  # any part of the parcel flooded this deep: red
     flood_zone_amber_m: float = 200  # distance to the modelled 1-in-100-year flood zone
     # Access and services
     road_touch_m: float = 10  # a road this close to the boundary counts as touching it

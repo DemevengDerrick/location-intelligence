@@ -22,6 +22,7 @@ from apps.orders.models import OrderStatus
 from . import services
 from .models import Report, ReportVersion
 from .page import finding_for_browser, map_key
+from .structure import in_report_order
 
 
 class ReportVersionInline(admin.TabularInline):
@@ -145,6 +146,7 @@ class ReportAdmin(admin.ModelAdmin):
                     "running": statuses.get(finding["module"]) == "pending",
                 }
             )
+        findings = in_report_order(findings)
         return TemplateResponse(
             request,
             "admin/reports/review.html",
