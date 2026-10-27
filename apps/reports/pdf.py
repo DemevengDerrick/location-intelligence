@@ -14,7 +14,7 @@ from apps.analysis.modules import MODULES
 from apps.core.models import Dataset
 from apps.pages.models import Page, PageSlug
 
-from .structure import in_report_order, sections_for, statement_for
+from .structure import PAIRED_MAPS, in_report_order, requester, sections_for, statement_for
 
 
 def _svg_image(svg):
@@ -54,6 +54,8 @@ def verify_url(report, language):
 
 def _finding_context(finding, language):
     rating = finding["rating"]
+    map_srcs = [_stored_svg(by_language.get(language)) for by_language in finding["maps"].values()]
+    pair = [src for src in map_srcs if src] if finding["module"] in PAIRED_MAPS else []
     return {
         **finding,
         "title": str(MODULES[finding["module"]].title) if finding["module"] in MODULES else "",
@@ -62,9 +64,8 @@ def _finding_context(finding, language):
         "colour": style.RATING_COLOURS[rating],
         "icon": style.RATING_ICONS[rating],
         "word": str(style.RATING_WORDS[rating]),
-        "map_srcs": [
-            _stored_svg(by_language.get(language)) for by_language in finding["maps"].values()
-        ],
+        "map_srcs": map_srcs,
+        "map_pair": pair if len(pair) == 2 else [],
         "charts": _charts(finding, language),
     }
 
@@ -92,6 +93,7 @@ def render_pdf(report, content, language, number):
                 "report": report,
                 "order": order,
                 "parcel": parcel,
+                "requester": requester(order),
                 "number": number,
                 "language": language,
                 "scorecard": findings,

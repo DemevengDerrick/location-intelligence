@@ -16,7 +16,7 @@ from apps.core.maps import basemap_url
 from apps.core.models import Dataset
 from apps.pages.models import Page, PageSlug
 
-from .structure import in_report_order, sections_for, statement_for
+from .structure import in_report_order, requester, sections_for, statement_for
 
 HIDDEN_CHART_FIELDS = {"order"}  # helper fields in chart data, not shown in data tables
 
@@ -182,6 +182,7 @@ def page_context(report, language):
         "report": report,
         "order": order,
         "parcel": parcel,
+        "requester": requester(order),
         "version": version,
         "versions": versions,
         "summary": findings,

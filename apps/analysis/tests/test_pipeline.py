@@ -682,11 +682,13 @@ def test_pdf_follows_the_report_structure(data, paid_order):
         weasyprint.HTML = original
     html = captured["html"]
     headings = [
-        "1. Demographics and area growth",
-        "2. Access and services",
-        "3. Flood, water and terrain",
-        "4. Regulatory red flags",
-        "5. Current imagery and occupation",
+        "Prepared for",
+        "1. Location and boundary check",
+        "2. Demographics and area growth",
+        "3. Access and services",
+        "4. Flood, water and terrain",
+        "5. Regulatory red flags",
+        "6. Current imagery and occupation",
         "8. Area signals",
     ]
     order_of = [html.index(heading) for heading in headings]
@@ -694,6 +696,7 @@ def test_pdf_follows_the_report_structure(data, paid_order):
     assert "Field verification findings" not in html  # desk tier
     assert "not included in this version" not in html  # every section has its module now
     assert html.count('class="tile"') == 10
+    assert html.count('class="map-pair"') == 3  # demographics, access and flood maps
     assert html.count("data:image/svg+xml") >= 20  # 12 maps + 8 charts + QR code
     assert "Population in 2025 (WorldPop R2025A)" in html  # the demographics table
     assert "Nearest services" in html and "École Les Lauriers" in html  # the services table

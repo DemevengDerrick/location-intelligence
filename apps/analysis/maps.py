@@ -6,6 +6,7 @@ exact at parcel scale. Each map has a north arrow, scale bar, legend and a sourc
 
 import io
 import math
+import textwrap
 
 import matplotlib
 
@@ -25,6 +26,7 @@ plt.rcParams.update({"font.family": style.FONT, "font.size": 8, "svg.fonttype": 
 PARCEL_MARGIN_M = 50  # "parcel": the boundary plus 50 m
 NEIGHBOURHOOD_RADIUS_M = 1_000  # "neighbourhood": 1 km around the parcel
 AREA_RADIUS_M = 5_000  # "area": 5 km around the parcel
+CAPTION_PT = 6
 NICE_LENGTHS = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000]
 
 
@@ -200,7 +202,7 @@ class ParcelMap:
         if self.legend:
             legend = ax.legend(handles=self.legend, loc="upper left", fontsize=7, framealpha=0.9)
             legend.set_zorder(30)  # above roads and points
-        self.fig.text(0.01, 0.005, source, fontsize=6, color="#444444", ha="left", va="bottom")
+        _caption(ax, source)
         buffer = io.BytesIO()
         self.fig.savefig(buffer, format="svg", bbox_inches="tight", pad_inches=0.15)
         plt.close(self.fig)
@@ -240,6 +242,24 @@ class ParcelMap:
             fontsize=7,
             zorder=20,
         )
+
+
+def _caption(ax, source):
+    """The source line under the map, wrapped to the map's width: one long line would widen
+    the saved image and shrink the map on the page."""
+    ax.figure.canvas.draw()  # the axes' final size, after the equal aspect is applied
+    width_pt = ax.get_window_extent().width * 72 / ax.figure.dpi
+    chars = max(40, int(width_pt / (CAPTION_PT * 0.55)))
+    ax.text(
+        0,
+        -0.015,
+        textwrap.fill(source, chars),
+        transform=ax.transAxes,
+        fontsize=CAPTION_PT,
+        color="#444444",
+        ha="left",
+        va="top",
+    )
 
 
 def image_strip(frames, parcel, source, columns=5):

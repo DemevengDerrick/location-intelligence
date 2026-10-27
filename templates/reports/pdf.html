@@ -17,6 +17,11 @@
   .footer .qr { width: 14mm; height: 14mm; }
   .cover { page-break-after: always; }
   .cover table { border-collapse: collapse; margin-top: 6mm; }
+  .cover h2 { margin-top: 10mm; }
+  .cover .requester { margin-top: 2mm; }
+  .map-pair { width: 100%; border-collapse: collapse; table-layout: fixed; page-break-inside: avoid; margin: 3mm 0; }
+  .map-pair td { width: 50%; vertical-align: top; padding: 0 1.5mm; text-align: center; }
+  .map-pair img { width: 100%; height: auto; }
   .cover td { padding: 1.5mm 4mm 1.5mm 0; vertical-align: top; }
   .cover td:first-child { color: #555; }
   .notice { border: 1px solid #E69F00; background: #FFF7E6; padding: 3mm; margin: 4mm 0; }
@@ -34,10 +39,10 @@
   .visual img { max-width: 100%; height: auto; }
   .placeholder { border: 1px dashed #999; color: #555; padding: 3mm; font-size: 8.5pt; }
   .statement { border: 1px solid #0072B2; background: #EEF5FB; padding: 2.5mm 3mm; font-size: 8.5pt; }
-  .tiles { display: flex; flex-wrap: wrap; gap: 3mm; margin-bottom: 4mm; }
-  .tile { width: 54mm; border: 1.5px solid; border-radius: 2mm; padding: 2.5mm; }
+  .tiles { display: flex; flex-wrap: wrap; justify-content: space-between; row-gap: 3mm; margin-bottom: 4mm; }
+  .tile { box-sizing: border-box; width: 49%; border: 1.5px solid; border-radius: 2mm; padding: 2.5mm 3.5mm; }
   .tile-label { margin: 2mm 0 0; font-weight: bold; font-size: 9pt; }
-  .tile-figure { margin: 1mm 0 0; font-size: 12pt; }
+  .tile-figure { margin: 1mm 0 0; font-size: 11pt; }
   .finding { font-size: 10.5pt; }
   .sources li { margin-bottom: 1.5mm; }
   .small { font-size: 8pt; color: #444; }
@@ -59,6 +64,13 @@
     <tr><td>{% translate "Order" %}</td><td>{{ order.public_id|stringformat:"s"|slice:":8" }} · {{ order.created_at|date:"DATE_FORMAT" }}</td></tr>
     <tr><td>{% translate "Report" %}</td><td>{{ order.get_tier_display }}</td></tr>
     <tr><td>{% translate "Location given as" %}</td><td>{{ parcel.get_input_method_display }}</td></tr>
+  </table>
+  <h2>{% translate "Prepared for" %}</h2>
+  <table class="requester">
+    <tr><td>{% translate "Requested by" %}</td><td>{{ requester.name|default:"–" }}</td></tr>
+    {% if requester.organization %}<tr><td>{% translate "Organization" %}</td><td>{{ requester.organization }}</td></tr>{% endif %}
+    <tr><td>{% translate "Requested on" %}</td><td>{{ order.created_at|date:"DATE_FORMAT" }}</td></tr>
+    {% if requester.intended_use %}<tr><td>{% translate "Intended use" %}</td><td>{{ requester.intended_use }}</td></tr>{% endif %}
   </table>
   {% if approximate %}
   <p class="notice">{% translate "Approximate location: only a pin was given. The analysis covers a circle around it, not the exact parcel." %}</p>
@@ -95,7 +107,11 @@
       <p class="finding">{{ f.sentence }}</p>
     </div>
     {% if f.rating != f.computed_rating and f.override_reason %}<p class="small">{% translate "Rating adjusted by the analyst" %}: {{ f.override_reason }}</p>{% endif %}
+    {% if f.map_pair %}{# two maps of the same area, compared side by side #}
+    <table class="map-pair"><tr>{% for src in f.map_pair %}<td><img src="{{ src }}" alt=""></td>{% endfor %}</tr></table>
+    {% else %}
     {% for src in f.map_srcs %}{% if src %}<div class="visual"><img src="{{ src }}" alt=""></div>{% endif %}{% empty %}{% if f.unavailable %}<p class="placeholder">{% translate "Map unavailable for this section." %}</p>{% endif %}{% endfor %}
+    {% endif %}
     {% for chart in f.charts %}
       {% if chart.src %}<div class="visual"><img src="{{ chart.src }}" alt=""></div>
       {% elif chart.table %}

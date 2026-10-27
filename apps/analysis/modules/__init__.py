@@ -15,6 +15,7 @@ from .terrain import TerrainModule
 MODULES: dict[str, Module] = {
     m.name: m
     for m in (
+        LocationModule(),
         DemographicsModule(),
         AccessModule(),
         FloodModule(),
@@ -23,7 +24,6 @@ MODULES: dict[str, Module] = {
         ImageryModule(),
         BuildingsModule(),
         ChangeModule(),
-        LocationModule(),
         SignalsModule(),
     )
 }

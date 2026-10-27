@@ -220,7 +220,7 @@ Every status change emails the customer in their own language. The payment steps
 
 Once any protected area is loaded as a reference layer, OSM protected areas are no longer checked. The atlas's annual cutting areas, timber sales, planted zones, protected-area zoning and administrative boundaries are not loaded: they add nothing a land buyer needs beyond the layers above. Its licence is not stated on the portal; it is a public government open-data site, and reports credit MINFOF and WRI.
 
-**Report order:** after the summary, the sections lead with the most telling analysis: demographics, access, flood and terrain, red flags, then imagery and buildings, change over time, the boundary check, field findings and area signals last (`apps/reports/structure.py`). The summary tiles and the review screen follow the same order, including for drafts made before a change of order.
+**Report order:** the cover says who the report was prepared for (name, organisation, intended use; never email or phone, since reports can be shared). After the summary, the location and boundary check sets the scene, then the most telling analysis leads: demographics, access, flood and terrain, red flags, then imagery and buildings, change over time, field findings and area signals last (`apps/reports/structure.py`). In the PDF, the paired maps of demographics, access and flood sit side by side, and map source lines wrap to the map's width. The summary tiles and the review screen follow the same order, including for drafts made before a change of order.
 
 **Network errors** (busy public servers, timeouts, 429/5xx) make a module retry after 1 and then 2 minutes before it is recorded as unavailable. Other errors are recorded at once.
 

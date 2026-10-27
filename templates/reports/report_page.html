@@ -20,6 +20,9 @@
     <p class="mt-2 text-sm text-slate-600">
       {% translate "Report ID" %} {{ report.reference }} · {% blocktranslate with n=version.number date=version.approved_at|date:"DATE_FORMAT" %}Version {{ n }}, {{ date }}{% endblocktranslate %}
     </p>
+    {% if requester.name or requester.organization %}
+    <p class="mt-1 text-sm text-slate-600">{% translate "Prepared for" %} {{ requester.name }}{% if requester.name and requester.organization %}, {% endif %}{{ requester.organization }} · {% translate "Requested on" %} {{ order.created_at|date:"DATE_FORMAT" }}{% if requester.intended_use %} · {% translate "Intended use" %}: {{ requester.intended_use }}{% endif %}</p>
+    {% endif %}
     <div class="mt-4 flex flex-wrap gap-3">
       {% for language, v in versions.items %}
         <a href="{% if shared %}{% url 'reports:shared_download' shared.token v.number language %}{% else %}{% url 'reports:download' order.public_id v.number language %}{% endif %}" class="rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800">{% blocktranslate with lang=v.get_language_display %}Download PDF ({{ lang }}){% endblocktranslate %}</a>
