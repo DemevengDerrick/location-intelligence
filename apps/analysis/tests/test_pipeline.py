@@ -1403,6 +1403,71 @@ def test_uploaded_protected_area_over_the_parcel_is_red(data, paid_order):
     assert "the protected area « Réserve de Douala-Edéa » covers" in flags["text"]["en"]
 
 
+def atlas_area(kind, name, proposed=False, advisory=False):
+    from apps.gazetteer.forest_atlas import SOURCE_PREFIX
+    from apps.gazetteer.models import ReferenceLayer
+
+    return ReferenceLayer.objects.create(
+        kind=kind,
+        name=name,
+        geometry=square_m(DOUALA[0] + 0.0002, DOUALA[1], 40),
+        properties={"proposed": proposed, "advisory": advisory},
+        source=f"{SOURCE_PREFIX} (test)",
+    )
+
+
+def test_forest_reserve_over_the_parcel_is_red_and_cites_the_forest_atlas(data, paid_order):
+    from apps.gazetteer.models import ReferenceLayerKind
+
+    atlas_area(ReferenceLayerKind.FOREST_ESTATE, "Mangombe (Forêt de protection)")
+    flags = findings(paid_order())["red_flags"]
+    assert flags["rating"] == "red"
+    assert (
+        "the permanent forest estate « Mangombe (Forêt de protection) » covers"
+        in (flags["text"]["en"])
+    )
+    assert "forest-atlas" in flags["datasets"]
+
+
+def test_proposed_park_or_plantation_concession_over_the_parcel_is_amber(data, paid_order):
+    from apps.gazetteer.models import ReferenceLayerKind
+
+    atlas_area(ReferenceLayerKind.PROTECTED_AREA, "Mefou (Parc national)", proposed=True)
+    atlas_area(ReferenceLayerKind.CONCESSION, "SOCAPALM (Plantation à grand echelle)")
+    flags = findings(paid_order())["red_flags"]
+    assert flags["rating"] == "amber"
+    text = flags["text"]["en"]
+    assert "« Mefou (Parc national) » (proposed, not yet gazetted) covers" in text
+    assert "the concession « SOCAPALM (Plantation à grand echelle) » covers" in text
+
+
+def test_ramsar_wetland_over_the_parcel_is_amber(data, paid_order):
+    from apps.gazetteer.models import ReferenceLayerKind
+
+    ebogo = "Zone Humide d'Ebogo (Site Ramsar)"
+    atlas_area(ReferenceLayerKind.PROTECTED_AREA, ebogo, advisory=True)
+    flags = findings(paid_order())["red_flags"]
+    assert flags["rating"] == "amber"
+    assert "the protected area « Zone Humide d'Ebogo (Site Ramsar) » covers" in flags["text"]["en"]
+
+
+def test_osm_protected_areas_give_way_to_official_ones(data, paid_order):
+    from apps.gazetteer.models import ReferenceLayer, ReferenceLayerKind
+    from apps.osm.models import Category
+
+    osm_park = (Category.PROTECTED, "national_park", "OSM park", None, square_m(*DOUALA, 60))
+    data["osm"] = osm_around_parcel(park=osm_park)  # covers the parcel
+    ReferenceLayer.objects.create(
+        kind=ReferenceLayerKind.PROTECTED_AREA,
+        name="Far away park",
+        geometry=square_m(DOUALA[0] + 1, DOUALA[1], 40),
+        source="MINFOF",
+    )
+    flags = findings(paid_order())["red_flags"]
+    assert flags["rating"] == "green"
+    assert flags["results"]["constraints"] == []
+
+
 def test_public_utility_zone_nearby_is_amber(data, paid_order):
     from apps.gazetteer.models import ReferenceLayer, ReferenceLayerKind
     from apps.osm.testing import offset

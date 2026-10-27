@@ -44,6 +44,8 @@ class ReferenceLayerKind(models.TextChoices):
     DUP_CORRIDOR = "dup_corridor", _("Public-utility (DUP) zone")
     INFRASTRUCTURE = "infrastructure", _("Infrastructure corridor")
     PROTECTED_AREA = "protected_area", _("Protected area")
+    FOREST_ESTATE = "forest_estate", _("Permanent forest estate")
+    CONCESSION = "concession", _("Land-use concession")
     RISK_ZONE = "risk_zone", _("Custom risk zone")
 
 

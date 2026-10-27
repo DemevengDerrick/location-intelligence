@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 04:57+0100\n"
+"POT-Creation-Date: 2026-10-27 12:39+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,7 +38,7 @@ msgid "Accounts"
 msgstr "Accounts"
 
 #: apps/accounts/models.py:19 apps/core/models.py:65
-#: apps/gazetteer/models.py:21 apps/gazetteer/models.py:54
+#: apps/gazetteer/models.py:21 apps/gazetteer/models.py:56
 #: apps/incidents/models.py:17 apps/incidents/models.py:220
 #: apps/pages/models.py:82 apps/partners/models.py:31
 #: apps/pricing/models.py:19
@@ -331,7 +331,7 @@ msgstr "Roads"
 #: apps/analysis/modules/demographics.py:240
 #: apps/analysis/modules/flood.py:195 apps/analysis/modules/flood.py:216
 #: apps/analysis/modules/imagery.py:106 apps/analysis/modules/location.py:73
-#: apps/analysis/modules/red_flags.py:199 apps/analysis/modules/signals.py:162
+#: apps/analysis/modules/red_flags.py:202 apps/analysis/modules/signals.py:162
 #: apps/analysis/modules/terrain.py:129
 msgid "Parcel boundary"
 msgstr "Parcel boundary"
@@ -366,7 +366,7 @@ msgid "Service"
 msgstr "Service"
 
 #: apps/analysis/modules/access.py:240 apps/analysis/modules/access.py:392
-#: apps/analysis/modules/red_flags.py:265 templates/emails/new_lead.txt:1
+#: apps/analysis/modules/red_flags.py:270 templates/emails/new_lead.txt:1
 msgid "Name"
 msgstr "Name"
 
@@ -417,7 +417,7 @@ msgstr "Nearest services"
 msgid "Destination"
 msgstr "Destination"
 
-#: apps/analysis/modules/access.py:392 apps/analysis/modules/red_flags.py:366
+#: apps/analysis/modules/access.py:392 apps/analysis/modules/red_flags.py:389
 msgid "Distance"
 msgstr "Distance"
 
@@ -474,7 +474,7 @@ msgid "Nearest services: %(list)s."
 msgstr "Nearest services: %(list)s."
 
 #: apps/analysis/modules/access.py:451 apps/analysis/modules/access.py:455
-#: apps/analysis/modules/flood.py:358 apps/analysis/modules/red_flags.py:381
+#: apps/analysis/modules/flood.py:358 apps/analysis/modules/red_flags.py:404
 msgid "; "
 msgstr "; "
 
@@ -517,7 +517,7 @@ msgstr "Within %(m)s m of the boundary"
 
 #: apps/analysis/modules/buildings.py:79
 #: apps/analysis/modules/buildings.py:122
-#: apps/analysis/modules/red_flags.py:366
+#: apps/analysis/modules/red_flags.py:389
 msgid "On the parcel"
 msgstr "On the parcel"
 
@@ -1046,38 +1046,17 @@ msgstr ""
 msgid "an unknown commune"
 msgstr "an unknown commune"
 
-#: apps/analysis/modules/red_flags.py:71 apps/reports/structure.py:14
+#: apps/analysis/modules/red_flags.py:78 apps/reports/structure.py:14
 #: templates/pages/samples.html:34
 msgid "Regulatory red flags"
 msgstr "Regulatory red flags"
 
-#: apps/analysis/modules/red_flags.py:162
-#: apps/analysis/modules/red_flags.py:400 apps/gazetteer/models.py:46
-#: apps/osm/models.py:52
-msgid "Protected area"
-msgstr "Protected area"
-
-#: apps/analysis/modules/red_flags.py:163
-#: apps/analysis/modules/red_flags.py:401 apps/gazetteer/models.py:44
-msgid "Public-utility (DUP) zone"
-msgstr "Public-utility (DUP) zone"
-
-#: apps/analysis/modules/red_flags.py:164
-#: apps/analysis/modules/red_flags.py:402 apps/gazetteer/models.py:45
-msgid "Infrastructure corridor"
-msgstr "Infrastructure corridor"
-
-#: apps/analysis/modules/red_flags.py:165
-#: apps/analysis/modules/red_flags.py:403
-msgid "Risk zone"
-msgstr "Risk zone"
-
-#: apps/analysis/modules/red_flags.py:189
-#: apps/analysis/modules/red_flags.py:240
+#: apps/analysis/modules/red_flags.py:192
+#: apps/analysis/modules/red_flags.py:243
 msgid "Setback strips"
 msgstr "Setback strips"
 
-#: apps/analysis/modules/red_flags.py:202
+#: apps/analysis/modules/red_flags.py:205
 #, python-format
 msgid ""
 "Setback rules as set in the admin; features © OpenStreetMap contributors "
@@ -1086,83 +1065,121 @@ msgstr ""
 "Setback rules as set in the admin; features © OpenStreetMap contributors "
 "(ODbL), data of %(date)s, and official layers where uploaded."
 
-#: apps/analysis/modules/red_flags.py:215
+#: apps/analysis/modules/red_flags.py:218
 #, python-format
 msgid "No regulatory constraint was found within %(d)s m of the parcel."
 msgstr "No regulatory constraint was found within %(d)s m of the parcel."
 
-#: apps/analysis/modules/red_flags.py:246
-#: apps/analysis/modules/red_flags.py:366
+#: apps/analysis/modules/red_flags.py:249
+#: apps/analysis/modules/red_flags.py:389
 msgid "Constraint"
 msgstr "Constraint"
 
-#: apps/analysis/modules/red_flags.py:265 apps/analysis/modules/signals.py:260
+#: apps/analysis/modules/red_flags.py:270 apps/analysis/modules/signals.py:260
 #: apps/gazetteer/admin.py:32
 msgid "Source"
 msgstr "Source"
 
-#: apps/analysis/modules/red_flags.py:273
+#: apps/analysis/modules/red_flags.py:278
 msgid "Rivers, roads and lines with setbacks"
 msgstr "Rivers, roads and lines with setbacks"
 
-#: apps/analysis/modules/red_flags.py:319
+#: apps/analysis/modules/red_flags.py:337
 #, python-format
 msgid "%(rule)s covers %(m2)s m² (%(pct)s %%) of the parcel"
 msgstr "%(rule)s covers %(m2)s m² (%(pct)s %%) of the parcel"
 
-#: apps/analysis/modules/red_flags.py:326
+#: apps/analysis/modules/red_flags.py:344
 msgid "the protected area"
 msgstr "the protected area"
 
-#: apps/analysis/modules/red_flags.py:327
+#: apps/analysis/modules/red_flags.py:345
+msgid "the permanent forest estate"
+msgstr "the permanent forest estate"
+
+#: apps/analysis/modules/red_flags.py:346
+msgid "the concession"
+msgstr "the concession"
+
+#: apps/analysis/modules/red_flags.py:347
 msgid "the public-utility (DUP) zone"
 msgstr "the public-utility (DUP) zone"
 
-#: apps/analysis/modules/red_flags.py:328
+#: apps/analysis/modules/red_flags.py:348
 msgid "the infrastructure corridor"
 msgstr "the infrastructure corridor"
 
-#: apps/analysis/modules/red_flags.py:329
+#: apps/analysis/modules/red_flags.py:349
 msgid "the risk zone"
 msgstr "the risk zone"
 
-#: apps/analysis/modules/red_flags.py:333
+#: apps/analysis/modules/red_flags.py:353
+#: apps/analysis/modules/red_flags.py:375
+msgid "(proposed, not yet gazetted)"
+msgstr "(proposed, not yet gazetted)"
+
+#: apps/analysis/modules/red_flags.py:355
 #, python-format
 msgid "%(what)s%(name)s covers %(pct)s %% of the parcel"
 msgstr "%(what)s%(name)s covers %(pct)s %% of the parcel"
 
-#: apps/analysis/modules/red_flags.py:338
+#: apps/analysis/modules/red_flags.py:360
 #, python-format
 msgid "%(what)s%(name)s is %(d)s m away"
 msgstr "%(what)s%(name)s is %(d)s m away"
 
-#: apps/analysis/modules/red_flags.py:365
+#: apps/analysis/modules/red_flags.py:388
 msgid "Constraints on or near the parcel"
 msgstr "Constraints on or near the parcel"
 
-#: apps/analysis/modules/red_flags.py:366
+#: apps/analysis/modules/red_flags.py:389
 msgid "Basis or source"
 msgstr "Basis or source"
 
-#: apps/analysis/modules/red_flags.py:376
+#: apps/analysis/modules/red_flags.py:399
 msgid ""
 "* Indicative width, to be confirmed by a lawyer or the planning office."
 msgstr ""
 "* Indicative width, to be confirmed by a lawyer or the planning office."
 
-#: apps/analysis/modules/red_flags.py:389
+#: apps/analysis/modules/red_flags.py:412
 msgid "No constraint found"
 msgstr "No constraint found"
 
-#: apps/analysis/modules/red_flags.py:391
+#: apps/analysis/modules/red_flags.py:414
 #, python-format
 msgid "%(n)s constraint(s) · %(pct)s %% in setbacks"
 msgstr "%(n)s constraint(s) · %(pct)s %% in setbacks"
 
-#: apps/analysis/modules/red_flags.py:395
+#: apps/analysis/modules/red_flags.py:418
 #, python-format
 msgid "%(n)s constraint(s) nearby"
 msgstr "%(n)s constraint(s) nearby"
+
+#: apps/analysis/modules/red_flags.py:423 apps/gazetteer/models.py:46
+#: apps/osm/models.py:52
+msgid "Protected area"
+msgstr "Protected area"
+
+#: apps/analysis/modules/red_flags.py:424 apps/gazetteer/models.py:47
+msgid "Permanent forest estate"
+msgstr "Permanent forest estate"
+
+#: apps/analysis/modules/red_flags.py:425
+msgid "Forest, hunting or agro-industrial concession"
+msgstr "Forest, hunting or agro-industrial concession"
+
+#: apps/analysis/modules/red_flags.py:426 apps/gazetteer/models.py:44
+msgid "Public-utility (DUP) zone"
+msgstr "Public-utility (DUP) zone"
+
+#: apps/analysis/modules/red_flags.py:427 apps/gazetteer/models.py:45
+msgid "Infrastructure corridor"
+msgstr "Infrastructure corridor"
+
+#: apps/analysis/modules/red_flags.py:428
+msgid "Risk zone"
+msgstr "Risk zone"
 
 #: apps/analysis/modules/signals.py:54
 msgid "Nearby"
@@ -1394,7 +1411,7 @@ msgid "version"
 msgstr "version"
 
 #: apps/buildings/models.py:22 apps/gazetteer/models.py:31
-#: apps/gazetteer/models.py:57 apps/incidents/models.py:36
+#: apps/gazetteer/models.py:59 apps/incidents/models.py:36
 #: apps/incidents/models.py:47 apps/osm/models.py:21
 msgid "source"
 msgstr "source"
@@ -1635,7 +1652,7 @@ msgstr "aliases"
 msgid "type"
 msgstr "type"
 
-#: apps/gazetteer/models.py:26 apps/gazetteer/models.py:55
+#: apps/gazetteer/models.py:26 apps/gazetteer/models.py:57
 msgid "geometry"
 msgstr "geometry"
 
@@ -1666,34 +1683,38 @@ msgstr "gazetteer place"
 msgid "gazetteer"
 msgstr "gazetteer"
 
-#: apps/gazetteer/models.py:47
+#: apps/gazetteer/models.py:48
+msgid "Land-use concession"
+msgstr "Land-use concession"
+
+#: apps/gazetteer/models.py:49
 msgid "Custom risk zone"
 msgstr "Custom risk zone"
 
-#: apps/gazetteer/models.py:53 apps/orders/models.py:117
+#: apps/gazetteer/models.py:55 apps/orders/models.py:117
 #: apps/partners/models.py:116 apps/payments/models.py:148
 #: apps/pricing/models.py:17
 msgid "kind"
 msgstr "kind"
 
-#: apps/gazetteer/models.py:56
+#: apps/gazetteer/models.py:58
 msgid "properties"
 msgstr "properties"
 
-#: apps/gazetteer/models.py:58
+#: apps/gazetteer/models.py:60
 msgid "valid from"
 msgstr "valid from"
 
-#: apps/gazetteer/models.py:59 apps/incidents/models.py:32
+#: apps/gazetteer/models.py:61 apps/incidents/models.py:32
 #: apps/payments/models.py:160 apps/pricing/models.py:23
 msgid "active"
 msgstr "active"
 
-#: apps/gazetteer/models.py:62
+#: apps/gazetteer/models.py:64
 msgid "reference layer feature"
 msgstr "reference layer feature"
 
-#: apps/gazetteer/models.py:63
+#: apps/gazetteer/models.py:65
 msgid "reference layers"
 msgstr "reference layers"
 
@@ -1860,15 +1881,19 @@ msgstr "Search again on the next order"
 msgid "Incidents"
 msgstr "Incidents"
 
-#: apps/incidents/manual.py:27
+#: apps/incidents/manual.py:29
 msgid "Added by an analyst"
 msgstr "Added by an analyst"
 
-#: apps/incidents/manual.py:60
+#: apps/incidents/manual.py:73
 msgid "The PDF could not be read."
 msgstr "The PDF could not be read."
 
-#: apps/incidents/manual.py:67
+#: apps/incidents/manual.py:78
+msgid "This address cannot be fetched."
+msgstr "This address cannot be fetched."
+
+#: apps/incidents/manual.py:82
 msgid ""
 "This site's robots.txt does not allow us to fetch the page. Upload it as a "
 "PDF."
@@ -1876,7 +1901,7 @@ msgstr ""
 "This site's robots.txt does not allow us to fetch the page. Upload it as a "
 "PDF."
 
-#: apps/incidents/manual.py:73
+#: apps/incidents/manual.py:88
 #, python-format
 msgid "The page could not be fetched: %(e)s"
 msgstr "The page could not be fetched: %(e)s"

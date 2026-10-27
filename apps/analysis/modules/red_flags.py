@@ -14,6 +14,7 @@ from django.utils import translation
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
+from apps.gazetteer.forest_atlas import SOURCE_PREFIX
 from apps.gazetteer.models import ReferenceLayer, ReferenceLayerKind
 from apps.osm.models import Category
 from apps.osm.queries import in_box
@@ -29,8 +30,14 @@ from .base import Module, ModuleOutput
 from .imagery import radius_bounds
 
 MIN_OVERLAP_M2 = 1  # below this, an overlap is a mapping artefact
+# Overlapping these is red, unless the area is only proposed or the designation advisory
+# (Ramsar wetlands); the others are amber.
+BLOCKING = {"protected", "forest_estate", "dup"}
+STATUSES = ("proposed", "advisory")
 AREA_KINDS = {
     ReferenceLayerKind.PROTECTED_AREA: "protected",
+    ReferenceLayerKind.FOREST_ESTATE: "forest_estate",
+    ReferenceLayerKind.CONCESSION: "concession",
     ReferenceLayerKind.DUP_CORRIDOR: "dup",
     ReferenceLayerKind.INFRASTRUCTURE: "infrastructure",
     ReferenceLayerKind.RISK_ZONE: "risk_zone",
@@ -38,6 +45,8 @@ AREA_KINDS = {
 STYLE = {
     "setback": {"facecolor": "#F6A04D", "edgecolor": "#B35806", "alpha": 0.45, "hatch": "///"},
     "protected": {"facecolor": "#A6DBA0", "edgecolor": "#1B7837", "alpha": 0.5, "hatch": "\\\\"},
+    "forest_estate": {"facecolor": "#5AAE61", "edgecolor": "#00441B", "alpha": 0.45, "hatch": "||"},
+    "concession": {"facecolor": "#C2A5CF", "edgecolor": "#762A83", "alpha": 0.45, "hatch": "--"},
     "dup": {"facecolor": "#F4A582", "edgecolor": "#B2182B", "alpha": 0.5, "hatch": "xx"},
     "infrastructure": {"facecolor": "#D8B365", "edgecolor": "#8C510A", "alpha": 0.5},
     "risk_zone": {"facecolor": "#FEE08B", "edgecolor": "#D73027", "alpha": 0.5, "hatch": ".."},
@@ -124,7 +133,7 @@ class RedFlagsModule(Module):
         )
 
         areas = self._areas(osm, bounds)
-        for kind, name, source, shape in areas:
+        for kind, name, source, shape, status in areas:
             shape_m = shape.transform(srid, clone=True)
             distance = parcel_m.distance(shape_m)
             if distance > t.constraint_near_m:
@@ -144,6 +153,8 @@ class RedFlagsModule(Module):
                     "distance_m": round(distance),
                     "basis": None,
                     "confirmed": True,
+                    "proposed": status == "proposed",
+                    "advisory": status == "advisory",
                 }
             )
         results = {
@@ -158,14 +169,9 @@ class RedFlagsModule(Module):
 
         def draw():
             figure = ParcelMap(geom, extent=max(150, half_diagonal * 2.5))
-            labels = {
-                "protected": _("Protected area"),
-                "dup": _("Public-utility (DUP) zone"),
-                "infrastructure": _("Infrastructure corridor"),
-                "risk_zone": _("Risk zone"),
-            }
+            labels = _kind_labels()
             seen = set()
-            for kind, _name, _source, shape in areas:
+            for kind, _name, _source, shape, _status in areas:
                 if shape.dims == 2:
                     figure.add(
                         shape,
@@ -225,7 +231,7 @@ class RedFlagsModule(Module):
                 "setback_red_pct": t.setback_red_pct,
                 "constraint_near_m": t.constraint_near_m,
             },
-            datasets={"osm-roads-services": osm.data_timestamp, "reference-layers": "admin"},
+            datasets=self._datasets(osm),
             maps={"constraints": self.render_maps(draw)},
             charts=charts,
             layers=self._layers(constraints, strips, areas, drawn_lines),
@@ -246,10 +252,12 @@ class RedFlagsModule(Module):
                 hover=[("rule", lambda: _("Constraint"))],
             )
         ]
-        for kind in ("protected", "dup", "infrastructure", "risk_zone"):
+        for kind in STYLE:
+            if kind == "setback":
+                continue
             found = [
                 (shape, {"name": name or "–", "source": source or "–"})
-                for k, name, source, shape in areas
+                for k, name, source, shape, _status in areas
                 if k == kind
             ]
             if found:
@@ -280,16 +288,28 @@ class RedFlagsModule(Module):
         return layers
 
     @staticmethod
+    def _datasets(osm):
+        used = {"osm-roads-services": osm.data_timestamp, "reference-layers": "admin"}
+        atlas = ReferenceLayer.objects.filter(is_active=True, source__startswith=SOURCE_PREFIX)
+        if atlas.exists():
+            used["forest-atlas"] = "MINFOF"
+        return used
+
+    @staticmethod
     def _areas(osm, bounds):
-        """(kind, name, source, geometry) for protected areas, DUP zones, corridors and risk
-        zones: OSM protected areas plus the admin-maintained reference layers."""
+        """(kind, name, source, geometry, status) for protected areas, forest estate,
+        concessions, DUP zones, corridors and risk zones from the admin-maintained reference
+        layers. OSM protected areas are used only until official ones are loaded."""
         box = Polygon.from_bbox(bounds)
         box.srid = 4326
-        found = [
-            ("protected", f.name or f.kind, "OpenStreetMap", f.geom)
-            for f in in_box(osm, Category.PROTECTED, *bounds)
-        ]
-        layers = ReferenceLayer.objects.filter(is_active=True, geometry__bboverlaps=box)
+        active = ReferenceLayer.objects.filter(is_active=True)
+        found = []
+        if not active.filter(kind=ReferenceLayerKind.PROTECTED_AREA).exists():
+            found = [
+                ("protected", f.name or f.kind, "OpenStreetMap", f.geom, None)
+                for f in in_box(osm, Category.PROTECTED, *bounds)
+            ]
+        layers = active.filter(geometry__bboverlaps=box)
         for layer in layers:
             shape = layer.geometry
             buffer_m = layer.properties.get("buffer_m") or 0
@@ -299,14 +319,18 @@ class RedFlagsModule(Module):
                 srid = utm_srid_for(shape.centroid)
                 shape = shape.transform(srid, clone=True).buffer(float(buffer_m))
                 shape = shape.transform(4326, clone=True)
-            found.append((AREA_KINDS[layer.kind], layer.name, layer.source, shape))
+            status = next((s for s in STATUSES if layer.properties.get(s)), None)
+            found.append((AREA_KINDS[layer.kind], layer.name, layer.source, shape, status))
         return found
 
     @staticmethod
     def _rate(r, t):
         items = r["constraints"]
         if r["setback_overlap_pct"] >= t.setback_red_pct or any(
-            c["type"] in {"protected", "dup"} and c["overlap_m2"] for c in items
+            c["type"] in BLOCKING
+            and c["overlap_m2"]
+            and not (c.get("proposed") or c.get("advisory"))
+            for c in items
         ):
             return Rating.RED
         if items:
@@ -324,11 +348,15 @@ class RedFlagsModule(Module):
             return text if c["confirmed"] else f"{text}*"
         what = {
             "protected": _("the protected area"),
+            "forest_estate": _("the permanent forest estate"),
+            "concession": _("the concession"),
             "dup": _("the public-utility (DUP) zone"),
             "infrastructure": _("the infrastructure corridor"),
             "risk_zone": _("the risk zone"),
         }[c["type"]]
         name = f" « {c['name']} »" if c["name"] else ""
+        if c.get("proposed"):
+            name += " " + _("(proposed, not yet gazetted)")
         if c["overlap_m2"]:
             return _("%(what)s%(name)s covers %(pct)s %% of the parcel") % {
                 "what": what,
@@ -350,6 +378,7 @@ class RedFlagsModule(Module):
             else:
                 label = str(_kind_labels()[c["type"]])
                 label += f" « {c['name']} »" if c["name"] else ""
+                label += " " + _("(proposed, not yet gazetted)") if c.get("proposed") else ""
                 basis = c.get("source") or ""
             rows.append(
                 [
@@ -398,6 +427,8 @@ class RedFlagsModule(Module):
 def _kind_labels():
     return {
         "protected": _("Protected area"),
+        "forest_estate": _("Permanent forest estate"),
+        "concession": _("Forest, hunting or agro-industrial concession"),
         "dup": _("Public-utility (DUP) zone"),
         "infrastructure": _("Infrastructure corridor"),
         "risk_zone": _("Risk zone"),

@@ -92,6 +92,13 @@ Load the quartiers, villages and lieux-dits from the OSM extract into the gazett
 docker compose exec web python manage.py load_places
 ```
 
+Load the official protected areas, permanent forest estate and concessions from the [Forest Atlas of Cameroon](https://cmr-data.forest-atlas.org/) (MINFOF with WRI; about 1,200 features, a minute). It reads each layer from the atlas's public feature service; `--file` loads a local export of one layer instead. Re-running a layer replaces it:
+
+```sh
+docker compose exec web python manage.py load_forest_atlas
+docker compose exec web python manage.py load_forest_atlas protected_areas --file "input/Aires_protege_de_la_faune/Aires_protegées_de_la_faune.shp"
+```
+
 The extract is refreshed every Sunday at 02:00 (Celery beat, editable under Periodic tasks; also **OSM imports → Download and load the latest extract now** in the admin). A refresh loads beside the current data and switches over only when complete. To rebuild the routing tiles after a refresh: `docker compose run --rm -e force_rebuild=True valhalla`.
 
 ### Order form
@@ -164,7 +171,7 @@ Every status change emails the customer in their own language. The payment steps
    | Change over time | Sentinel-2 dry-season (Dec–Feb) composites, one per year since 2017 | Vegetation lost in the last 5 years → amber |
    | Access and services | Local OSM copy (roads, schools, health facilities, markets, water points), Valhalla routing | No road within 500 m → red; parcel not on a road, paved road over 2 km, health facility over 30 min by car or school over 30 min on foot → amber |
    | Demographics and growth | WorldPop R2025A age-sex rasters (2015, 2020, 2025, 2030 projected) for 1 km, 5 km and the commune, plus growth per 5-year period since 2000 compared with GHSL population (GHS-POP), shown as rates only: WorldPop 2000–2010 is the older Global1 release, and no rate spans the two releases; GHSL built-up epochs | Annual growth within 5 km: 2 % or more → green; 0–2 % → amber; falling → red |
-   | Regulatory red flags | Setback rules (Core → Settings → `setback_rules`) around OSM watercourses, water bodies, shore, main roads, railways and power lines; OSM protected areas; uploaded official layers | Protected area or DUP zone on the parcel, or setbacks over 10 % of it → red; any other constraint on or within 200 m → amber |
+   | Regulatory red flags | Setback rules (Core → Settings → `setback_rules`) around OSM watercourses, water bodies, shore, main roads, railways and power lines; Forest Atlas protected areas, forest estate and concessions (OSM protected areas only until those are loaded); uploaded official layers | Gazetted protected area (other than a Ramsar wetland), permanent forest estate or DUP zone on the parcel, or setbacks over 10 % of it → red; any other constraint on or within 200 m (including proposed areas and concessions) → amber |
    | Flood and water | Copernicus EMS/JRC 1-in-100-year river flood depth (local tiles), JRC Global Surface Water (1984–2021), OSM rivers, water bodies and wetlands | 10 % of the parcel in the flood zone, any part 1 m deep or more, water seen on 10 % of it, or a wetland on it → red; any part in the flood zone, the zone within 200 m, or water seen on it → amber |
    | Area signals | Approved land-issue incidents from Cameroonian outlets' feeds and the GDELT news index (see *Area signals* below) | Not rated: "for information" (blue *i*), since these are area-level reports, not findings about the parcel |
 
@@ -198,6 +205,20 @@ Every status change emails the customer in their own language. The payment steps
 **Demographics** describe the people around the parcel, not on it. Totals are the sum of the WorldPop age-sex bands, so the pyramid always adds up to the total. Figures are cached per area, release and year (`PopulationStat`), so each commune is computed once. They are modelled estimates, not census counts, and the report says so.
 
 **Red flags**: setback rules are a list in Core → Settings → `setback_rules` (category, OSM kinds, distance in metres, FR/EN label, legal basis, `confirmed`). The seeded river (25 m) and sea-shore (50 m) public-domain widths follow Ordonnance n° 74-2 of 1974; the road, railway and power-line widths are indicative. Every rule stays `confirmed: false`, shown with an asterisk in reports, until a Cameroonian lawyer has checked it. Upload public-utility (DUP) zones, infrastructure corridors, national protected areas and risk zones under **Gazetteer → Reference layers → Import a layer** (GeoJSON, KML or zipped shapefile; a `buffer_m` or `width_m` attribute widens lines into corridors). WDPA is not used: its licence excludes commercial use.
+
+**Forest Atlas layers** (`load_forest_atlas`, `apps/gazetteer/forest_atlas.py`):
+
+| Layer | Kind | On the parcel |
+| --- | --- | --- |
+| `protected_areas`: national parks, wildlife reserves and sanctuaries | Protected area | Red; amber if only proposed |
+| `forest_reserves`: protection, recreation and research forests, reforestation perimeters | Permanent forest estate | Red; amber if classification is under way |
+| `production_forests`: forest management units (UFA) and council forests | Permanent forest estate | Red; amber if not yet classified |
+| `plantations`: agro-industrial plantations (CDC, SOCAPALM, HEVECAM…) | Concession | Amber |
+| `community_forests` | Concession | Amber |
+| `hunting_zones`: hunting and community hunting zones | Concession | Amber |
+| `ramsar_sites`: the 7 Ramsar wetlands of international importance | Protected area (advisory) | Amber |
+
+Once any protected area is loaded as a reference layer, OSM protected areas are no longer checked. The atlas's annual cutting areas, timber sales, planted zones, protected-area zoning and administrative boundaries are not loaded: they add nothing a land buyer needs beyond the layers above. Its licence is not stated on the portal; it is a public government open-data site, and reports credit MINFOF and WRI.
 
 **Report order:** after the summary, the sections lead with the most telling analysis: demographics, access, flood and terrain, red flags, then imagery and buildings, change over time, the boundary check, field findings and area signals last (`apps/reports/structure.py`). The summary tiles and the review screen follow the same order, including for drafts made before a change of order.
 
