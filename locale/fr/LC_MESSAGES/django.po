@@ -5941,3 +5941,16 @@ msgid ""
 msgstr ""
 "Le fichier est comparé à l'empreinte (SHA-256) enregistrée lors de "
 "l'émission du rapport. Il n'est pas conservé."
+
+#: templates/admin/incidents/incident/map.html:38
+msgid "incident shown"
+msgstr "incident affiché"
+
+#: apps/analysis/modules/signals.py:170
+#, python-format
+msgid ""
+"Approved incidents from public news reports (Cameroonian outlets), searched "
+"on %(date)s."
+msgstr ""
+"Incidents validés issus de la presse publique (médias camerounais), "
+"recherche du %(date)s."

@@ -9,7 +9,7 @@ import unicodedata
 import urllib.robotparser
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
-from urllib.parse import quote_plus, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, quote_plus, urlencode, urlsplit, urlunsplit
 
 import httpx
 from defusedxml import ElementTree
@@ -54,9 +54,21 @@ def contains_any(text, phrases):
     return any(f" {normalise(p)} " in haystack for p in phrases if normalise(p))
 
 
+TRACKING_PARAMS = re.compile(r"^(utm_\w+|fbclid|gclid|mc_cid|mc_eid)$", re.IGNORECASE)
+
+
 def canonical_url(url):
+    """The URL used to spot duplicates: feeds add utm_* tracking to the links they publish, so
+    the same article pasted from a browser must still match."""
     parts = urlsplit(url.strip())
-    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path, parts.query, ""))
+    query = urlencode(
+        [
+            (k, v)
+            for k, v in parse_qsl(parts.query, keep_blank_values=True)
+            if not TRACKING_PARAMS.match(k)
+        ]
+    )
+    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path, query, ""))
 
 
 def content_hash(url):

@@ -18,7 +18,7 @@ from django.views.decorators.http import require_POST
 from apps.accounts import roles
 from apps.accounts.permissions import has_role
 from apps.core.audit import log_action
-from apps.core.maps import basemap_url
+from apps.core.maps import GISModelAdmin, basemap_url
 from apps.orders.models import Attachment, AttachmentKind
 
 from . import services
@@ -39,7 +39,7 @@ class GeometryHistoryInline(admin.TabularInline):
 
 
 @admin.register(Parcel)
-class ParcelAdmin(admin.GISModelAdmin):
+class ParcelAdmin(GISModelAdmin):
     list_display = [
         "order",
         "input_method",

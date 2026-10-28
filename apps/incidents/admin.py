@@ -2,7 +2,6 @@ import json
 
 from django import forms
 from django.contrib import admin, messages
-from django.contrib.gis import admin as gis_admin
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -12,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from modeltranslation.admin import TranslationAdmin
 
 from apps.core import llm
-from apps.core.maps import basemap_url
+from apps.core.maps import GISModelAdmin, basemap_url
 
 from . import geocode, manual, services
 from .models import (
@@ -147,7 +146,7 @@ class ConfirmNamesForm(forms.Form):
 
 
 @admin.register(Incident)
-class IncidentAdmin(TranslationAdmin, gis_admin.GISModelAdmin):
+class IncidentAdmin(TranslationAdmin, GISModelAdmin):
     list_display = [
         "incident_type",
         "event_date",

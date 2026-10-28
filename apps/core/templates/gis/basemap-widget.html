@@ -1,0 +1,11 @@
+{% extends "gis/openlayers-osm.html" %}
+
+{% block base_layer %}
+var base_layer = new ol.layer.Tile({
+    source: new ol.source.XYZ({
+        url: "{{ basemap_url|escapejs }}",
+        attributions: "{{ basemap_attribution|escapejs }}",
+        maxZoom: 19
+    })
+});
+{% endblock %}

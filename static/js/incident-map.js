@@ -29,7 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(new FormData(form));
     const response = await fetch(`${config.dataUrl}?${params}`, { credentials: "same-origin" });
     const data = await response.json();
-    count.textContent = `${data.features.length} ${labels.count}`;
+    const n = data.features.length;
+    count.textContent = `${n} ${n === 1 ? labels.one : labels.count}`;
     if (map.getSource("incidents")) {
       map.getSource("incidents").setData(data);
       return;

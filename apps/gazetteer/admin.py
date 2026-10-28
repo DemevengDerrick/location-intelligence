@@ -1,10 +1,10 @@
 from django import forms
 from django.contrib import admin, messages
-from django.contrib.gis import admin as gis_admin
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.maps import GISModelAdmin
 from apps.parcels.parsers import GeometryInputError
 
 from .layer_import import import_layer
@@ -12,7 +12,7 @@ from .models import GazetteerPlace, ReferenceLayer, ReferenceLayerKind
 
 
 @admin.register(GazetteerPlace)
-class GazetteerPlaceAdmin(gis_admin.GISModelAdmin):
+class GazetteerPlaceAdmin(GISModelAdmin):
     list_display = ["name", "place_type", "commune", "department", "region"]
     list_filter = ["place_type", "region"]
     search_fields = ["name", "aliases", "commune"]
@@ -40,7 +40,7 @@ class LayerImportForm(forms.Form):
 
 
 @admin.register(ReferenceLayer)
-class ReferenceLayerAdmin(gis_admin.GISModelAdmin):
+class ReferenceLayerAdmin(GISModelAdmin):
     list_display = ["name", "kind", "source", "is_active", "valid_from"]
     list_filter = ["kind", "is_active", "source"]
     search_fields = ["name", "source"]

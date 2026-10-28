@@ -160,13 +160,17 @@ class SignalsModule(Module):
                 if points:
                     figure.add_points(points, type_label(kind), colour, marker="D", size=44)
             figure.add_parcel(geom, _("Parcel boundary"))
-            return figure.to_svg(
-                _(
+            if settings.gdelt_enabled:
+                source = _(
                     "Approved incidents from public news reports (GDELT and Cameroonian "
                     "outlets), searched on %(date)s."
                 )
-                % {"date": searched_on or "–"}
-            )
+            else:
+                source = _(
+                    "Approved incidents from public news reports (Cameroonian outlets), "
+                    "searched on %(date)s."
+                )
+            return figure.to_svg(source % {"date": searched_on or "–"})
 
         charts_ = {"incidents": self._table_or_reason(results)}
         if incidents:
@@ -271,6 +275,7 @@ class SignalsModule(Module):
 
     def _timeline(self, results, searched_on):
         labels = level_labels()
+        end = date.fromisoformat(searched_on) if searched_on else date.today()
         values = [
             {
                 "date": e["date"],
@@ -290,8 +295,19 @@ class SignalsModule(Module):
             data={"values": values},
             mark={"type": "point", "filled": True, "size": 90},
             encoding={
-                "x": {"field": "date", "type": "temporal", "title": _("Date of the event")},
-                "y": {"field": "type", "type": "nominal", "title": None},
+                "x": {  # the whole look-back window, in years, even for a single incident
+                    "field": "date",
+                    "type": "temporal",
+                    "title": _("Date of the event"),
+                    "scale": {"domain": [f"{end.year - results['years']}-01-01", end.isoformat()]},
+                    "axis": {"format": "%Y", "tickCount": "year"},
+                },
+                "y": {
+                    "field": "type",
+                    "type": "nominal",
+                    "title": None,
+                    "axis": {"labelLimit": 300},  # French type names are long
+                },
                 "color": {
                     "field": "where",
                     "type": "nominal",

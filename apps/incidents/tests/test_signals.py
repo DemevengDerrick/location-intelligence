@@ -7,6 +7,7 @@ import httpx
 import pytest
 from django.contrib.gis.geos import Point
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.urls import reverse
 from django.utils import timezone
 
@@ -151,6 +152,38 @@ def test_land_words_in_passing_do_not_make_an_item_relevant():
     assert relevant("Tensions à Bali", "La chefferie conteste un lotissement")  # two weak
     assert not relevant("Un hôtel de 220 milliards", "fonds propres et foncier apportés")
     assert not relevant("Plantain", "valorisation du foncier et des fonciers des universités")
+
+
+def test_duplicates_are_spotted_without_tracking_parameters():
+    feed = "https://a.cm/article/?utm_source=rss&utm_medium=rss&p=12"
+    assert collectors.content_hash(feed) == collectors.content_hash("https://A.cm/article/?p=12")
+    assert collectors.content_hash(feed) != collectors.content_hash("https://a.cm/article/?p=13")
+
+
+def test_refilter_removes_only_collected_off_topic_items(places, outlet):
+    def item(n, title, description="", source=outlet):
+        text = f"{title}\n\n{description}" if description else title
+        return SourceItem.objects.create(
+            url=f"https://a.cm/{n}",
+            title=title,
+            private_text=text,
+            content_hash=f"h{n}",
+            source=source,
+        )
+
+    off = item(1, "Un hôtel de 220 milliards", "fonds propres et foncier apportés")
+    item(2, "Réforme foncière : le ministère passe à l'action")
+    item(3, "Tensions à Bali", "La chefferie conteste un lotissement")
+    item(4, "Article ajouté à la main", source=manual._manual_source())
+    used = item(5, "Un marché rénové")
+    IncidentSource.objects.create(incident=make_incident(places["quartier"]), source_item=used)
+
+    call_command("refilter_items")
+    assert SourceItem.objects.count() == 5  # listing only
+
+    call_command("refilter_items", delete=True)
+    assert not SourceItem.objects.filter(pk=off.pk).exists()
+    assert SourceItem.objects.count() == 4
 
 
 def test_robots_txt_is_respected():
@@ -417,6 +450,16 @@ def test_incident_map_lists_filtered_incidents(places, staff_client):
         reverse("admin:incidents_incident_map_data"), {"status": "approved"}
     ).json()
     assert len(data["features"]) == 1
+
+
+def test_admin_location_map_uses_our_basemap(places, staff_client, settings):
+    """The OSM tile servers refuse Django's default admin map: it draws on our basemap."""
+    settings.BASEMAP_TILE_URL = "https://tiles.example.com/{z}/{y}/{x}"
+    incident = make_incident(places["quartier"])
+    page = staff_client.get(reverse("admin:incidents_incident_change", args=[incident.pk]))
+    html = page.content.decode()
+    assert 'url: "https://tiles.example.com/{z}/{y}/{x}"' in html
+    assert "ol.source.OSM()" not in html
 
 
 def test_add_item_from_a_pdf_notice(db, monkeypatch):

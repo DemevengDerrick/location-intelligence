@@ -1,5 +1,7 @@
 from django.contrib.gis import admin
 
+from apps.core.maps import GISModelAdmin
+
 from .models import FieldJob, FieldObservation, Partner
 
 
@@ -26,7 +28,7 @@ class FieldJobAdmin(admin.ModelAdmin):
 
 
 @admin.register(FieldObservation)
-class FieldObservationAdmin(admin.GISModelAdmin):
+class FieldObservationAdmin(GISModelAdmin):
     list_display = ["job", "kind", "taken_at", "distance_from_parcel_m"]
     list_filter = ["kind"]
     raw_id_fields = ["job"]

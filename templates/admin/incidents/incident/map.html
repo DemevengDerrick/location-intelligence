@@ -35,5 +35,5 @@
 <div id="incident-map" role="region" aria-label="{% translate 'Map of incidents' %}"></div>
 <p class="help">{% translate "Area incidents (commune, department, region) are drawn at a point inside their area. Click a point to open the incident." %}</p>
 {{ config|json_script:"incident-map-config" }}
-<script id="incident-map-labels" type="application/json">{"count": "{% translate 'incidents shown' %}", "official": "{% translate 'Official act' %}", "open": "{% translate 'Open the incident' %}"}</script>
+<script id="incident-map-labels" type="application/json">{"one": "{% translate 'incident shown' %}", "count": "{% translate 'incidents shown' %}", "official": "{% translate 'Official act' %}", "open": "{% translate 'Open the incident' %}"}</script>
 {% endblock %}

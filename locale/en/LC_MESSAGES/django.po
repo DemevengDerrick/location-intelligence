@@ -5853,3 +5853,16 @@ msgid ""
 msgstr ""
 "The file is compared with the fingerprint (SHA-256) recorded when the report"
 " was issued. It is not stored."
+
+#: templates/admin/incidents/incident/map.html:38
+msgid "incident shown"
+msgstr "incident shown"
+
+#: apps/analysis/modules/signals.py:170
+#, python-format
+msgid ""
+"Approved incidents from public news reports (Cameroonian outlets), searched "
+"on %(date)s."
+msgstr ""
+"Approved incidents from public news reports (Cameroonian outlets), searched "
+"on %(date)s."
