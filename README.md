@@ -1,6 +1,6 @@
-# Land Due-Diligence Report Platform
+# LiOD: Location Intelligence from OpenData
 
-A bilingual (FR/EN) Django + GeoDjango platform that sells reviewed physical and environmental due-diligence reports on land parcels in Cameroon. The requirements are in [`input/land-due-diligence-trd.md`](input/land-due-diligence-trd.md).
+A bilingual (FR/EN) Django + GeoDjango platform that sells location reports on land in Cameroon, built from free public geospatial data and checked by an analyst. The site name (`SITE_NAME`, default LiOD) and the logo (`static/img/logo-liod.svg`, drawn by `manage.py make_logo` from the bundled Outfit font) can be changed without touching the templates. The requirements are in [`input/land-due-diligence-trd.md`](input/land-due-diligence-trd.md).
 
 **Status:** Phases 1 and 2 are done. Phase 3 (analysis modules) is in progress: location, current imagery, buildings, change over time, flood and water, terrain, access and services, demographics and area growth, and regulatory red flags are done, with analyst review, bilingual PDF reports with verification, and an interactive report page in the portal with shareable links. Phase 4 (staff tools: order queue, boundary editor, site-plan georeferencing, review with maps) is done. Phase 5 (area signals: news collection, per-order area search, LLM extraction, geocoding, incident review and the report section; and the optional *suggest wording* button) is built; LLM extraction and suggestions stay off until `ANTHROPIC_API_KEY` is set.
 
@@ -59,7 +59,7 @@ docker compose exec web python manage.py createsuperuser
 
 Then sign in at http://localhost:8000/fr/admin/. To give the user the admin role, add them to the `admin` group.
 
-Load Cameroon's administrative boundaries once (country, regions, departments, communes from geoBoundaries). The order form needs them to check that a parcel is in Cameroon and to prefill its region and commune:
+Load Cameroon's administrative boundaries once (country, regions, departments, communes from geoBoundaries). The order form's map draws them (regions, departments, then communes as you zoom in), greys out the rest of the world, cannot be panned away from Cameroon, names the commune, department and region under the map, and flags a pin or boundary outside Cameroon at once (the server checks again on submit). The outlines come simplified and gzipped from `/order/boundaries/` (cached a day). The order form needs them to check that a parcel is in Cameroon and to prefill its region and commune:
 
 ```sh
 docker compose exec web python manage.py load_boundaries
@@ -76,7 +76,7 @@ Load the population and built-up data once (about 3 GB; an interrupted load can 
 
 ```sh
 docker compose exec web python manage.py load_worldpop   # WorldPop R2025A age-sex 2015–2030, Global1 totals 2000–2010
-docker compose exec web python manage.py load_ghsl       # GHSL tiles for Cameroon: built-up 1975–2020, population 2000–2030
+docker compose exec web python manage.py load_ghsl       # GHSL built-up tiles for Cameroon, 1975–2020
 docker compose exec web python manage.py load_flood      # JRC 1-in-100-year river flood depth tiles covering Cameroon
 ```
 
@@ -164,13 +164,13 @@ Every status change emails the customer in their own language. The payment steps
 
    | Module | Data | Rating (thresholds in Core → Settings → `analysis_thresholds`) |
    | --- | --- | --- |
-   | Location | Parcel geometry, geoBoundaries | Stated vs computed area difference; grey for pin-only parcels |
+   | Location | Parcel geometry, geoBoundaries; two maps side by side: the neighbourhood (buildings, roads with their names, rivers, the commune boundary, named places) and where the parcel lies in Cameroon (its region shaded, Yaoundé and Douala for reference) | Stated vs computed area difference; grey for pin-only parcels |
    | Terrain | Copernicus DEM GLO-30, read as a small window over HTTP | Mean slope; share of the parcel over the erosion slope |
    | Buildings | Google Open Buildings v3 (local copy; detections below the `building_min_confidence` threshold, 0.7, are ignored) | On the parcel → red; within 20 m → amber |
    | Current imagery | Sentinel-2 L2A from AWS Earth Search: cloud-masked median of the last 12 months | Mostly not vegetated → amber (never red: pixels can't tell buildings from bare soil) |
-   | Change over time | Sentinel-2 dry-season (Dec–Feb) composites, one per year since 2017 | Vegetation lost in the last 5 years → amber |
+   | Change over time | Sentinel-2 dry-season (Dec–Feb) composites, one per year since 2017. A year is left out when the area around the parcel was barely seen, or when it suddenly looks much less green than the median and than the years either side (Harmattan haze: 2016–17 scenes have no usable cloud mask); left-out years are named in the captions (`change_min_window_pct`, `change_haze_ndvi_drop`) | Vegetation lost in the last 5 years → amber |
    | Access and services | Local OSM copy (roads, schools, health facilities, markets, water points), Valhalla routing | No road within 500 m → red; parcel not on a road, paved road over 2 km, health facility over 30 min by car or school over 30 min on foot → amber |
-   | Demographics and growth | WorldPop R2025A age-sex rasters (2015, 2020, 2025, 2030 projected) for 1 km, 5 km and the commune, plus growth per 5-year period since 2000 compared with GHSL population (GHS-POP), shown as rates only: WorldPop 2000–2010 is the older Global1 release, and no rate spans the two releases; GHSL built-up epochs | Annual growth within 5 km: 2 % or more → green; 0–2 % → amber; falling → red |
+   | Demographics and growth | WorldPop R2025A age-sex rasters (2015, 2020, 2025, 2030 projected) for 1 km, 5 km and the commune, plus growth per 5-year period since 2000, shown as rates only: WorldPop 2000–2010 is the older Global1 release, and no rate spans the two releases. WorldPop is the only population source (GHSL population was dropped: two models disagreeing confused readers). Each area is labelled with its size, as the 5 km circle and the commune can hold similar populations. Ages and sexes are shown once, as the region's profile: WorldPop R2025A spreads one age-sex profile over each whole region (checked cell by cell), so a 5 km vs commune comparison would always show identical bars. GHSL built-up epochs for the expansion map | Annual growth within 5 km: 2 % or more → green; 0–2 % → amber; falling → red |
    | Regulatory red flags | Setback rules (Core → Settings → `setback_rules`) around OSM watercourses, water bodies, shore, main roads, railways and power lines; Forest Atlas protected areas, forest estate and concessions (OSM protected areas only until those are loaded); uploaded official layers | Gazetted protected area (other than a Ramsar wetland), permanent forest estate or DUP zone on the parcel, or setbacks over 10 % of it → red; any other constraint on or within 200 m (including proposed areas and concessions) → amber |
    | Flood and water | Copernicus EMS/JRC 1-in-100-year river flood depth (local tiles), JRC Global Surface Water (1984–2021), OSM rivers, water bodies and wetlands | 10 % of the parcel in the flood zone, any part 1 m deep or more, water seen on 10 % of it, or a wetland on it → red; any part in the flood zone, the zone within 200 m, or water seen on it → amber |
    | Area signals | Approved land-issue incidents from Cameroonian outlets' feeds and the GDELT news index (see *Area signals* below) | Not rated: "for information" (blue *i*), since these are area-level reports, not findings about the parcel |
@@ -224,7 +224,11 @@ Once any protected area is loaded as a reference layer, OSM protected areas are 
 
 **Network errors** (busy public servers, timeouts, 429/5xx) make a module retry after 1 and then 2 minutes before it is recorded as unavailable. Other errors are recorded at once.
 
-**PDF maps** use Sentinel-2 imagery (open licence, attributed) for current imagery and change. The other maps are vector maps; Esri imagery stays web-only until its print licensing is settled. Whether Esri imagery may be printed in paid reports is an open licensing question.
+**Every map** carries the roads from the local OSM copy for context (all roads on close-up maps, main roads only beyond 2 km, national roads on the Cameroon map), drawn over the data layers, which are 70 % opaque so the roads and the ground show through. **PDF maps** use Sentinel-2 imagery (open licence, attributed) for current imagery and change. The other maps are vector maps; Esri imagery stays web-only until its print licensing is settled. Whether Esri imagery may be printed in paid reports is an open licensing question.
+
+**Written for non-specialists.** Findings say what the data suggests and what to do next ("the data we used shows…", "appears"), never more. Right after the cover, a red **How to read this report** box says the report is a first look from free public data, that finer data or a visit may show something different, and that everything must be confirmed on the ground. Every section ends with a plain **Limits of this section** line (`apps/reports/structure.py`, `LIMITS`). The closing **Data sources and their limits** lists each source with what we use it for and what it cannot show, in everyday words: edit them in **Core → Datasets** (*what we use it for*, *limits*, in both languages). Finding wording lives in **Analysis → Finding templates**.
+
+**Covers.** Every PDF opens on a full-bleed blue cover (contour lines and a colour stripe drawn from the report reference, so each report has its own) with the LiOD logo, and closes on a matching back cover with the contact details, set by `REPORT_CONTACT_EMAIL` and `REPORT_CONTACT_WEBSITE`. Headings use the Outfit font (SIL Open Font License, bundled in `static/fonts/outfit`).
 
 ### Area signals (Phase 5)
 
@@ -278,7 +282,20 @@ docker compose exec web python manage.py shell -c "from apps.core.tasks import p
 
 ## Running the pipeline on a sample parcel
 
-Coming in Phase 3.
+`make_sample_report` runs every module on an example parcel and publishes the result on the **Sample reports** page, in French and English. The cover says it is a sample and shows "Sample client" instead of the requester.
+
+```bash
+# a new 30 m square parcel (creates an order owned by an inactive sample account)
+docker compose exec web python manage.py make_sample_report --lon 11.548 --lat 3.786 --side 30 \
+    --quartier Odza --commune "Yaoundé IV" --region Centre --sort-order 2 \
+    --title-fr "Yaoundé : terrain en périphérie à forte croissance" \
+    --title-en "Yaoundé: plot on the fast-growing outskirts"
+
+# or reuse the draft of an existing order
+docker compose exec web python manage.py make_sample_report --order 5 --title-fr "…" --title-en "…"
+```
+
+The summary on the page counts the ratings ("2 warnings, 1 point to check, 6 good"). Samples can be edited, unpublished or reordered in **Pages → Sample reports**. The pictures on the home page cards (`static/img/analysis`) are maps and charts from these sample analyses.
 
 ## Deployment (outline)
 

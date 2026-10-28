@@ -13,8 +13,14 @@ environ.Env.read_env(BASE_DIR / ".env", overwrite=False)
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
-SITE_NAME = env("SITE_NAME", default="Land Due Diligence")
+SITE_NAME = env("SITE_NAME", default="LiOD")
+SITE_TAGLINE = "Location Intelligence from OpenData"
 SITE_URL = env("SITE_URL", default="http://localhost:8000")
+# Shown on the back cover of every report
+REPORT_CONTACT_EMAIL = env("REPORT_CONTACT_EMAIL", default="tangent.analytics.ca@gmail.com")
+REPORT_CONTACT_WEBSITE = env(
+    "REPORT_CONTACT_WEBSITE", default="https://tangentanalytics.github.io/"
+)
 SITE_ID = 1
 
 INSTALLED_APPS = [

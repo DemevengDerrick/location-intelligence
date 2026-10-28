@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block head_title %}{% translate "Sample reports" %} · {{ SITE_NAME }}{% endblock %}
-{% block meta_description %}{% translate "Download sample land due-diligence reports and see exactly what you will receive." %}{% endblock %}
+{% block meta_description %}{% translate "Download sample location reports and see exactly what you will receive." %}{% endblock %}
 {% block content %}
 <h1 class="text-3xl font-bold">{% translate "Sample reports" %}</h1>
-<p class="mt-4 max-w-3xl text-lg">{% translate "See exactly what you will receive before you order." %}</p>
+<p class="mt-4 max-w-3xl text-lg">{% translate "See exactly what you will receive before you order. Every section ends with what its data cannot show." %}</p>
+<p class="mt-2 max-w-3xl text-slate-600">{% translate "Each sample is a real analysis of an example parcel, in French and English." %}</p>
 
 {% if samples %}
 <ul class="mt-8 grid gap-6 md:grid-cols-3">
@@ -20,21 +21,27 @@
 <p class="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-6">{% translate "Sample reports will be available here soon. Contact us and we will send you one." %}</p>
 {% endif %}
 
+<div class="mt-8 flex flex-wrap items-center gap-4 rounded-lg bg-emerald-50 p-6">
+  <p class="flex-1 text-lg font-semibold text-emerald-900">{% translate "Ready to check your own parcel?" %}</p>
+  <a href="{% url 'intake:start' %}" class="rounded bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800">{% translate "Order a report" %}</a>
+</div>
+
 <section class="mt-12">
   <h2 class="text-xl font-semibold">{% translate "Inside every report" %}</h2>
   <ol class="mt-4 list-decimal space-y-1 pl-6">
-    <li>{% translate "Cover: parcel reference, location, order date, report version" %}</li>
-    <li>{% translate "One-page summary of traffic-light findings" %}</li>
-    <li>{% translate "Location and boundary check, with area comparison" %}</li>
-    <li>{% translate "Current imagery and occupation" %}</li>
-    <li>{% translate "Change over time, year by year" %}</li>
-    <li>{% translate "Flood, water and terrain" %}</li>
+    <li>{% translate "Cover: location, order date, report version and who it was prepared for" %}</li>
+    <li>{% translate "How to read this report: what it can and cannot tell you" %}</li>
+    <li>{% translate "One-page summary with a colour for each finding" %}</li>
+    <li>{% translate "Location and boundary, with an area comparison" %}</li>
+    <li>{% translate "People and area growth" %}</li>
     <li>{% translate "Access and nearby services" %}</li>
-    <li>{% translate "Population and area growth" %}</li>
-    <li>{% translate "Regulatory red flags" %}</li>
-    <li>{% translate "Area signals: land issues reported nearby" %}</li>
-    <li>{% translate "Field verification findings (field tier only)" %}</li>
-    <li>{% translate "Methods, data sources, limitations and disclaimer" %}</li>
+    <li>{% translate "Flooding and slope" %}</li>
+    <li>{% translate "Rules and restrictions" %}</li>
+    <li>{% translate "What is on the land today: satellite view and buildings" %}</li>
+    <li>{% translate "Change over time, year by year" %}</li>
+    <li>{% translate "Land issues reported nearby" %}</li>
+    <li>{% translate "Field visit findings (field tier only)" %}</li>
+    <li>{% translate "Data sources and their limits, and disclaimer" %}</li>
   </ol>
 </section>
 {% endblock %}

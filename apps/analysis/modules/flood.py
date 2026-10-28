@@ -178,8 +178,20 @@ class FloodModule(Module):
                     zorder=4,
                 )
 
-        def draw_hazard():
+        def draw():
+            """One map: where satellites have seen water (blues), the 100-year river flood zone
+            (reds, on top) and the mapped rivers and wetlands."""
             figure = ParcelMap(geom, extent="neighbourhood")
+            labels = ["1–25 %", "25–50 %", "50–75 %", "75–100 %"]
+            seen = np.where(np.nan_to_num(occurrence) > 0, occurrence, np.nan)
+            if np.isfinite(seen).any():  # legend only when water was seen
+                figure.add_classified_raster(
+                    seen,
+                    transform,
+                    OCCURRENCE_CLASSES,
+                    OCCURRENCE_COLOURS,
+                    [_("Water seen %(range)s of the time") % {"range": label} for label in labels],
+                )
             if flooded.any():
                 figure.add_classified_raster(
                     np.where(flooded, depth, np.nan),
@@ -195,29 +207,8 @@ class FloodModule(Module):
             figure.add_parcel(geom, _("Parcel boundary"))
             return figure.to_svg(
                 _(
-                    "1-in-100-year river flood depth: Copernicus EMS / JRC global flood hazard "
-                    "maps, CC BY 4.0. Waterways © OpenStreetMap contributors."
-                )
-            )
-
-        def draw_water():
-            figure = ParcelMap(geom, extent="neighbourhood")
-            labels = ["1–25 %", "25–50 %", "50–75 %", "75–100 %"]
-            seen = np.where(np.nan_to_num(occurrence) > 0, occurrence, np.nan)
-            if np.isfinite(seen).any():  # legend only when water was seen
-                figure.add_classified_raster(
-                    seen,
-                    transform,
-                    OCCURRENCE_CLASSES,
-                    OCCURRENCE_COLOURS,
-                    [_("Water %(range)s of the time") % {"range": label} for label in labels],
-                )
-            add_water_features(figure)
-            figure.add_parcel(geom, _("Parcel boundary"))
-            return figure.to_svg(
-                _(
-                    "Surface water 1984–2021: EC JRC/Google (Pekel et al. 2016). "
-                    "Waterways © OpenStreetMap contributors."
+                    "River flood zones: Copernicus EMS / JRC (CC BY 4.0). Water seen by "
+                    "satellite 1984–2021: EC JRC/Google. Rivers © OpenStreetMap contributors."
                 )
             )
 
@@ -237,10 +228,7 @@ class FloodModule(Module):
                 water_data.gsw_dataset: water_data.gsw_version,
                 features.dataset: features.version,
             },
-            maps={  # stored as jsonb, which orders keys by length then name: "flood" first
-                "flood": self.render_maps(draw_hazard),
-                "water": self.render_maps(draw_water),
-            },
+            maps={"flood": self.render_maps(draw)},
             layers=self._layers(occurrence, depth, transform, features),
         )
 

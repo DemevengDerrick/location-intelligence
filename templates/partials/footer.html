@@ -1,9 +1,9 @@
-{% load i18n %}
+{% load i18n static %}
 <footer class="border-t border-slate-200 bg-slate-50">
   <div class="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:grid-cols-3">
     <div>
-      <p class="font-semibold">{{ SITE_NAME }}</p>
-      <p class="mt-2 text-slate-600">{% translate "Physical and environmental due-diligence reports on land parcels in Cameroon." %}</p>
+      <img src="{% static 'img/logo-liod-header.svg' %}" alt="{{ SITE_NAME }}: Location Intelligence from OpenData" width="250" height="44" class="h-11 w-auto">
+      <p class="mt-2 text-slate-600">{% translate "Location reports for land in Cameroon, built from free public data." %}</p>
     </div>
     <nav aria-label="{% translate "Footer" %}">
       <ul class="space-y-2">
@@ -18,6 +18,6 @@
     </div>
   </div>
   <p class="mx-auto max-w-6xl px-4 pb-8 text-xs text-slate-600">
-    {% translate "Reports are physical and environmental due diligence from remote data. They are not a legal title search, a survey or a valuation." %}
+    {% translate "Our reports are a first look from free public data, to be confirmed on the ground. They are not a land title search, a survey or a valuation." %}
   </p>
 </footer>

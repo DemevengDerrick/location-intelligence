@@ -16,7 +16,14 @@ from apps.core.maps import basemap_url
 from apps.core.models import Dataset
 from apps.pages.models import Page, PageSlug
 
-from .structure import in_report_order, requester, sections_for, statement_for
+from .structure import (
+    HOW_TO_READ,
+    in_report_order,
+    limits_for,
+    requester,
+    sections_for,
+    statement_for,
+)
 
 HIDDEN_CHART_FIELDS = {"order"}  # helper fields in chart data, not shown in data tables
 
@@ -174,6 +181,7 @@ def page_context(report, language):
     with translation.override(language):
         sections = [
             {"key": key, "title": str(title), "statement": statement_for(key),
+             "limits": limits_for(key),
              "findings": [by_module[m] for m in modules if m in by_module]}
             for key, title, modules in sections_for(order)
         ]  # fmt: skip
@@ -190,5 +198,6 @@ def page_context(report, language):
         "note": _pick(content.get("note") or {}, language),
         "approximate": content.get("approximate"),
         "datasets": Dataset.objects.filter(slug__in=dataset_slugs).order_by("name"),
+        "how_to_read": [str(line) for line in HOW_TO_READ],
         "disclaimer": Page.objects.filter(slug=PageSlug.DISCLAIMER).first(),
     }

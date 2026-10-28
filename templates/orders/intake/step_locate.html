@@ -63,6 +63,8 @@
          aria-label="{% translate "Map for locating the parcel" %}"></div>
     <noscript><p class="p-4">{% translate "The map needs JavaScript. You can still upload a coordinates file or a site plan." %}</p></noscript>
   </div>
+  <p id="map-where" class="text-sm text-slate-700" aria-live="polite"></p>
+  <p id="map-outside" class="hidden rounded border-2 border-red-700 bg-red-50 px-4 py-3 font-semibold text-red-800" role="alert"></p>
   <div class="flex flex-wrap items-center gap-3 text-sm">
     <button type="button" id="clear-shape" class="rounded border border-slate-300 px-3 py-1"
             x-show="method === 'drawn' || method === 'pin'">{% translate "Clear and start again" %}</button>

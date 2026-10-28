@@ -121,7 +121,7 @@ class AccessModule(Module):
                     facecolor=style.ISOCHRONE_COLOURS.get(minutes, "#D9F0D3"),
                     edgecolor="#1B7837",
                     linewidth=0.5,
-                    alpha=0.85,
+                    alpha=0.7,
                     zorder=1,
                 )
             bounds = radius_bounds(centre, radius)
@@ -143,6 +143,7 @@ class AccessModule(Module):
                 colour, marker = style.SERVICE_STYLE[str(category)]
                 points = [(f.geom.x, f.geom.y) for f in in_box(osm, category, *bounds)]
                 figure.add_points(points, labels[category], colour, marker)
+            figure.roads_drawn = True  # drawn above, with the travel areas
             figure.add_parcel(geom, _("Parcel boundary"))
             return figure.to_svg(
                 _(

@@ -37,6 +37,31 @@ def season_years(first_year, today):
     return list(range(int(first_year), last + 1))
 
 
+def window_quality(bands):
+    """(share of the area around the parcel seen clearly, in %, and its median vegetation
+    index): the parcel's surroundings change little from year to year, so a year whose index
+    falls well below the others' is hazy rather than cleared."""
+    red, nir = bands["red"], bands["nir"]
+    seen = np.isfinite(red) & np.isfinite(nir) & ((nir + red) > 0)
+    if not seen.any():
+        return 0.0, 0.0
+    ndvi = (nir[seen] - red[seen]) / (nir[seen] + red[seen])
+    return float(seen.mean() * 100), float(np.median(ndvi))
+
+
+def hazy_years(yearly_ndvi, drop):
+    """Years whose surroundings look much less green than usual (`drop` below the median of
+    all years) and than each year either side of them: a one-year dip is haze, while a steady
+    trend (an area being built up or growing back) never dips that much in a single year."""
+    typical = float(np.median([ndvi for _year, ndvi in yearly_ndvi])) if yearly_ndvi else 0.0
+    hazy = set()
+    for i, (year, ndvi) in enumerate(yearly_ndvi):
+        neighbours = [n for _y, n in yearly_ndvi[max(i - 1, 0) : i] + yearly_ndvi[i + 1 : i + 2]]
+        if ndvi < typical - drop and all(ndvi < n - drop for n in neighbours):
+            hazy.add(year)
+    return hazy
+
+
 def first_cleared_year(stack):
     """Per pixel, the first year from which it stays non-vegetated in every later observation,
     if it was vegetated in the first one; NaN otherwise."""
@@ -69,14 +94,27 @@ class ChangeModule(Module):
         with ThreadPoolExecutor(max_workers=3) as pool:
             composites = list(pool.map(fetch, years))
 
-        series, frames, stack, grid = [], [], [], None
+        usable, skipped = [], []
         for year, composite in composites:
             if composite is None:
+                continue
+            window_pct, window_ndvi = window_quality(composite.bands)
+            if window_pct < t.change_min_window_pct:
+                skipped.append({"year": year, "reason": "clouds"})
+                continue
+            usable.append((year, composite, window_ndvi))
+        hazy = hazy_years([(year, ndvi) for year, _c, ndvi in usable], t.change_haze_ndvi_drop)
+
+        series, frames, stack, grid = [], [], [], None
+        for year, composite, _ndvi in usable:
+            if year in hazy:
+                skipped.append({"year": year, "reason": "haze"})
                 continue
             classes = classify(composite.bands, t)
             mask = parcel_mask(geom, composite.crs_epsg, composite.transform, classes.shape)
             cover = shares(classes, mask)
             if cover["coverage_pct"] < MIN_COVERAGE_PCT:
+                skipped.append({"year": year, "reason": "clouds"})
                 continue
             series.append({"year": year, **cover})
             frames.append(
@@ -84,12 +122,13 @@ class ChangeModule(Module):
             )
             stack.append((year, classes))
             grid = (composite.transform, composite.crs_epsg, mask)
+        skipped.sort(key=lambda row: row["year"])
 
         if len(series) < MIN_YEARS:
             return ModuleOutput(
                 status=ModuleStatus.WARNING,
                 rating=Rating.GREY,
-                results={"series": series, "years_requested": years},
+                results={"series": series, "years_requested": years, "skipped_years": skipped},
                 datasets={"sentinel-2-l2a": "L2A dry-season composites"},
             )
 
@@ -118,13 +157,19 @@ class ChangeModule(Module):
             "open_last": last["open"],
             "vegetation_loss_recent_pts": round(recent_loss, 1),
             "cleared_years": cleared_years,
+            "skipped_years": skipped,
         }
 
         def source():
-            return _(
+            text = _(
                 "Contains modified Copernicus Sentinel data %(first)s–%(last)s, "
                 "dry-season composites."
             ) % {"first": first["year"], "last": last["year"]}
+            if skipped:
+                text += " " + _("Left out because of haze or clouds: %(years)s.") % {
+                    "years": ", ".join(str(row["year"]) for row in skipped)
+                }
+            return text
 
         def draw_strip():
             return image_strip(frames, geom, source())

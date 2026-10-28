@@ -5,9 +5,9 @@ WorldPop R2025A age-sex rasters (2015, 2020, 2025, and the 2030 projection); bui
 from GHSL. They are modelled estimates, not census counts, and less certain for small areas.
 
 Growth since 2000 is shown as rates per 5-year period, never as counts next to R2025A: WorldPop
-2000–2010 comes from the older Global1 release (another method), and GHSL population
-(GHS-POP) is a second model to compare the trend with. No rate spans the two WorldPop
-releases. The rating uses R2025A only.
+2000–2010 comes from the older Global1 release (another method). No rate spans the two
+releases. The rating uses R2025A only. WorldPop is the only population source, so readers
+never see two models disagree.
 """
 
 import logging
@@ -16,7 +16,7 @@ import numpy as np
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
-from apps.gazetteer.boundaries import commune_at
+from apps.gazetteer.boundaries import admin_units_at, commune_at
 from apps.parcels.geometry import utm_srid_for
 
 from .. import style
@@ -27,7 +27,7 @@ from ..layers import classified_layer, vector_layer
 from ..maps import AREA_RADIUS_M, ParcelMap
 from ..models import Rating
 from ..population import BANDS, cached_age_sex, cached_total, population_provider
-from ..providers import ghsl_population_provider, ghsl_provider
+from ..providers import ghsl_provider
 from .base import Module, ModuleOutput
 from .imagery import radius_bounds
 
@@ -63,17 +63,26 @@ def period_rates(totals):
     }
 
 
-def area_labels(commune_name):
-    return {
+def area_labels(results):
+    """Each area's name with its size, so readers see the 5 km circle and the commune are
+    different areas even when their populations come out close."""
+    names = {
         "1km": _("Within 1 km"),
         "5km": _("Within 5 km"),
-        "commune": _("Commune of %(name)s") % {"name": commune_name} if commune_name else "",
+        "commune": _("Commune of %(name)s") % {"name": results["commune"]}
+        if results.get("commune")
+        else "",
+    }
+    sizes = {key: area.get("area_km2") for key, area in results.get("areas", {}).items()}
+    return {
+        key: f"{name} ({fmt(sizes[key], 0)} km²)" if name and sizes.get(key) else str(name)
+        for key, name in names.items()
     }
 
 
 class DemographicsModule(Module):
     name = "demographics"
-    title = gettext_lazy("Demographics and area growth")
+    title = gettext_lazy("People and area growth")
 
     def run(self, parcel):
         t = thresholds()
@@ -105,32 +114,15 @@ class DemographicsModule(Module):
             }
             for key, area in areas.items()
         }
-        ghsl_pop = ghsl_population_provider()
-        try:
-            ghsl_totals = {
-                key: {
-                    year: cached_total(
-                        ghsl_pop.dataset,
-                        ghsl_pop.version,
-                        area,
-                        year,
-                        lambda area=area, year=year: ghsl_pop.total(area, year),
-                    )
-                    for year in ghsl_pop.EPOCHS
-                }
-                for key, area in areas.items()
-            }
-        except Exception:  # a comparison only: the section stands without it
-            logger.warning("GHSL population unavailable", exc_info=True)
-            ghsl_totals = None
         results = {
             "release": provider.release,
             "years": years,
             "history_release": provider.history_release if history_years else None,
             "history_years": history_years,
             "projected_years": [y for y in years if y >= 2026],
-            "ghsl_pop_version": ghsl_pop.version if ghsl_totals else None,
             "commune": commune.name if commune else None,
+            # WorldPop spreads one age-sex profile over each region: age figures are regional
+            "region": admin_units_at(geom).region or None,
             "areas": {},
         }
         for key, area in areas.items():
@@ -147,15 +139,11 @@ class DemographicsModule(Module):
                 )
                 if len(history_years) >= 2
                 else None,
-                "ghsl_population": {str(y): round(n) for y, n in ghsl_totals[key].items()}
-                if ghsl_totals
-                else {},
                 "trends": {
                     "worldpop": {
                         **period_rates(history[key]),
                         **period_rates({y: s.total for y, s in stats[key].items()}),
                     },
-                    "ghsl": period_rates(ghsl_totals[key]) if ghsl_totals else {},
                 },
                 "density": {y: round(n / km2) for y, n in totals.items()},
                 "growth_pct": annual_rate(
@@ -181,7 +169,7 @@ class DemographicsModule(Module):
         density = provider.density(*bounds, CURRENT_YEAR)
 
         def draw_density():
-            labels = area_labels(results["commune"])  # in the language being drawn
+            labels = area_labels(results)  # in the language being drawn
             figure = ParcelMap(geom, extent="area")
             figure.add_classified_raster(
                 np.where(density.values > 0.5, density.values, np.nan),
@@ -216,7 +204,7 @@ class DemographicsModule(Module):
             )
 
         def draw_expansion():
-            labels = area_labels(results["commune"])
+            labels = area_labels(results)
             figure = ParcelMap(geom, extent="area")
             epoch_labels = [_("Built by %(y)s") % {"y": ghsl.EPOCHS[0]}] + [
                 f"{a}–{b}" for a, b in zip(ghsl.EPOCHS, ghsl.EPOCHS[1:], strict=False)
@@ -249,8 +237,6 @@ class DemographicsModule(Module):
         datasets = {provider.dataset: provider.release, ghsl.dataset: ghsl.version}
         if history_years:
             datasets[provider.history_dataset] = provider.history_release
-        if ghsl_totals:
-            datasets[ghsl_pop.dataset] = ghsl_pop.version
         charts = {
             "pyramid": self.per_language(lambda: self._pyramid_chart(results, provider)),
             "growth": self.per_language(lambda: self._growth_chart(results, provider)),
@@ -372,29 +358,11 @@ class DemographicsModule(Module):
         return f"{text} {extra}".strip()
 
     def _pyramid_chart(self, r, provider):
-        labels = area_labels(r["commune"])
         rows = []
-        for key in ("5km", "commune"):
-            if key not in r["areas"]:
-                continue
-            pyramid = r["areas"][key]["pyramid"]
-            for i, band in enumerate(BANDS):
-                rows.append(
-                    {
-                        "band": band,
-                        "sex": _("Male"),
-                        "share": -pyramid["male"][i],
-                        "area": str(labels[key]),
-                    }
-                )
-                rows.append(
-                    {
-                        "band": band,
-                        "sex": _("Female"),
-                        "share": pyramid["female"][i],
-                        "area": str(labels[key]),
-                    }
-                )
+        pyramid = r["areas"]["5km"]["pyramid"]
+        for i, band in enumerate(BANDS):
+            rows.append({"band": band, "sex": _("Male"), "share": -pyramid["male"][i]})
+            rows.append({"band": band, "sex": _("Female"), "share": pyramid["female"][i]})
         under15 = r["areas"]["5km"]["groups"]["under_15"]
         y = {"field": "band", "type": "ordinal", "sort": list(reversed(BANDS)), "title": None}
         x = {
@@ -405,7 +373,6 @@ class DemographicsModule(Module):
         }
         layers = [
             {
-                "transform": [{"filter": {"field": "area", "equal": str(labels["5km"])}}],
                 "mark": {"type": "bar"},
                 "encoding": {
                     "y": y,
@@ -422,35 +389,14 @@ class DemographicsModule(Module):
                 },
             }
         ]
-        if r["commune"]:
-            layers.append(
-                {
-                    "transform": [{"filter": {"field": "area", "equal": str(labels["commune"])}}],
-                    "mark": {
-                        "type": "bar",
-                        "fillOpacity": 0,
-                        "stroke": "#222222",
-                        "strokeWidth": 1,
-                    },
-                    "encoding": {"y": y, "x": x},
-                }
-            )
-        outline = (
-            _("Bars: within 5 km in %(year)s. Outline: commune of %(name)s.")
-            % {"year": CURRENT_YEAR, "name": r["commune"]}
-            if r["commune"]
-            else _("Within 5 km in %(year)s.") % {"year": CURRENT_YEAR}
-        )
         return spec(
-            title=_("%(pct)s %% of people within 5 km are under 15") % {"pct": fmt(under15)},
-            source=[
-                self._source(provider),
-                outline,
-                _(
-                    "WorldPop models age structure per administrative unit, so it "
-                    "varies little between nearby areas."
-                ),
-            ],
+            title=self._age_title(
+                r,
+                _("%(pct)s %% of people in the %(region)s region are under 15"),
+                _("%(pct)s %% of people are under 15"),
+                pct=fmt(under15),
+            ),
+            source=[self._source(provider, str(CURRENT_YEAR)), self._regional_note(r)],
             height=260,
             data={"values": rows},
             layer=layers,
@@ -496,7 +442,7 @@ class DemographicsModule(Module):
     def _trends_chart(self, r):
         trends = r["areas"]["5km"]["trends"]
         # source: (annual rates per period, first projected year)
-        sources = {"WorldPop": (trends["worldpop"], 2026), "GHSL": (trends["ghsl"], 2025)}
+        sources = {"WorldPop": (trends["worldpop"], 2026)}
         estimate, projection = _("Estimate"), _("Projection")
         rows = []
         for name, (rates, projected_from) in sources.items():
@@ -505,11 +451,10 @@ class DemographicsModule(Module):
                     kind = projection if int(period[-4:]) >= projected_from else estimate
                     rows.append({"period": period, "source": name, "rate": rate, "kind": kind})
         recent = {row["source"]: row["rate"] for row in rows if row["period"] == "2020–2025"}
-        if len(recent) == 2:
+        if "WorldPop" in recent:
             title = _(
-                "Within 5 km, %(wp)s %% a year (WorldPop) and %(gh)s %% a year (GHSL) from "
-                "2020 to 2025"
-            ) % {"wp": _signed(recent["WorldPop"]), "gh": _signed(recent["GHSL"])}
+                "Within 5 km, the population changed by %(wp)s %% a year from 2020 to 2025"
+            ) % {"wp": _signed(recent["WorldPop"])}
         else:
             title = _("Population growth a year within 5 km, by period")
         source = []
@@ -525,10 +470,6 @@ class DemographicsModule(Module):
                     "b": r["history_years"][-1],
                     "new": r["release"],
                 }
-            )
-        if r.get("ghsl_pop_version"):
-            source.append(
-                _("GHSL: GHS-POP %(v)s (EC JRC, CC BY 4.0).") % {"v": r["ghsl_pop_version"]}
             )
         source.append(_("Lighter bars: projection. Modelled estimates, not census counts."))
         return spec(
@@ -567,32 +508,25 @@ class DemographicsModule(Module):
         )
 
     def _groups_chart(self, r, provider):
-        labels = area_labels(r["commune"])
         names = {
             "under_5": _("Under 5"),
             "5_14": _("5–14 (school age)"),
             "15_64": _("15–64"),
             "65_plus": _("65 and over"),
         }
-        rows = []
-        for key in ("5km", "commune"):
-            if key in r["areas"]:
-                for group in GROUPS:
-                    rows.append(
-                        {
-                            "group": str(names[group]),
-                            "area": str(labels[key]),
-                            "share": r["areas"][key]["groups"][group],
-                        }
-                    )
-        ratio = r["areas"]["5km"]["groups"]["dependency_ratio"]
+        groups = r["areas"]["5km"]["groups"]
+        rows = [{"group": str(names[g]), "share": groups[g]} for g in GROUPS]
         return spec(
-            title=_("%(ratio)s dependants for every 100 people aged 15–64 within 5 km")
-            % {"ratio": fmt(ratio, 0)},
-            source=self._source(provider, str(CURRENT_YEAR)),
+            title=self._age_title(
+                r,
+                _("%(ratio)s dependants for every 100 people aged 15–64 in the %(region)s region"),
+                _("%(ratio)s dependants for every 100 people aged 15–64"),
+                ratio=fmt(groups["dependency_ratio"], 0),
+            ),
+            source=[self._source(provider, str(CURRENT_YEAR)), self._regional_note(r)],
             height=160,
             data={"values": rows},
-            mark={"type": "bar"},
+            mark={"type": "bar", "color": style.SERIES["computed"]},
             encoding={
                 "x": {
                     "field": "group",
@@ -601,27 +535,34 @@ class DemographicsModule(Module):
                     "sort": [str(names[g]) for g in GROUPS],
                     "axis": {"labelAngle": 0},
                 },
-                "xOffset": {"field": "area"},
                 "y": {
                     "field": "share",
                     "type": "quantitative",
                     "title": _("Share of the population (%)"),
                 },
-                "color": {
-                    "field": "area",
-                    "type": "nominal",
-                    "title": None,
-                    "scale": {
-                        "domain": [str(labels["5km"]), str(labels["commune"])],
-                        "range": [style.SERIES["computed"], style.SERIES["comparison"]],
-                    },
-                },
             },
         )
 
     @staticmethod
+    def _age_title(r, regional, plain, **values):
+        if r.get("region"):
+            return regional % {"region": r["region"], **values}
+        return plain % values
+
+    @staticmethod
+    def _regional_note(r):
+        """WorldPop applies one age-sex profile to a whole region, so comparing the 5 km
+        circle with the commune would always show identical bars: say so instead."""
+        if r.get("region"):
+            return _(
+                "WorldPop uses one age and sex profile for the whole %(region)s region: these "
+                "shares describe the region, not the neighbourhood."
+            ) % {"region": r["region"]}
+        return _("WorldPop uses one age and sex profile per region, not per neighbourhood.")
+
+    @staticmethod
     def _table(r):
-        labels = area_labels(r["commune"])
+        labels = area_labels(r)
         history = r.get("history_years") or []
         rows = []
         for key in ("1km", "5km", "commune"):

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block head_title %}{% translate "Land due-diligence reports for Cameroon" %} · {{ SITE_NAME }}{% endblock %}
+{% block head_title %}{% translate "Location reports for land in Cameroon" %} · {{ SITE_NAME }}{% endblock %}
 {% block body %}
 <section class="bg-emerald-900 text-white">
   <div class="mx-auto max-w-6xl px-4 py-16 sm:py-20">
     <h1 class="max-w-3xl text-3xl font-bold sm:text-5xl">{% translate "Know the land before you buy it" %}</h1>
     <p class="mt-5 max-w-2xl text-lg text-emerald-50">
       {% blocktranslate trimmed %}
-        Buying land in Cameroon from abroad? We check where the parcel really is, what is on it, and the physical risks around it, then send you a report reviewed by an analyst.
+        Buying land in Cameroon, maybe from abroad? We look at where the plot really is, what is on it and the risks around it, using satellite images and free public maps. An analyst checks every report before we send it.
       {% endblocktranslate %}
     </p>
     <div class="mt-8 flex flex-wrap gap-3">
@@ -22,6 +22,10 @@
   <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     {% include "pages/_report_questions.html" %}
   </ul>
+  <p class="mt-4 text-sm text-slate-600">{% translate "Every picture above comes from a real report." %}</p>
+  <div class="mt-6">
+    <a href="{% url 'pages:samples' %}" class="inline-block rounded bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800">{% translate "See sample reports" %}</a>
+  </div>
 </section>
 
 <section class="bg-slate-50">
@@ -52,7 +56,7 @@
     <h2 class="text-lg font-semibold">{% translate "What we do not do" %}</h2>
     <p class="mt-2">
       {% blocktranslate trimmed %}
-        We do not verify land titles, survey boundaries or value property. Our reports describe the physical and environmental situation from remote data and help you decide what to check with a notary and a surveyor.
+        We do not check land titles, measure boundaries or value property. Our reports give you a first look from free public data, so you know what to check with a notary, a surveyor and the commune.
       {% endblocktranslate %}
       <a class="underline" href="{% url 'pages:disclaimer' %}">{% translate "Read the disclaimer" %}</a>
     </p>

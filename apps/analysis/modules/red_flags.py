@@ -77,7 +77,7 @@ def _in_language(value):
 
 class RedFlagsModule(Module):
     name = "red_flags"
-    title = gettext_lazy("Regulatory red flags")
+    title = gettext_lazy("Rules and restrictions")
 
     def run(self, parcel):
         t = thresholds()

@@ -92,3 +92,43 @@ def test_unpublished_sample_is_not_downloadable(client):
     sample = SampleReport.objects.create(title="Draft", is_published=False)
     sample.pdf_fr.save("draft.pdf", ContentFile(b"%PDF-1.4"))
     assert client.get(f"/fr/exemples-de-rapports/{sample.pk}/pdf/").status_code == 404
+
+
+def test_home_cards_show_real_analysis_and_link_to_the_samples(client):
+    html = client.get("/en/").content.decode()
+    for name in ("location", "occupation", "flood", "access", "growth", "red-flags", "signals"):
+        assert f"img/analysis/en/{name}.jpg" in html
+    assert html.count(reverse("pages:samples")) >= 2  # hero link and the button under the cards
+    assert "img/analysis/fr/flood.jpg" in client.get("/fr/").content.decode()
+
+
+def test_samples_page_offers_to_order(client):
+    with translation.override("en"):
+        html = client.get(reverse("pages:samples")).content.decode()
+        assert reverse("intake:start") in html.split("Ready to check your own parcel?")[1]
+
+
+def test_sample_summary_counts_the_ratings_in_each_language():
+    from apps.pages.management.commands.make_sample_report import summary
+
+    draft = {
+        "findings": [
+            {"rating": "red"},
+            {"rating": "amber"},
+            {"rating": "amber"},
+            {"rating": "green"},
+            {"rating": "info"},
+            {"rating": "red", "hidden": True},
+        ]
+    }
+    assert summary(draft, "Odza", "en") == "Odza: 1 warning, 2 points to check, 1 good."
+    assert summary(draft, "Odza", "fr") == "Odza : 1 alerte, 2 points à vérifier, 1 favorable."
+
+
+@pytest.mark.parametrize("language", ["fr", "en"])
+def test_every_card_picture_exists_in_each_language(language):
+    from django.conf import settings
+
+    folder = settings.BASE_DIR / "static" / "img" / "analysis" / language
+    for name in ("location", "occupation", "flood", "access", "growth", "red-flags", "signals"):
+        assert (folder / f"{name}.jpg").is_file()

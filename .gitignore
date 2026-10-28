@@ -12,3 +12,7 @@ media/
 htmlcov/
 .idea/
 .vscode/
+
+# Reference material from other organisations (design inspiration only, not ours to publish)
+input/IBArchive-*.pdf
+input/logo.svg

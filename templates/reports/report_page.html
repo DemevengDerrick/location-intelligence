@@ -29,7 +29,10 @@
       {% endfor %}
       {% if not shared %}<a href="{% url 'portal:order' order.public_id %}" class="rounded border border-slate-300 px-4 py-2 font-semibold hover:bg-slate-50">{% translate "Back to the order" %}</a>{% endif %}
     </div>
-    <p class="mt-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{% translate "This report is physical and environmental due diligence from remote data. It is not a legal title search, a survey or a valuation." %}</p>
+    <div class="mt-4 max-w-3xl rounded border-2 border-red-700 bg-red-50 px-4 py-3 font-bold text-red-800">
+      <h2 class="text-lg">{% translate "How to read this report" %}</h2>
+      <ul class="mt-2 list-disc space-y-1 pl-5">{% for line in how_to_read %}<li>{{ line }}</li>{% endfor %}</ul>
+    </div>
     {% if approximate %}<p class="mt-2 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{% translate "The location was given as a pin: the analysis uses a small circle around it, so figures about the parcel are approximate." %}</p>{% endif %}
   </header>
 
@@ -110,6 +113,7 @@
     {% empty %}
     <p class="mt-4 rounded border border-dashed border-slate-300 px-4 py-3 text-slate-600">{% translate "This section is not included in this version of the report." %}</p>
     {% endfor %}
+    {% if section.limits and section.findings %}<p class="mt-6 max-w-3xl rounded border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-sm text-amber-950"><strong>{% translate "Limits of this section:" %}</strong> {{ section.limits }}</p>{% endif %}
   </section>
   {% endfor %}
 
@@ -146,9 +150,10 @@
   {% endif %}
 
   <section class="mt-12" aria-labelledby="methods-heading">
-    <h2 id="methods-heading" class="text-xl font-semibold">{% translate "Methods, data sources and limitations" %}</h2>
-    <ul class="mt-3 list-disc space-y-2 pl-6 text-sm text-slate-700">
-      {% for d in datasets %}<li><strong>{{ d.name }}</strong>{% if d.version %} ({{ d.version }}){% endif %}. {% translate "Licence" %}: {{ d.licence }}. {{ d.attribution }}</li>{% endfor %}
+    <h2 id="methods-heading" class="text-xl font-semibold">{% translate "Data sources and their limits" %}</h2>
+    <p class="mt-2 max-w-3xl text-slate-700">{% translate "This report uses free public data. Here is each source, what we use it for, and what it cannot show." %}</p>
+    <ul class="mt-3 list-disc space-y-3 pl-6 text-slate-700">
+      {% for d in datasets %}<li><strong>{{ d.name }}</strong>{% if d.use %}: {{ d.use }}{% endif %}{% if d.limitation %}<br><span class="text-amber-900">{% translate "Limits:" %} {{ d.limitation }}</span>{% endif %}<br><span class="text-xs text-slate-500">{% translate "Licence" %}: {{ d.licence }}. {{ d.attribution }}</span></li>{% endfor %}
     </ul>
     {% if disclaimer %}
     <h2 class="mt-8 text-xl font-semibold">{{ disclaimer.title }}</h2>

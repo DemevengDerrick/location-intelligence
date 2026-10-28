@@ -25,6 +25,11 @@ class Thresholds:
     imagery_max_scene_cloud: float = 70  # scenes cloudier than this are skipped
     imagery_max_scenes: float = 6  # scenes combined per composite
     change_first_year: float = 2017
+    # A year is left out of the change series when too little of the area around the parcel was
+    # seen clearly, or when its vegetation index is far below the other years' median: old
+    # scenes (2016-2017) have no usable cloud mask, and dry-season haze then looks like bare soil
+    change_min_window_pct: float = 70
+    change_haze_ndvi_drop: float = 0.06
     # Flood and water
     gsw_water_pct: float = 50  # surface-water occurrence counted as "water" (% of time)
     water_seen_red_pct: float = 10  # share of the parcel where water was ever seen

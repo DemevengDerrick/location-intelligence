@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
+from django.views.decorators.gzip import gzip_page
 from django.views.decorators.http import require_GET, require_POST
 from django_ratelimit.decorators import ratelimit
 
@@ -118,12 +119,18 @@ def _locate(request, draft):
         "basemapUrl": basemap_url(),
         "attribution": settings.BASEMAP_ATTRIBUTION,
         "searchUrl": reverse("intake:search"),
+        "boundariesUrl": reverse("intake:boundaries"),
         "geometry": json.loads(draft.geometry.geojson) if draft.geometry else None,
         "pin": json.loads(draft.pin.geojson) if draft.pin else None,
         "method": form["method"].value(),
         "messages": {
             "noResults": _("No place found. Try another spelling or a nearby town."),
             "searching": _("Searching…"),
+            "outside": _(
+                "This location is outside Cameroon. Our reports only cover Cameroon: check "
+                "the place or the coordinates."
+            ),
+            "here": _("You are here:"),
         },
     }
     return render(
@@ -176,6 +183,17 @@ def _attach(draft, upload, kind, mime, user):
         size_bytes=upload.size,
         uploaded_by=user if user.is_authenticated else None,
     )
+
+
+@require_GET
+@gzip_page  # public outlines, no secrets: safe to compress (about 5x smaller)
+def boundaries(request):
+    """Region, department and commune outlines and the outside-Cameroon mask for the map."""
+    from apps.gazetteer.boundaries import boundaries_geojson
+
+    response = JsonResponse(boundaries_geojson())
+    response["Cache-Control"] = "public, max-age=86400"
+    return response
 
 
 @require_GET

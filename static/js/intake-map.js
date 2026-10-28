@@ -8,6 +8,11 @@
   const status = document.getElementById("shape-status");
   const storageKey = config.token ? "intake:" + config.token + ":geometry" : null;
   const CAMEROON = { center: [12.35, 5.7], zoom: 5 };
+  // The map cannot be panned away from Cameroon: it always springs back inside these bounds.
+  const MAX_BOUNDS = [[5.5, 0.0], [19.5, 14.8]];
+  const whereLine = document.getElementById("map-where");
+  const outsideAlert = document.getElementById("map-outside");
+  let country = null; // the outline, once loaded, for the instant "outside Cameroon" check
 
   let method = config.method || "pin";
   let marker = null;
@@ -30,6 +35,8 @@
     center: CAMEROON.center,
     zoom: CAMEROON.zoom,
     maxZoom: 20,
+    minZoom: 4.5,
+    maxBounds: MAX_BOUNDS,
     cooperativeGestures: false,
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
@@ -56,6 +63,8 @@
   // --- helpers --------------------------------------------------------------------------
 
   function save(geometry) {
+    if (geometry && !checkCountry(geometry)) geometry = null;
+    else if (!geometry) checkCountry(null);
     input.value = geometry ? JSON.stringify(geometry) : "";
     try {
       if (storageKey) {
@@ -77,6 +86,94 @@
     return bounds;
   }
 
+  // --- boundaries, mask and "where am I" ----------------------------------------------
+
+  function addBoundaryLayers() {
+    // Empty at first, filled when the outlines arrive; added before Terra Draw starts so the
+    // drawing stays on top.
+    map.addSource("boundaries", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    const level = (name) => ["==", ["get", "level"], name];
+    map.addLayer({ id: "mask", type: "fill", source: "boundaries", filter: level("mask"),
+      paint: { "fill-color": "#1f2937", "fill-opacity": 0.6 } });
+    ["region", "department", "commune"].forEach((name) => {
+      // invisible fills, so the names under a point can be looked up
+      map.addLayer({ id: name + "-fill", type: "fill", source: "boundaries", filter: level(name),
+        paint: { "fill-opacity": 0 } });
+    });
+    map.addLayer({ id: "commune-line", type: "line", source: "boundaries", filter: level("commune"),
+      minzoom: 8, paint: { "line-color": "#ffffff", "line-width": 0.7, "line-opacity": 0.8 } });
+    map.addLayer({ id: "department-line", type: "line", source: "boundaries", filter: level("department"),
+      minzoom: 6, paint: { "line-color": "#ffffff", "line-width": 1.2, "line-dasharray": [3, 2] } });
+    map.addLayer({ id: "region-line", type: "line", source: "boundaries", filter: level("region"),
+      paint: { "line-color": "#fde68a", "line-width": 2 } });
+    map.addLayer({ id: "country-line", type: "line", source: "boundaries", filter: level("country"),
+      paint: { "line-color": "#ffffff", "line-width": 3 } });
+  }
+
+  async function loadBoundaries() {
+    try {
+      const response = await fetch(config.boundariesUrl, { headers: { Accept: "application/json" } });
+      const data = await response.json();
+      map.getSource("boundaries").setData(data);
+      const outline = data.features.find((f) => f.properties.level === "country");
+      country = outline ? outline.geometry : null;
+      map.once("idle", showWhere);
+    } catch (e) {} // the map still works without the outlines; the server checks the country
+  }
+
+  function namesAt(lngLat) {
+    const point = map.project(lngLat);
+    const names = {};
+    map.queryRenderedFeatures(point, { layers: ["region-fill", "department-fill", "commune-fill"] })
+      .forEach((f) => { names[f.properties.level] = f.properties.name; });
+    return [names.commune, names.department, names.region].filter(Boolean).join(" · ");
+  }
+
+  function showWhere() {
+    if (!whereLine || !map.getLayer("commune-fill")) return;
+    const pinShown = marker && marker.getElement().isConnected;
+    const at = pinShown ? marker.getLngLat() : map.getCenter();
+    const names = namesAt(at);
+    whereLine.textContent = names ? config.messages.here + " " + names : "";
+  }
+
+  function inRing(point, ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if (yi > point[1] !== yj > point[1] && point[0] < ((xj - xi) * (point[1] - yi)) / (yj - yi) + xi) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+
+  function inCameroon(point) {
+    if (!country) return true; // not loaded yet: the server still checks on submit
+    const polygons = country.type === "MultiPolygon" ? country.coordinates : [country.coordinates];
+    return polygons.some((rings) => inRing(point, rings[0]) && !rings.slice(1).some((hole) => inRing(point, hole)));
+  }
+
+  function verticesOf(geometry) {
+    const points = [];
+    (function walk(coords) {
+      if (typeof coords[0] === "number") points.push(coords);
+      else coords.forEach(walk);
+    })(geometry.coordinates);
+    return points;
+  }
+
+  function checkCountry(geometry) {
+    // Flags a pin or boundary outside Cameroon at once, and keeps it out of the form.
+    const outside = geometry && verticesOf(geometry).some((point) => !inCameroon(point));
+    if (outsideAlert) {
+      outsideAlert.textContent = outside ? config.messages.outside : "";
+      outsideAlert.classList.toggle("hidden", !outside);
+    }
+    return !outside;
+  }
+
   function placeMarker(lngLat) {
     if (!marker) {
       marker = new maplibregl.Marker({ draggable: true, color: "#047857" });
@@ -88,6 +185,7 @@
 
   function savePin(lngLat) {
     save({ type: "Point", coordinates: [lngLat.lng, lngLat.lat] });
+    showWhere();
   }
 
   function removeMarker() {
@@ -217,7 +315,11 @@
 
   // --- initial state --------------------------------------------------------------------
 
+  map.on("moveend", showWhere);
+
   map.on("load", () => {
+    addBoundaryLayers();
+    loadBoundaries();
     draw.start();
 
     let stored = null;

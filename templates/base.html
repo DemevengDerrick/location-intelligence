@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% block meta %}
   <title>{% block head_title %}{{ SITE_NAME }}{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}{% translate "Physical and environmental due-diligence reports on land parcels in Cameroon, reviewed by an analyst before delivery." %}{% endblock %}">
+  <meta name="description" content="{% block meta_description %}{% translate "Location reports for land in Cameroon, built from free public data and checked by an analyst before delivery." %}{% endblock %}">
   <link rel="canonical" href="{{ request.build_absolute_uri }}">
   {% for code, name in LANGUAGES %}
   <link rel="alternate" hreflang="{{ code }}" href="{% translated_url code absolute=True %}">
@@ -15,7 +15,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ SITE_NAME }}">
   <meta property="og:title" content="{% block og_title %}{{ SITE_NAME }}{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}{% translate "Know the land before you buy it: location, occupation, flood and access checks for parcels in Cameroon." %}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{% translate "Know a place before you commit: location, buildings, flood and access checks for land in Cameroon." %}{% endblock %}">
   <meta property="og:url" content="{{ request.build_absolute_uri }}">
   <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-default.png' %}">
   <meta property="og:locale" content="{% if LANGUAGE_CODE == 'fr' %}fr_FR{% else %}en_US{% endif %}">
@@ -31,7 +31,10 @@
 
   <header class="border-b border-slate-200 bg-white" x-data="{ open: false }">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-      <a href="{% url 'pages:home' %}" class="text-lg font-bold text-emerald-800">{{ SITE_NAME }}</a>
+      <a href="{% url 'pages:home' %}" class="shrink-0">{# compact logo on phones, tagline beside it from tablets up #}
+        <img src="{% static 'img/logo-liod.svg' %}" alt="{{ SITE_NAME }}: Location Intelligence from OpenData" width="140" height="40" class="h-10 w-auto sm:hidden">
+        <img src="{% static 'img/logo-liod-header.svg' %}" alt="{{ SITE_NAME }}: Location Intelligence from OpenData" width="250" height="44" class="hidden h-11 w-auto sm:block">
+      </a>
 
       <nav class="hidden items-center gap-5 text-sm md:flex" aria-label="{% translate "Main" %}">
         {% include "partials/nav_links.html" %}

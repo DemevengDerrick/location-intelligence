@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block head_title %}{% translate "How it works" %} · {{ SITE_NAME }}{% endblock %}
-{% block meta_description %}{% translate "From locating your parcel to receiving a reviewed report: how our land due-diligence service works." %}{% endblock %}
+{% block meta_description %}{% translate "From locating your plot to receiving a checked report: how our location reports work." %}{% endblock %}
 {% block content %}
 <h1 class="text-3xl font-bold">{% translate "How it works" %}</h1>
 <p class="mt-4 max-w-3xl text-lg">
   {% blocktranslate trimmed %}
-    Every report combines automated analysis of satellite and open data with a review by an analyst. Nothing is delivered without that human check.
+    Every report combines computer analysis of satellite images and free public maps with a check by an analyst. Nothing is sent to you without that human check.
   {% endblocktranslate %}
 </p>
 {% include "pages/_steps.html" %}

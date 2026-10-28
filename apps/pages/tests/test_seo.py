@@ -27,4 +27,4 @@ def test_pages_have_meta_hreflang_and_open_graph(client):
         '<meta property="og:image" content="http://testserver/static/img/og-default.png">' in html
     )
     assert '<meta property="og:locale" content="fr_FR">' in html
-    assert 'name="description" content="Des prix fixes' in html
+    assert 'name="description" content="Prix fixes' in html

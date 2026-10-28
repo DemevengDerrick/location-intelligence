@@ -558,36 +558,8 @@ class GhslBuiltSurface(GhslTiles):
         return self._mosaic(west, south, east, north, epoch)
 
 
-class GhslPopulation(GhslTiles):
-    """GHSL population (GHS-POP): people per cell, a second model to compare trends with."""
-
-    dataset, PRODUCT = "ghsl-pop", "GHS_POP"
-    EPOCHS = (2000, 2005, 2010, 2015, 2020, 2025, 2030)
-    PROJECTED_FROM = 2025
-
-    def total(self, geom, epoch):
-        """People in the cells whose centre falls inside the geometry."""
-        import json
-
-        from rasterio.features import geometry_mask
-
-        grid = self._mosaic(*geom.extent, epoch)
-        inside = geometry_mask(
-            [json.loads(geom.json)],
-            out_shape=grid.values.shape,
-            transform=grid.transform,
-            invert=True,
-        )
-        values = np.where(grid.values > 0, grid.values, 0)
-        return float(values[inside].sum())
-
-
 def ghsl_provider():
     return GhslBuiltSurface()
-
-
-def ghsl_population_provider():
-    return GhslPopulation()
 
 
 class LocalOsm:

@@ -76,7 +76,7 @@ def statement():
 
 class SignalsModule(Module):
     name = "signals"
-    title = gettext_lazy("Area signals: reported land issues nearby")
+    title = gettext_lazy("Land issues reported nearby")
 
     def run(self, parcel):
         settings = signals_settings()

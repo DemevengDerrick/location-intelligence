@@ -68,10 +68,12 @@ BUILT_UP = {"blue": 0.13, "green": 0.14, "red": 0.15, "nir": 0.18, "swir16": 0.2
 
 class FakeImagery:
     """Synthetic Sentinel-2 composites: vegetation everywhere; inside the parcel, built-up from
-    `built_from` (dry-season year) onwards, and in the current composite if `built_now`."""
+    `built_from` (dry-season year) onwards, and in the current composite if `built_now`.
+    In `hazy_years` the whole area reads like bare ground, as dry-season haze makes it look."""
 
-    def __init__(self, built_from=None, built_now=False, cloudy=False):
+    def __init__(self, built_from=None, built_now=False, cloudy=False, hazy_years=()):
         self.built_from, self.built_now, self.cloudy = built_from, built_now, cloudy
+        self.hazy_years = set(hazy_years)
 
     def composite(self, west, south, east, north, start, end):
         from apps.analysis.providers import Composite, _utm_grid
@@ -95,6 +97,8 @@ class FakeImagery:
             values = np.full((height, width), VEGETATION[band], dtype="float32")
             if built:
                 values[inside] = BUILT_UP[band]
+            if not current and end.year in self.hazy_years:
+                values[:] = BUILT_UP[band]
             if self.cloudy:
                 values[:] = np.nan
             bands[band] = values
@@ -251,26 +255,6 @@ class FakePopulation:
         return providers.Grid(values, from_origin(west, north, res, res))
 
 
-class FakeGhslPopulation:
-    """GHS-POP: the same density as FakePopulation in 2020, growing `growth` % a year."""
-
-    dataset, version = "ghsl-pop", "R2023A"
-    EPOCHS = (2000, 2005, 2010, 2015, 2020, 2025, 2030)
-    PROJECTED_FROM = 2025
-
-    def __init__(self, growth=2.5, fail=False):
-        self.growth, self.fail, self.calls = growth, fail, 0
-
-    def total(self, geom, epoch):
-        from apps.parcels.geometry import utm_srid_for
-
-        if self.fail:
-            raise OSError("tiles unreachable")
-        self.calls += 1
-        km2 = geom.transform(utm_srid_for(geom.centroid), clone=True).area / 1e6
-        return 4000 * (1 + self.growth / 100) ** (epoch - 2020) * km2
-
-
 class FakeGhsl:
     """Built-up land spreading outwards from the parcel, epoch by epoch."""
 
@@ -323,7 +307,6 @@ def data(monkeypatch):
         "water_features": FakeWaterFeatures(),
         "router": FakeRouter(),
         "population": FakePopulation(),
-        "ghsl_population": FakeGhslPopulation(),
         "ghsl": FakeGhsl(),
         "osm": None,  # built on first use, so tests can replace it first
         "area_levels": [],  # what the widening news search returns (see signals tests)
@@ -347,15 +330,21 @@ def data(monkeypatch):
         return state["osm"]
 
     monkeypatch.setattr("apps.analysis.modules.access.osm_provider", osm)
+    monkeypatch.setattr("apps.analysis.modules.location.osm_provider", osm)
+    # modules run in no fixed order: every user of the OSM copy gets the same test import
+    monkeypatch.setattr("apps.analysis.modules.red_flags.osm_provider", osm)
+    monkeypatch.setattr(providers, "osm_provider", osm)  # the roads on every map
+    monkeypatch.setattr(
+        "apps.analysis.modules.location.buildings_provider", lambda: state["buildings"]
+    )
+    monkeypatch.setattr(
+        "apps.analysis.modules.location.water_features_provider", lambda: state["water_features"]
+    )
     monkeypatch.setattr("apps.analysis.modules.access.routing_provider", lambda: state["router"])
     monkeypatch.setattr(
         "apps.analysis.modules.demographics.population_provider", lambda: state["population"]
     )
     monkeypatch.setattr("apps.analysis.modules.demographics.ghsl_provider", lambda: state["ghsl"])
-    monkeypatch.setattr(
-        "apps.analysis.modules.demographics.ghsl_population_provider",
-        lambda: state["ghsl_population"],
-    )
     monkeypatch.setattr(
         "apps.analysis.modules.signals.area_search.widen",
         lambda point, settings=None, http=None: state["area_levels"],
@@ -495,6 +484,48 @@ def review_form(order, **changes):
         )
     data.update({"note_fr": "", "note_en": ""}, **changes)
     return data
+
+
+def test_every_map_shows_the_roads_over_see_through_layers(data, paid_order):
+    from django.core.files.storage import default_storage
+
+    data["osm"] = osm_around_parcel()  # the local OSM copy, active before the modules run
+    terrain = findings(paid_order())["terrain"]  # a module that draws no roads itself
+    with default_storage.open(terrain["maps"]["main"]["en"]) as svg:
+        drawn = svg.read().decode()
+    assert "Roads" in drawn
+
+    from rasterio.transform import from_origin
+
+    from apps.analysis.maps import OVERLAY_ALPHA, ParcelMap
+    from apps.parcels.testing import square_m
+
+    figure = ParcelMap(square_m(*DOUALA, 40), roads=False)
+    grid = np.ones((4, 4), dtype="float32")
+    figure.add_classified_raster(
+        grid,
+        from_origin(DOUALA[0] - 0.001, DOUALA[1] + 0.001, 0.0005, 0.0005),
+        [0, 2],
+        ["#f00"],
+        ["x"],
+    )
+    figure.add(square_m(*DOUALA, 20), facecolor="#0f0")
+    assert OVERLAY_ALPHA < 1  # data layers are see-through
+    assert figure.ax.images[0].get_alpha() == OVERLAY_ALPHA
+    assert figure.ax.patches[0].get_alpha() == OVERLAY_ALPHA
+
+
+def test_location_maps_show_the_neighbourhood_and_cameroon(data, paid_order, cameroon):
+    from django.core.files.storage import default_storage
+
+    location = findings(paid_order())["location"]
+    assert set(location["maps"]) == {"main", "country"}
+    assert "geoboundaries-cmr-adm1" in location["datasets"]
+    with default_storage.open(location["maps"]["country"]["en"]) as svg:
+        drawn = svg.read().decode()
+    assert "Its region" in drawn and "Littoral" in drawn  # legend text (labels are outlines)
+    with default_storage.open(location["maps"]["main"]["fr"]) as svg:
+        assert "Limites de la parcelle" in svg.read().decode()  # labels in each language
 
 
 def test_rating_override_needs_a_reason(data, paid_order, analyst_client):
@@ -660,7 +691,7 @@ def test_pin_orders_explain_the_missing_area_chart(
     assert "only a pin was given" in reason["en"]
 
 
-def test_pdf_follows_the_report_structure(data, paid_order):
+def test_pdf_follows_the_report_structure(data, paid_order, settings):
     from apps.reports.pdf import render_pdf
 
     order = paid_order()
@@ -683,21 +714,37 @@ def test_pdf_follows_the_report_structure(data, paid_order):
     html = captured["html"]
     headings = [
         "Prepared for",
-        "1. Location and boundary check",
-        "2. Demographics and area growth",
+        "1. Location and boundary",
+        "2. People and area growth",
         "3. Access and services",
-        "4. Flood, water and terrain",
-        "5. Regulatory red flags",
-        "6. Current imagery and occupation",
-        "8. Area signals",
+        "4. Flooding and slope",
+        "5. Rules and restrictions",
+        "6. What is on the land today",
+        "8. Land issues reported nearby",
     ]
     order_of = [html.index(heading) for heading in headings]
     assert order_of == sorted(order_of)
     assert "Field verification findings" not in html  # desk tier
     assert "not included in this version" not in html  # every section has its module now
     assert html.count('class="tile"') == 10
-    assert html.count('class="map-pair"') == 3  # demographics, access and flood maps
+    assert html.count('class="map-pair"') == 3  # location, demographics and access maps
+    assert "How to read this report" in html and html.count('class="limits"') == 8
     assert html.count("data:image/svg+xml") >= 20  # 12 maps + 8 charts + QR code
+    # covers: the heading font, the back cover with the contact details, no sample notice
+    assert "outfit-latin-600.woff" in html and 'class="back-page"' in html
+    assert "Contact us" in html and settings.REPORT_CONTACT_EMAIL in html
+    assert "Sample report:" not in html
+
+    weasyprint.HTML = lambda string, **kwargs: capture(string)
+    try:
+        with pytest.raises(StopIteration):
+            render_pdf(report, report.draft, "en", 1, sample=True)
+    finally:
+        weasyprint.HTML = original
+    sample = captured["html"]
+    assert "Sample report:" in sample and "Sample client" in sample
+    name = order.customer.get_full_name()
+    assert not name or name not in sample
     assert "Population in 2025 (WorldPop R2025A)" in html  # the demographics table
     assert "Nearest services" in html and "École Les Lauriers" in html  # the services table
 
@@ -709,7 +756,7 @@ def test_vegetated_parcel_rates_land_cover_green(data, paid_order):
     imagery = findings(paid_order())["imagery"]
     assert imagery["rating"] == "green"
     assert imagery["results"]["vegetation"] == 100.0
-    assert "mostly vegetated" in imagery["text"]["en"]
+    assert "mostly covered by vegetation" in imagery["text"]["en"]
     assert imagery["key"]["en"] == "100 % vegetated"
     assert set(imagery["maps"]["main"]) == {"fr", "en"}
     title = imagery["charts"]["cover"]["en"]["title"]["text"]
@@ -721,7 +768,7 @@ def test_unvegetated_parcel_is_amber_never_red(data, paid_order):
     imagery = findings(paid_order())["imagery"]
     assert imagery["rating"] == "amber"  # pixels cannot prove buildings: at most amber
     assert imagery["results"]["open"] == 100.0
-    assert "cannot tell buildings from cleared soil" in imagery["text"]["en"]
+    assert "See the Buildings section" in imagery["text"]["en"]
 
 
 def test_cloudy_imagery_is_reported_as_unknown(data, paid_order):
@@ -730,6 +777,25 @@ def test_cloudy_imagery_is_reported_as_unknown(data, paid_order):
     assert f["imagery"]["rating"] == "grey"
     assert f["change"]["rating"] == "grey"
     assert "too much cloud" in f["imagery"]["text"]["en"]
+
+
+def test_a_hazy_year_is_left_out_rather_than_read_as_clearing(data, paid_order):
+    data["imagery"] = FakeImagery(hazy_years={2017})
+    change = findings(paid_order())["change"]
+    results = change["results"]
+    assert results["skipped_years"] == [{"year": 2017, "reason": "haze"}]
+    assert results["first_year"] == 2018 and results["vegetation_first"] == 100.0
+    assert change["rating"] == "green"
+
+
+def test_haze_is_a_one_year_dip_never_a_steady_trend():
+    from apps.analysis.modules.change import hazy_years
+
+    years = range(2017, 2027)
+    dips = [0.26, 0.56, 0.55, 0.65, 0.33, 0.59, 0.38, 0.55, 0.60, 0.44]  # real Yaoundé values
+    assert hazy_years(list(zip(years, dips, strict=True)), 0.06) == {2017, 2021, 2023, 2026}
+    built_up = [0.70 - 0.04 * i for i in range(10)]  # an area steadily built over
+    assert hazy_years(list(zip(years, built_up, strict=True)), 0.06) == set()
 
 
 def test_recent_clearing_is_flagged_with_its_year(data, paid_order):
@@ -745,7 +811,7 @@ def test_recent_clearing_is_flagged_with_its_year(data, paid_order):
     assert results["vegetation_loss_recent_pts"] == 100.0
     assert results["cleared_years"] == [2023]
     assert [row["year"] for row in results["series"]] == list(range(2017, 2027))
-    assert "from 100 % in 2021 to 0 % in 2026" in change["text"]["en"]
+    assert "from about 100 % in 2021 to 0 % in 2026" in change["text"]["en"]
     assert change["key"]["en"] == "-100 pts vegetation since 2021"
     assert set(change["maps"]) == {"strip", "clearing"}
     trend = change["charts"]["trend"]["en"]
@@ -756,7 +822,7 @@ def test_stable_parcel_rates_change_green(data, paid_order):
     change = findings(paid_order())["change"]
     assert change["rating"] == "green"
     assert change["results"]["cleared_years"] == []
-    assert "No recent clearing" in change["text"]["en"]
+    assert "no clear sign of recent clearing" in change["text"]["en"]
     assert change["key"]["en"] == "0 pts vegetation since 2021"  # never "+-0"
     assert set(change["maps"]) == {"strip"}  # no empty clearing map...
     reason = change["charts"]["clearing"]["reason"]["en"]  # ...but a labelled placeholder
@@ -833,9 +899,9 @@ def test_dry_parcel_far_from_water_rates_flood_green(data, paid_order):
     assert flood["results"]["nearest_water_m"] is None
     assert flood["key"]["en"] == "No 100-year flood zone within 1 km"
     assert "No river or water body is mapped within 1 km." in flood["text"]["en"]
-    assert "large rivers only" in flood["text"]["en"]  # the model's limits are always stated
-    assert "grands cours d'eau" in flood["text"]["fr"]
-    assert list(flood["maps"]) == ["flood", "water"]  # the flood map comes first in the PDF
+    assert "Ask neighbours" in flood["text"]["en"]  # the data's limits are in the section
+    assert "Demandez aux voisins" in flood["text"]["fr"]
+    assert list(flood["maps"]) == ["flood"]  # flood zones and water seen, on one map
     assert set(flood["datasets"]) == {"jrc-gsw", "jrc-flood-hazard", "osm-water"}
     assert "height_above_water_mean_m" not in flood["results"]
 
@@ -1069,7 +1135,7 @@ def test_parcel_on_a_road_near_services_rates_access_green(data, paid_order):
     school = r["services"]["school"]
     assert school["name"] == "École Les Lauriers" and 6 <= school["walk_min"] <= 10
     assert set(access["maps"]) == {"walk", "drive"}
-    assert "well served: it touches a road" in access["text"]["en"]
+    assert "appears well served: it touches a road" in access["text"]["en"]
     assert "school" in access["text"]["en"] and "min on foot" in access["text"]["en"]
     assert "elle touche une route" in access["text"]["fr"] and " ; " in access["text"]["fr"]
     assert access["key"]["en"].startswith("On a road · clinic")
@@ -1087,7 +1153,7 @@ def test_parcel_without_a_road_nearby_is_red(data, paid_order):
     access = findings(paid_order())["access"]
     assert access["rating"] == "red"
     assert access["results"]["touches_road"] is False
-    assert "no road access" in access["text"]["en"]
+    assert "show no road reaching the parcel" in access["text"]["en"]
     assert "the nearest road is" in access["text"]["en"]
 
 
@@ -1103,7 +1169,7 @@ def test_road_a_little_away_and_far_clinic_are_amber(data, paid_order):
     assert access["rating"] == "amber"
     text = access["text"]["en"]
     assert "the nearest road is 100 m from the boundary" in text
-    assert "Access needs checking" in text
+    assert "Access may be difficult" in text
 
 
 def test_services_beyond_the_search_radius_are_reported_as_none(data, paid_order):
@@ -1192,12 +1258,11 @@ def test_growing_area_rates_demographics_green(data, paid_order):
     built = r["built_km2"]
     assert built["1975"] < built["2020"]
     text = demo["text"]["en"]
-    assert text.startswith("The area is growing. About")
-    assert "people live within 5 km" in text and "+3.0 % a year" in text
+    assert text.startswith("The area appears to be growing. About")
+    assert "people are estimated to live within 5 km" in text and "+3.0 % a year" in text
     assert "from 2020 to 2025" in text and "to 2030" in text  # never "2,020"
-    assert "modelled estimates (WorldPop R2025A), not census counts" in text
     assert "Built-up land within 5 km grew from" in text
-    assert "La zone est en croissance" in demo["text"]["fr"]
+    assert "La zone semble en croissance" in demo["text"]["fr"]
     assert demo["key"]["en"].endswith("people within 5 km · +3.0 %/yr")
     assert set(demo["maps"]) == {"density", "expansion"}
     density_en = ModuleResult.objects.get(module="demographics").maps["density"]["en"]
@@ -1207,21 +1272,28 @@ def test_growing_area_rates_demographics_green(data, paid_order):
         drawn = svg.read().decode()
     assert "Within 5 km" in drawn and "À moins de 5 km" not in drawn
     table = demo["charts"]["areas"]["table"]["en"]
-    assert [row[0] for row in table["rows"]] == [
-        "Within 1 km",
-        "Within 5 km",
-        "Commune of Douala V",
-    ]
+    names = [row[0] for row in table["rows"]]  # each area with its size
+    assert names[0] == "Within 1 km (3 km²)" and names[1] == "Within 5 km (79 km²)"
+    assert names[2].startswith("Commune of Douala V (") and names[2].endswith(" km²)")
     growth = demo["charts"]["growth"]["en"]
     kinds = {row["kind"] for row in growth["data"]["values"]}
     assert kinds == {"Estimate", "Projection"}  # projected years drawn dashed
+    # WorldPop has one age-sex profile per region: show it once, labelled as the region's,
+    # never as a 5 km vs commune comparison (the bars would always be identical)
+    groups = demo["charts"]["groups"]["en"]
+    assert "area" not in groups["data"]["values"][0] and len(groups["data"]["values"]) == 4
+    assert groups["title"]["text"].endswith("in the Littoral region")
+    assert "describe the region, not the neighbourhood" in " ".join(groups["title"]["subtitle"])
+    pyramid_rows = demo["charts"]["pyramid"]["en"]["data"]["values"]
+    assert all("area" not in row for row in pyramid_rows)
+    assert "In the region, 41.7 % of people are under 15." in text
 
 
 @pytest.mark.parametrize(
     ("growth", "rating", "lead"),
     [
-        (1.0, "amber", "The area is growing slowly."),
-        (-1.0, "red", "The area's population is falling."),
+        (1.0, "amber", "The area appears to be growing slowly."),
+        (-1.0, "red", "The area's population appears to be falling."),
     ],
 )
 def test_slow_or_falling_growth(data, paid_order, growth, rating, lead):
@@ -1240,37 +1312,37 @@ def test_population_figures_are_cached_per_area_and_year(data, paid_order):
     run = AnalysisRun.objects.get()
     MODULES["demographics"].run(run.parcel)
     assert data["population"].calls == calls  # all from the cache
-    assert PopulationStat.objects.count() == 9 + 21  # and GHSL: 3 areas x 7 epochs
+    assert PopulationStat.objects.count() == 9  # WorldPop only
 
 
 def test_growth_since_2000_is_compared_as_rates_never_as_counts(data, paid_order):
     data["population"] = FakePopulation(years=(2015, 2020, 2025, 2030), history=(2000, 2005, 2010))
     demo = findings(paid_order())["demographics"]
     r = demo["results"]
-    assert r["history_release"] == "Global1" and r["ghsl_pop_version"] == "R2023A"
+    assert r["history_release"] == "Global1" and "ghsl_pop_version" not in r
     five = r["areas"]["5km"]
     assert five["growth_pct"] == pytest.approx(3.0, abs=0.01)  # the rating: R2025A only
-    worldpop, ghsl = five["trends"]["worldpop"], five["trends"]["ghsl"]
+    worldpop = five["trends"]["worldpop"]
+    assert list(five["trends"]) == ["worldpop"]  # one population source only
     assert list(worldpop) == ["2000–2005", "2005–2010", "2015–2020", "2020–2025", "2025–2030"]
     assert "2010–2015" not in worldpop  # never across the two releases
-    assert len(ghsl) == 6 and ghsl["2010–2015"] == pytest.approx(2.5, abs=0.01)
     assert five["history_growth_pct"] == pytest.approx(3.0, abs=0.01)
-    assert {"worldpop-global1", "ghsl-pop"} <= set(demo["datasets"])
+    assert "worldpop-global1" in demo["datasets"] and "ghsl-pop" not in demo["datasets"]
 
     growth = demo["charts"]["growth"]["en"]["data"]["values"]
     assert min(row["year"] for row in growth) == 2015  # counts: R2025A only
 
     trends = demo["charts"]["trends"]["en"]
     assert trends["title"]["text"] == (
-        "Within 5 km, +3.0 % a year (WorldPop) and +2.5 % a year (GHSL) from 2020 to 2025"
+        "Within 5 km, the population changed by +3.0 % a year from 2020 to 2025"
     )
     rows = trends["data"]["values"]
-    assert {row["source"] for row in rows} == {"WorldPop", "GHSL"}
+    assert {row["source"] for row in rows} == {"WorldPop"}
     projected = {(row["source"], row["period"]) for row in rows if row["kind"] == "Projection"}
-    assert projected == {("WorldPop", "2025–2030"), ("GHSL", "2020–2025"), ("GHSL", "2025–2030")}
+    assert projected == {("WorldPop", "2025–2030")}
     subtitle = " ".join(trends["title"]["subtitle"])
     assert "No rate is given across the two releases" in subtitle
-    assert "GHS-POP R2023A" in subtitle
+    assert "GHS-POP" not in subtitle
     assert "de 2020 à 2025" in demo["charts"]["trends"]["fr"]["title"]["text"]
 
     table = demo["charts"]["areas"]["table"]["en"]
@@ -1281,19 +1353,10 @@ def test_growth_since_2000_is_compared_as_rates_never_as_counts(data, paid_order
     from apps.analysis.models import AnalysisRun as Run
     from apps.analysis.modules import MODULES
 
-    calls = data["population"].history_calls, data["ghsl_population"].calls
-    assert calls == (9, 21)
+    calls = data["population"].history_calls
+    assert calls == 9
     MODULES["demographics"].run(Run.objects.get().parcel)
-    assert (data["population"].history_calls, data["ghsl_population"].calls) == calls  # cached
-
-
-def test_demographics_stand_without_ghsl_population(data, paid_order):
-    data["ghsl_population"] = FakeGhslPopulation(fail=True)
-    demo = findings(paid_order())["demographics"]
-    assert demo["rating"] == "green" and demo["results"]["ghsl_pop_version"] is None
-    assert "ghsl-pop" not in demo["datasets"]
-    sources = {row["source"] for row in demo["charts"]["trends"]["en"]["data"]["values"]}
-    assert sources == {"WorldPop"}
+    assert data["population"].history_calls == calls  # cached
 
 
 def test_demographics_unavailable_without_worldpop(data, paid_order):
@@ -1326,13 +1389,6 @@ def test_worldpop_and_ghsl_file_names():
     assert len(worldpop.band_names()) == 40
     assert worldpop.history_url(2005).endswith("/Global_2000_2020/2005/CMR/cmr_ppp_2005.tif")
     assert worldpop.history_path(2005).name == "cmr_ppp_2005_Global1_cog.tif"
-    from apps.analysis.providers import GhslPopulation
-
-    tile = GhslPopulation().tile_url(2000, 9, 19)
-    assert tile.endswith(
-        "/GHSL/GHS_POP_GLOBE_R2023A/GHS_POP_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/"
-        "GHS_POP_E2000_GLOBE_R2023A_4326_3ss_V1_0_R9_C19.zip"
-    )
     ghsl = GhslBuiltSurface()
     assert ghsl.tiles(9.6, 4.0, 9.8, 4.1) == [(9, 19)]  # Douala
     assert ghsl.tiles(*ghsl.CAMEROON) == [(8, 19), (8, 20), (9, 19), (9, 20)]
@@ -1356,7 +1412,7 @@ def test_parcel_clear_of_constraints_rates_red_flags_green(data, paid_order):
     assert flags["rating"] == "green"
     assert flags["results"]["constraints"] == []
     assert flags["results"]["buildable_pct"] == 100
-    assert "No protected area" in flags["text"]["en"]
+    assert "show no protected area" in flags["text"]["en"]
     assert (
         "No regulatory constraint was found within 200 m"
         in (flags["charts"]["constraints"]["reason"]["en"])

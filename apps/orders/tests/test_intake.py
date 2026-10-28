@@ -389,3 +389,16 @@ def test_mistyped_deadline_explains_what_to_do(client):
         step_url(draft, 3), {"tier": "desk", "report_language": "fr", "deadline": "202611-02-01"}
     )
     assert "Choose the date in the calendar" in response.content.decode()
+
+
+def test_map_boundaries_include_the_mask_outside_cameroon(client):
+    with translation.override("fr"):
+        url = reverse("intake:boundaries")
+    assert url == "/fr/commande/limites/"
+    data = client.get(url).json()
+    levels = {f["properties"]["level"] for f in data["features"]}
+    assert {"country", "mask", "region", "commune"} <= levels
+    commune = next(f for f in data["features"] if f["properties"]["level"] == "commune")
+    assert commune["properties"]["name"] == "Douala V"
+    lon = commune["geometry"]["coordinates"][0][0][0]
+    assert lon == round(lon, 4)  # rounded to keep the download small

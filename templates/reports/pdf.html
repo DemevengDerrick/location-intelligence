@@ -4,26 +4,64 @@
 <meta charset="utf-8">
 <title>{{ site_name }} · {{ report.reference }}</title>
 <style>
+  @font-face { font-family: "Outfit"; font-weight: 300; src: url("{{ fonts_url }}/outfit-latin-300.woff"); }
+  @font-face { font-family: "Outfit"; font-weight: 400; src: url("{{ fonts_url }}/outfit-latin-400.woff"); }
+  @font-face { font-family: "Outfit"; font-weight: 600; src: url("{{ fonts_url }}/outfit-latin-600.woff"); }
+  @font-face { font-family: "Outfit"; font-weight: 700; src: url("{{ fonts_url }}/outfit-latin-700.woff"); }
   @page {
     size: A4;
     margin: 18mm 16mm 24mm 16mm;
-    @bottom-left { content: element(footer); }
+    @bottom-left { content: element(footer); width: 155mm; }
     @bottom-right { content: counter(page) " / " counter(pages); font: 8pt "DejaVu Sans"; color: #555; }
   }
-  body { font-family: "DejaVu Sans", sans-serif; font-size: 9.5pt; color: #111; line-height: 1.45; }
+  @page cover { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+  .cover-page { page: cover; }
+  .back-page { page: cover; page-break-before: always; }
+  body { margin: 0; font-family: "DejaVu Sans", sans-serif; font-size: 9.5pt; color: #111; line-height: 1.45; }
+  h1, h2, h3, .tile-label, .scorecard strong { font-family: "Outfit", "DejaVu Sans", sans-serif; }
+  .scorecard strong { font-weight: 600; font-size: 10.5pt; }
   h1 { font-size: 22pt; margin: 0 0 4mm; color: #064E3B; }
-  h2 { font-size: 13pt; margin: 8mm 0 2mm; color: #064E3B; page-break-after: avoid; }
+  h2 { font-size: 15pt; font-weight: 600; margin: 8mm 0 2mm; color: #064E3B; page-break-after: avoid; }
   .footer { position: running(footer); font-size: 7.5pt; color: #555; display: flex; align-items: center; gap: 3mm; }
   .footer .qr { width: 14mm; height: 14mm; }
-  .cover { page-break-after: always; }
-  .cover table { border-collapse: collapse; margin-top: 6mm; }
-  .cover h2 { margin-top: 10mm; }
-  .cover .requester { margin-top: 2mm; }
+  /* Front and back covers: full-bleed deep blue, contour lines, a colour stripe */
+  .sheet { position: relative; width: 210mm; height: 297mm; overflow: hidden; color: #fff;
+           background: linear-gradient(170deg, #0B5CAB 0%, #0D3F7A 45%, #102A55 100%); }
+  .sheet .contours { position: absolute; left: 0; top: 0; width: 210mm; height: 297mm; }
+  .sheet .stripe { position: absolute; left: 14mm; top: 112mm; width: 5mm; height: 150mm; }
+  .sheet .stripe div { width: 5mm; }
+  .sheet .brand-logo { position: absolute; left: 16mm; top: 15mm; width: 70mm; height: auto; }
+  .footer .footer-logo { height: 6mm; width: auto; margin-left: auto; }
+  .how-to-read { border: 2px solid #B91C1C; background: #FEF2F2; color: #991B1B; font-weight: bold; padding: 3mm 4mm; margin: 0 0 6mm; page-break-inside: avoid; }
+  .how-to-read h2 { color: #B91C1C; margin: 0 0 2mm; font-size: 13pt; }
+  .how-to-read ul { margin: 0; padding-left: 5mm; }
+  .how-to-read li { margin-bottom: 1.2mm; }
+  .limits { border-left: 3px solid #E69F00; background: #FFF8EB; padding: 2mm 3mm; font-size: 8.5pt; color: #5A4300; margin: 2mm 0 4mm; page-break-inside: avoid; }
+  .sources li { margin-bottom: 2.5mm; }
+  .sources .use { color: #222; }
+  .sources .limit { display: block; color: #5A4300; }
+  .sources .licence { display: block; font-size: 7.5pt; color: #666; }
+  .cover-body { position: absolute; left: 26mm; right: 16mm; top: 112mm; }
+  .cover-title { font: 300 40pt/1.02 "Outfit", sans-serif; text-transform: uppercase; margin: 0; }
+  .cover-place { font: 400 15pt "Outfit", sans-serif; margin: 5mm 0 0; color: #E8F0FA; }
+  .cover-facts { margin-top: 9mm; width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .cover-facts td { vertical-align: top; padding: 0 6mm 0 0; }
+  .cover-facts h2 { font-size: 10pt; font-weight: 600; text-transform: uppercase; letter-spacing: .8pt; color: #F4B183; margin: 0 0 2mm; }
+  .cover-facts table { border-collapse: collapse; font-size: 8.5pt; }
+  .cover-facts table td { padding: .8mm 3mm .8mm 0; }
+  .cover-facts table td:first-child { color: #BFD3EA; white-space: nowrap; }
+  .cover-notes { position: absolute; left: 26mm; right: 16mm; bottom: 14mm; font-size: 8pt; color: #DCE7F5; }
+  .cover-notes p { margin: 0 0 2mm; padding: 2mm 3mm; border-left: 2px solid #E69F00; background: rgba(255,255,255,.07); }
+  .back-body { position: absolute; left: 26mm; right: 16mm; top: 150mm; }
+  .back-body h2 { font: 300 34pt "Outfit", sans-serif; color: #fff; margin: 0 0 6mm; text-transform: uppercase; }
+  .back-body p { font-size: 11pt; margin: 0 0 3mm; color: #E8F0FA; }
+  .back-body a { color: #fff; text-decoration: none; font: 600 14pt "Outfit", sans-serif; }
+  .back-body .label { display: block; font-size: 8pt; text-transform: uppercase; letter-spacing: .8pt; color: #F4B183; }
+  .back-body .web-qr { width: 26mm; height: 26mm; background: #fff; padding: 2mm; margin-top: 4mm; }
+  .back-foot { position: absolute; left: 26mm; right: 16mm; bottom: 14mm; font-size: 7.5pt; color: #BFD3EA; }
   .map-pair { width: 100%; border-collapse: collapse; table-layout: fixed; page-break-inside: avoid; margin: 3mm 0; }
   .map-pair td { width: 50%; vertical-align: top; padding: 0 1.5mm; text-align: center; }
   .map-pair img { width: 100%; height: auto; }
-  .cover td { padding: 1.5mm 4mm 1.5mm 0; vertical-align: top; }
-  .cover td:first-child { color: #555; }
   .notice { border: 1px solid #E69F00; background: #FFF7E6; padding: 3mm; margin: 4mm 0; }
   .scorecard { width: 100%; border-collapse: separate; border-spacing: 0 2mm; }
   .scorecard td { padding: 2mm 3mm; vertical-align: top; border-top: 1px solid #ddd; }
@@ -52,31 +90,51 @@
 <div class="footer">
   <img class="qr" src="{{ qr_src }}" alt="">
   <div>{% translate "Report ID" %} {{ report.reference }} · v{{ number }}<br>{% translate "Check this report is genuine:" %} {{ verify_url }}</div>
+  <img class="footer-logo" src="{{ footer_logo_src }}" alt="{{ site_name }}">
 </div>
 
-<section class="cover">
-  <p class="small">{{ site_name }}</p>
-  <h1>{% translate "Land due-diligence report" %}</h1>
-  <p class="finding">{% if parcel.quartier %}{{ parcel.quartier }}, {% endif %}{{ parcel.commune|default:"" }}{% if parcel.region %} ({{ parcel.region }}){% endif %}</p>
-  <table>
-    <tr><td>{% translate "Report ID" %}</td><td>{{ report.reference }}</td></tr>
-    <tr><td>{% translate "Version" %}</td><td>{{ number }} · {{ generated_at|date:"DATE_FORMAT" }}</td></tr>
-    <tr><td>{% translate "Order" %}</td><td>{{ order.public_id|stringformat:"s"|slice:":8" }} · {{ order.created_at|date:"DATE_FORMAT" }}</td></tr>
-    <tr><td>{% translate "Report" %}</td><td>{{ order.get_tier_display }}</td></tr>
-    <tr><td>{% translate "Location given as" %}</td><td>{{ parcel.get_input_method_display }}</td></tr>
-  </table>
-  <h2>{% translate "Prepared for" %}</h2>
-  <table class="requester">
-    <tr><td>{% translate "Requested by" %}</td><td>{{ requester.name|default:"–" }}</td></tr>
-    {% if requester.organization %}<tr><td>{% translate "Organization" %}</td><td>{{ requester.organization }}</td></tr>{% endif %}
-    <tr><td>{% translate "Requested on" %}</td><td>{{ order.created_at|date:"DATE_FORMAT" }}</td></tr>
-    {% if requester.intended_use %}<tr><td>{% translate "Intended use" %}</td><td>{{ requester.intended_use }}</td></tr>{% endif %}
-  </table>
-  {% if approximate %}
-  <p class="notice">{% translate "Approximate location: only a pin was given. The analysis covers a circle around it, not the exact parcel." %}</p>
-  {% endif %}
-  <p class="notice">{% translate "This report is physical and environmental due diligence from remote data. It is not a legal title search, a survey or a valuation." %}</p>
+<section class="cover-page">
+  <div class="sheet">
+    <img class="contours" src="{{ cover.contours }}" alt="">
+    <div class="stripe">{% for colour, height in cover.stripe %}<div style="background: {{ colour }}; height: {{ height|unlocalize }}%"></div>{% endfor %}</div>
+    <img class="brand-logo" src="{{ logo_src }}" alt="{{ site_name }}">
+    <div class="cover-body">
+      <h1 class="cover-title">{% for word, colour in cover.title %}<span style="color: {{ colour }}">{{ word }}</span>{% if not forloop.last %} {% endif %}{% endfor %}</h1>
+      <p class="cover-place">{% if parcel.quartier %}{{ parcel.quartier }}, {% endif %}{{ parcel.commune|default:"" }}{% if parcel.region %} ({{ parcel.region }}){% endif %}</p>
+      <table class="cover-facts"><tr>
+        <td>
+          <h2>{% translate "Report" %}</h2>
+          <table>
+            <tr><td>{% translate "Report ID" %}</td><td>{{ report.reference|stringformat:"s"|slice:":8" }}</td></tr>
+            <tr><td>{% translate "Version" %}</td><td>{{ number }} · {{ generated_at|date:"DATE_FORMAT" }}</td></tr>
+            <tr><td>{% translate "Order" %}</td><td>{{ order.public_id|stringformat:"s"|slice:":8" }} · {{ order.created_at|date:"DATE_FORMAT" }}</td></tr>
+            <tr><td>{% translate "Report" %}</td><td>{{ order.get_tier_display }}</td></tr>
+            <tr><td>{% translate "Location given as" %}</td><td>{{ parcel.get_input_method_display }}</td></tr>
+          </table>
+        </td>
+        <td>
+          <h2>{% translate "Prepared for" %}</h2>
+          <table>
+            <tr><td>{% translate "Requested by" %}</td><td>{{ requester.name|default:"–" }}</td></tr>
+            {% if requester.organization %}<tr><td>{% translate "Organization" %}</td><td>{{ requester.organization }}</td></tr>{% endif %}
+            <tr><td>{% translate "Requested on" %}</td><td>{{ order.created_at|date:"DATE_FORMAT" }}</td></tr>
+            {% if requester.intended_use %}<tr><td>{% translate "Intended use" %}</td><td>{{ requester.intended_use }}</td></tr>{% endif %}
+          </table>
+        </td>
+      </tr></table>
+    </div>
+    <div class="cover-notes">
+      {% if sample %}<p>{% translate "Sample report: a real analysis of an example parcel, for illustration only." %}</p>{% endif %}
+      {% if approximate %}<p>{% translate "Approximate location: only a pin was given. The analysis covers a circle around it, not the exact parcel." %}</p>{% endif %}
+      <p>{% translate "A first look at a location from free public data, to be confirmed on the ground. Read “How to read this report” on the next page before using it." %}</p>
+    </div>
+  </div>
 </section>
+
+<div class="how-to-read">
+  <h2>{% translate "How to read this report" %}</h2>
+  <ul>{% for line in how_to_read %}<li>{{ line }}</li>{% endfor %}</ul>
+</div>
 
 <h2>{% translate "Summary" %}</h2>
 <div class="tiles">
@@ -126,24 +184,38 @@
   {% empty %}
   <p class="placeholder">{% translate "This section is not included in this version of the report." %}</p>
   {% endfor %}
+  {% if section.limits and section.findings %}<p class="limits"><strong>{% translate "Limits of this section:" %}</strong> {{ section.limits }}</p>{% endif %}
 </section>
 {% endfor %}
 
 <section>
-  <h2>{% translate "Methods, data sources and limitations" %}</h2>
+  <h2>{% translate "Data sources and their limits" %}</h2>
+  <p>{% translate "This report uses free public data. Here is each source, what we use it for, and what it cannot show." %}</p>
   <ul class="sources">
-    {% for d in datasets %}<li><strong>{{ d.name }}</strong>{% if d.version %} ({{ d.version }}){% endif %}. {% translate "Licence" %}: {{ d.licence }}. {{ d.attribution }}</li>{% endfor %}
+    {% for d in datasets %}<li><strong>{{ d.name }}</strong>{% if d.use %} · <span class="use">{{ d.use }}</span>{% endif %}
+      {% if d.limitation %}<span class="limit">{% translate "Limits:" %} {{ d.limitation }}</span>{% endif %}
+      <span class="licence">{% translate "Licence" %}: {{ d.licence }}. {{ d.attribution }}</span></li>{% endfor %}
   </ul>
-  <p class="small">{% translate "Slopes come from a surface model: in built-up or wooded areas, buildings and trees add relief. Building footprints come from OpenStreetMap, whose coverage varies; an absence of mapped buildings does not prove the land is empty." %}
-  {% translate "Land cover comes from 10 m Sentinel-2 pixels: it separates vegetation and water from built-up or bare ground, but cannot tell buildings from cleared soil, and on small parcels it is indicative only." %}
-  {% translate "Flood exposure combines satellite observations of water since 1984 with a global river-flood model at about 90 m; it does not cover flooding from blocked drains or heavy rain in town." %}
-  {% translate "Travel times are computed on mapped roads without traffic; services missing from OpenStreetMap are not counted, and a road next to the parcel does not prove a legal right of way." %}
-  {% translate "Population figures are modelled estimates from WorldPop, not census counts, and are less certain for small areas; the 2030 figures are projections." %}
-  {% translate "Regulatory checks cover only the constraints that are mapped or uploaded; setback strips are measured from mapped centrelines, and widths marked * are indicative. The commune's urban planning office has the final word." %}</p>
   {% if disclaimer %}
   <h2>{{ disclaimer.title }}</h2>
   <div class="small">{{ disclaimer.body|linebreaks }}</div>
   {% endif %}
+</section>
+
+<section class="back-page">
+  <div class="sheet">
+    <img class="contours" src="{{ cover.back_contours }}" alt="">
+    <div class="stripe">{% for colour, height in cover.stripe %}<div style="background: {{ colour }}; height: {{ height|unlocalize }}%"></div>{% endfor %}</div>
+    <img class="brand-logo" src="{{ logo_src }}" alt="{{ site_name }}">
+    <div class="back-body">
+      <h2>{% translate "Contact us" %}</h2>
+      <p>{% translate "Questions about this report, another parcel to check, or a field visit? Write to us." %}</p>
+      {% if contact.email %}<p><span class="label">{% translate "Email" %}</span><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></p>{% endif %}
+      {% if contact.website %}<p><span class="label">{% translate "Website" %}</span><a href="{{ contact.website }}">{{ contact.website_label }}</a></p>
+      <img class="web-qr" src="{{ contact.qr }}" alt="">{% endif %}
+    </div>
+    <div class="back-foot">{% translate "Report ID" %} {{ report.reference }} · v{{ number }} · {% translate "Check this report is genuine:" %} {{ verify_url }}</div>
+  </div>
 </section>
 </body>
 </html>

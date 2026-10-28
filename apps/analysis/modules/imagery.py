@@ -65,7 +65,7 @@ def cover_encoding():
 
 class ImageryModule(Module):
     name = "imagery"
-    title = gettext_lazy("Recent imagery and land cover")
+    title = gettext_lazy("Satellite view of the land")
 
     def run(self, parcel):
         t = thresholds()

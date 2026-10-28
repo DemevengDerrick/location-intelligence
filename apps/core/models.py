@@ -70,6 +70,13 @@ class Dataset(TimeStampedModel):
     url = models.URLField(_("URL"), blank=True)
     commercial_use_allowed = models.BooleanField(_("commercial use allowed"), default=False)
     notes = models.TextField(_("notes"), blank=True)
+    # Plain language for the report's sources section (translated: use_fr, limitation_en...)
+    use = models.CharField(
+        _("what we use it for"), max_length=200, blank=True, help_text=_("In everyday words.")
+    )
+    limitation = models.TextField(
+        _("limits"), blank=True, help_text=_("What this data cannot show, in everyday words.")
+    )
 
     class Meta:
         verbose_name = _("dataset")
